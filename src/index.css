@@ -1,0 +1,191 @@
+@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Playfair+Display:wght@600;700&family=Space+Grotesk:wght@400;600&display=swap");
+
+:root {
+  font-family: "Suisse Int'l", "Space Grotesk", "Inter", system-ui, -apple-system, sans-serif;
+  color: #f5f5f4;
+  background-color: #0a0000;
+  --slop-red: #dc2626;
+  --slop-black: #0a0000;
+  --slop-parchment: #f5f5f4;
+  --slop-error-yellow: #fbbf24;
+  --slop-blue: #3b82f6;
+  --slop-purple: #8b5cf6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #0a0000;
+  background-image:
+    radial-gradient(circle at 10% 10%, rgba(220, 38, 38, 0.35), transparent 45%),
+    radial-gradient(circle at 80% 0%, rgba(248, 113, 113, 0.45), transparent 40%),
+    linear-gradient(180deg, transparent 0%, rgba(15, 15, 15, 0.9) 60%, #000000 100%);
+  color: #f5f5f4;
+  font-family: inherit;
+}
+
+::selection {
+  background-color: rgba(220, 38, 38, 0.5);
+  color: #fff;
+}
+
+.paper-meta {
+  font-family: "Suisse Int'l", sans-serif;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #dc2626;
+  border-left: 3px solid #dc2626;
+  padding-left: 1rem;
+}
+
+.paper-abstract {
+  position: relative;
+  font-family: "Playfair Display", "Times New Roman", serif;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  text-align: left;
+}
+
+.paper-abstract::first-letter {
+  font-size: 4rem;
+  font-family: "Playfair Display", "Times New Roman", serif;
+  color: #dc2626;
+  float: left;
+  line-height: 0.85;
+  margin: 0 0.35rem 0.1rem 0;
+  text-transform: uppercase;
+}
+
+.paper-title-glow {
+  box-shadow: 0 0 30px rgba(220, 38, 38, 0.35);
+  transition: box-shadow 0.4s ease;
+}
+
+.paper-title-glow:hover {
+  box-shadow: 0 0 40px rgba(220, 38, 38, 0.65);
+}
+
+.slop-flicker {
+  animation: flicker 3s ease-in-out infinite;
+}
+
+.slop-misalign {
+  margin-left: 1px;
+}
+
+.slop-pulse-error {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.question-spinner {
+  font-family: "JetBrains Mono", monospace;
+  width: 56px;
+  height: 56px;
+  border: 2px solid rgba(220, 38, 38, 0.6);
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: #dc2626;
+  animation: spin-question 1.8s linear infinite;
+  filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.6));
+}
+
+.question-spinner::before {
+  content: "?";
+}
+
+.button-scale {
+  transition: transform 0.2s ease;
+}
+
+.button-scale:active {
+  transform: scale(0.98);
+}
+
+.button-scale[data-quirk="true"]:active {
+  transform: scale(1.02);
+}
+
+.reviewer-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: rgba(12, 12, 12, 0.7);
+  padding: 1.25rem;
+  border-radius: 1.25rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+  position: relative;
+}
+
+.reviewer-card::after {
+  content: "Desk-bashing incidents: 1";
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: #fbbf24;
+}
+
+.author-score::after {
+  content: attr(data-score);
+  position: absolute;
+  bottom: -1.5rem;
+  left: 0;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.65rem;
+  color: #3b82f6;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.author-score:hover::after {
+  opacity: 1;
+}
+
+@keyframes flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
+  60% {
+    opacity: 0.95;
+  }
+}
+
+@keyframes pulse {
+  0%
+  {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(220, 38, 38, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
+}
+
+@keyframes spin-question {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1199px) {
+  body {
+    --grid-warp: 1px;
+  }
+}

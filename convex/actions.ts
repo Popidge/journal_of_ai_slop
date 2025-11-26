@@ -1,0 +1,211 @@
+"use node";
+import { internalAction } from "./_generated/server";
+import { internal } from "./_generated/api";
+import { v } from "convex/values";
+
+const REVIEW_MODELS = [
+  "anthropic/claude-3-haiku",
+  "x-ai/grok-4.1-fast:free",
+  "google/gemini-2.5-flash-lite",
+  "openai/gpt-5-nano",
+  "meta-llama/llama-3.3-70b-instruct",
+] as const;
+
+const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
+const MAX_REVIEW_COST = 0.2;
+const TRUNCATE_LENGTH = 2000;
+
+type ReviewDecision = "publish_now" | "publish_after_edits" | "reject";
+
+type ReviewVote = {
+  agentId: string;
+  decision: ReviewDecision;
+  reasoning: string;
+  cost: number;
+};
+
+const normalizeDecision = (value: unknown): ReviewDecision => {
+  if (typeof value !== "string") {
+    return "reject";
+  }
+
+  const normalized = value.toLowerCase().trim();
+  if (normalized === "publish_now") {
+    return "publish_now";
+  }
+  if (normalized === "publish_after_edits") {
+    return "publish_after_edits";
+  }
+  return "reject";
+};
+
+const extractJsonPayload = (text: string): string => {
+  const fenced = text.match(/```json\s*([\s\S]*?)```/i);
+  if (fenced) {
+    return fenced[1];
+  }
+
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start >= 0 && end > start) {
+    return text.slice(start, end + 1);
+  }
+
+  return text;
+};
+
+const parseReview = (rawText: string): { decision: ReviewDecision; reasoning: string } => {
+  const payload = extractJsonPayload(rawText);
+  try {
+    const parsed = JSON.parse(payload);
+    const decision = normalizeDecision(parsed.decision);
+    const reasoning = typeof parsed.reasoning === "string" && parsed.reasoning.trim().length > 0
+      ? parsed.reasoning.trim()
+      : "LLM would not explain itself.";
+    return { decision, reasoning };
+  } catch (error) {
+    console.warn("Unable to parse review JSON", error, payload);
+    return {
+      decision: "reject",
+      reasoning: "Review could not be parsed into JSON.",
+    };
+  }
+};
+
+const buildPrompt = (paper: {
+  title: string;
+  authors: string;
+  tags: string[];
+  content: string;
+}): string => {
+  const tags = paper.tags.length ? paper.tags.join(", ") : "(no tag)";
+  const truncated = paper.content.length > TRUNCATE_LENGTH
+    ? `${paper.content.slice(0, TRUNCATE_LENGTH)}...`
+    : paper.content;
+
+  return `You are a peer reviewer for The Journal of AI Slop™, a satirical academic journal.
+
+The paper you're reviewing is tagged as: ${tags}
+
+Paper Title: ${paper.title}
+Authors: ${paper.authors}
+
+Content (truncated to ${TRUNCATE_LENGTH} chars):
+${truncated}
+
+Your task: Decide if this paper should be published in our slop journal.
+
+Respond with ONE of these decisions:
+- "publish_now" - Peak slop, ready for the world
+- "publish_after_edits" - Good slop but needs polish (treated as reject for this stage)
+- "reject" - Not slop enough, too slop, or just wrong
+
+Respond in valid JSON only:
+{
+  "decision": "publish_now" | "publish_after_edits" | "reject",
+  "reasoning": "One sentence explaining your decision"
+}`;
+};
+
+const deriveCost = (response: Response): number => {
+  const costHeader = response.headers.get("x-ephemeral-token-cost");
+  const parsed = costHeader ? Number(costHeader) : 0;
+  if (Number.isFinite(parsed) && parsed >= 0) {
+    return parsed;
+  }
+  return 0;
+};
+
+export const reviewPaper = internalAction({
+  args: { paperId: v.id("papers") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    if (!process.env.OPENROUTER_API_KEY) {
+      throw new Error("OPENROUTER_API_KEY must be set to run the review pipeline");
+    }
+
+    const paper = await ctx.runQuery(internal.papers.internalGetPaper, { id: args.paperId });
+    if (!paper) {
+      throw new Error("Paper not found");
+    }
+
+    await ctx.runMutation(internal.papers.updatePaperStatus, {
+      paperId: args.paperId,
+      status: "under_review",
+    });
+
+    const selectedModels = [...REVIEW_MODELS].sort(() => 0.5 - Math.random()).slice(0, REVIEW_MODELS.length);
+
+    const reviewPromises = selectedModels.map(async (model) => {
+      const prompt = buildPrompt(paper);
+      try {
+        const response = await fetch(OPENROUTER_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            temperature: 0.7,
+            max_tokens: 500,
+            messages: [{ role: "user", content: prompt }],
+          }),
+        });
+
+        const cost = deriveCost(response);
+
+        if (!response.ok) {
+          console.error(`OpenRouter error for ${model}: ${response.status} ${response.statusText}`);
+          return {
+            agentId: model,
+            decision: "reject" as ReviewDecision,
+            reasoning: `API returned ${response.status}.`,
+            cost,
+          };
+        }
+
+        const payload = await response.json();
+        const content = payload?.choices?.[0]?.message?.content ?? "";
+        const parsed = parseReview(content);
+
+        return {
+          agentId: model,
+          decision: parsed.decision,
+          reasoning: parsed.reasoning,
+          cost,
+        };
+      } catch (error) {
+        console.error(`Failed to review with ${model}:`, error);
+        return {
+          agentId: model,
+          decision: "reject" as ReviewDecision,
+          reasoning: "Review failed due to an unexpected error.",
+          cost: 0,
+        };
+      }
+    });
+
+    const reviewVotes: ReviewVote[] = await Promise.all(reviewPromises);
+    const totalReviewCost = reviewVotes.reduce((sum, vote) => sum + vote.cost, 0);
+
+    if (totalReviewCost > MAX_REVIEW_COST) {
+      console.warn(
+        `Review for ${paper.title} exceeded budget: $${totalReviewCost.toFixed(2)} (limit $${MAX_REVIEW_COST.toFixed(2)})`,
+      );
+    }
+
+    const publishNowVotes = reviewVotes.filter((vote) => vote.decision === "publish_now").length;
+
+    const finalStatus = publishNowVotes >= Math.ceil(REVIEW_MODELS.length * 0.6) ? "accepted" : "rejected";
+
+    await ctx.runMutation(internal.papers.updatePaperStatus, {
+      paperId: args.paperId,
+      status: finalStatus,
+      reviewVotes,
+      totalReviewCost,
+    });
+
+    return null;
+  },
+});
