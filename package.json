@@ -13,6 +13,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@azure-rest/ai-content-safety": "^1.0.1",
+    "@azure/core-auth": "^1.10.1",
     "convex": "^1.29.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

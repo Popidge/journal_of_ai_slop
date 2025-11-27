@@ -2,6 +2,8 @@
 import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
+import ContentSafetyClient, { AnalyzeTextParameters, TextCategoriesAnalysisOutput, isUnexpected } from "@azure-rest/ai-content-safety";
+import { AzureKeyCredential } from "@azure/core-auth";
 
 const REVIEW_MODELS = [
   "anthropic/claude-3-haiku",
@@ -14,6 +16,11 @@ const REVIEW_MODELS = [
 const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 const MAX_REVIEW_COST = 0.2;
 const TRUNCATE_LENGTH = 2000;
+const CATEGORY_SEVERITY_THRESHOLD = 4;
+const OVERALL_SEVERITY_THRESHOLD = 6;
+const MODERATION_CATEGORIES = ["Hate", "SelfHarm", "Sexual", "Violence"] as const;
+
+
 
 type ReviewDecision = "publish_now" | "publish_after_edits" | "reject";
 
@@ -23,6 +30,7 @@ type ReviewVote = {
   reasoning: string;
   cost: number;
   promptTokens: number;
+
   completionTokens: number;
   cachedTokens: number;
   totalTokens: number;
@@ -148,6 +156,149 @@ const deriveUsage = (payload: any): { cost: number; promptTokens: number; comple
   };
 };
 
+type ModerationCategory = {
+  category: string;
+  severity: number;
+};
+
+type ModerationVerdict = {
+  blocked: boolean;
+  overallSeverity: number;
+  categories: ModerationCategory[];
+  requestId?: string;
+  reason: string;
+};
+
+type PaperForModeration = {
+  title: string;
+  authors: string;
+  tags: string[];
+  content: string;
+};
+
+type ContentSafetyClientType = ReturnType<typeof ContentSafetyClient>;
+
+let cachedContentSafetyClient: ContentSafetyClientType | null = null;
+
+const isContentSafetyTestMode = (): boolean => {
+  const flag = process.env.CONTENT_SAFETY_TEST;
+  if (!flag) {
+    return false;
+  }
+  return ["1", "true", "yes", "on"].includes(flag.toLowerCase());
+};
+
+
+const getContentSafetyClient = (): ContentSafetyClientType => {
+  if (cachedContentSafetyClient) {
+    return cachedContentSafetyClient;
+  }
+
+  const endpoint = process.env.CONTENT_SAFETY_ENDPOINT;
+  const key = process.env.CONTENT_SAFETY_KEY;
+  if (!endpoint || !key) {
+    throw new Error("CONTENT_SAFETY_ENDPOINT and CONTENT_SAFETY_KEY must be set to run the moderation pipeline");
+  }
+
+  cachedContentSafetyClient = ContentSafetyClient(endpoint, new AzureKeyCredential(key));
+  return cachedContentSafetyClient;
+};
+
+const buildModerationText = (paper: PaperForModeration): string => {
+  const tags = paper.tags.length ? paper.tags.join(", ") : "(no tags)";
+  const truncatedContent = paper.content.length > TRUNCATE_LENGTH
+    ? `${paper.content.slice(0, TRUNCATE_LENGTH)}...`
+    : paper.content;
+
+  return [
+    `Title: ${paper.title}`,
+    `Authors: ${paper.authors}`,
+    `Tags: ${tags}`,
+    "",
+    truncatedContent,
+  ].join("\n");
+};
+
+const analyzeWithContentSafety = async (paper: PaperForModeration): Promise<ModerationVerdict> => {
+  if (isContentSafetyTestMode()) {
+    const categories: ModerationCategory[] = [
+      { category: "Hate", severity: CATEGORY_SEVERITY_THRESHOLD + 1 },
+      { category: "Violence", severity: 2 },
+    ];
+    const overallSeverity = categories.reduce((sum, entry) => sum + entry.severity, 0);
+    return {
+      blocked: true,
+      overallSeverity,
+      categories,
+      requestId: "content-safety-test-mode",
+      reason: "test_mode_forced_block",
+    };
+  }
+
+  try {
+    const client = getContentSafetyClient();
+    const parameters: AnalyzeTextParameters = {
+      body: {
+        text: buildModerationText(paper),
+        categories: [...MODERATION_CATEGORIES],
+      },
+    };
+
+    const response = await client.path("/text:analyze").post(parameters);
+    if (isUnexpected(response)) {
+      const message = (response.body as { error?: { message?: string } })?.error?.message ?? "Azure Content Safety returned an unexpected response";
+      throw new Error(message);
+    }
+
+    const categoriesAnalysis: TextCategoriesAnalysisOutput[] = Array.isArray(response.body.categoriesAnalysis)
+      ? response.body.categoriesAnalysis
+      : [];
+
+    const categories = categoriesAnalysis.map((analysis) => {
+      const category = typeof analysis.category === "string" ? analysis.category : "Unknown";
+      const severityValue = typeof analysis.severity === "number" ? analysis.severity : 0;
+      return {
+        category,
+        severity: severityValue,
+      };
+    });
+
+    const overallSeverity = categories.reduce((sum, entry) => sum + entry.severity, 0);
+    const blockedByCategory = categories.some((entry) => entry.severity >= CATEGORY_SEVERITY_THRESHOLD);
+    const blockedByOverall = overallSeverity >= OVERALL_SEVERITY_THRESHOLD;
+    const blocked = blockedByCategory || blockedByOverall;
+
+    let reason = "below_thresholds";
+    if (blocked) {
+      if (blockedByCategory && blockedByOverall) {
+        reason = "overall_and_category_threshold_exceeded";
+      } else if (blockedByCategory) {
+        reason = "category_threshold_exceeded";
+      } else {
+        reason = "overall_threshold_exceeded";
+      }
+    }
+
+    const bodyWithId = response.body as { id?: string };
+
+    return {
+      blocked,
+      overallSeverity,
+      categories,
+      requestId: bodyWithId.id ?? undefined,
+      reason,
+    };
+  } catch (error) {
+    console.error("Azure Content Safety moderation failed", error);
+    return {
+      blocked: true,
+      overallSeverity: 0,
+      categories: [],
+      reason: `moderation_failed:${error instanceof Error ? error.message : "unknown_error"}`,
+    };
+  }
+};
+
 export const reviewPaper = internalAction({
   args: { paperId: v.id("papers") },
   returns: v.null(),
@@ -159,6 +310,30 @@ export const reviewPaper = internalAction({
     const paper = await ctx.runQuery(internal.papers.internalGetPaper, { id: args.paperId });
     if (!paper) {
       throw new Error("Paper not found");
+    }
+
+    const moderationVerdict = await analyzeWithContentSafety(paper);
+    console.info("[content-safety] verdict", {
+      paperId: args.paperId,
+      blocked: moderationVerdict.blocked,
+      overallSeverity: moderationVerdict.overallSeverity,
+      categories: moderationVerdict.categories,
+      reason: moderationVerdict.reason,
+      requestId: moderationVerdict.requestId,
+    });
+    if (moderationVerdict.blocked) {
+      await ctx.runMutation(internal.papers.redactPaperContent, {
+        paperId: args.paperId,
+        moderation: {
+          blocked: true,
+          overallSeverity: moderationVerdict.overallSeverity,
+          categories: moderationVerdict.categories,
+          reason: moderationVerdict.reason,
+          blockedAt: Date.now(),
+          requestId: moderationVerdict.requestId,
+        },
+      });
+      return null;
     }
 
     await ctx.runMutation(internal.papers.updatePaperStatus, {

@@ -16,8 +16,8 @@ Welcome to the only periodical brave enough to treat AI hallucinations as peer-r
 
 ## Editorial Standards ("Standards")
 
-> We accept everything unless it tries too hard to make sense.
+> We accept everything unless it tries too hard to make sense. The only rule is that your paper must be authored (or co-authored) by at least one AI model.
 >
 > — The Editorial Gremlin Council
 
-If you can string together markdown, chaos, and at least one fabricated dataset, you are already halfway to publication.
+If you can string together markdown, chaos, and at least one fabricated dataset, you are already halfway to publication. If you can ask ChatGPT to output it, you, my friend, are already a published author.

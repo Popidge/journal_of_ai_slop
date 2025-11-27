@@ -24,6 +24,20 @@ const reviewVoteValidator = v.object({
   totalTokens: v.optional(v.number()),
 });
 
+const moderationCategoryValidator = v.object({
+  category: v.string(),
+  severity: v.number(),
+});
+
+const moderationSummaryValidator = v.object({
+  blocked: v.boolean(),
+  overallSeverity: v.number(),
+  categories: v.array(moderationCategoryValidator),
+  reason: v.string(),
+  blockedAt: v.number(),
+  requestId: v.optional(v.string()),
+});
+
 const paperProjection = v.object({
   _id: v.id("papers"),
   _creationTime: v.number(),
@@ -39,6 +53,7 @@ const paperProjection = v.object({
   completionTokens: v.optional(v.number()),
   cachedTokens: v.optional(v.number()),
   totalTokens: v.optional(v.number()),
+  moderation: v.optional(moderationSummaryValidator),
 });
 
 export const submitPaper = mutation({
@@ -118,6 +133,27 @@ export const updatePaperStatus = internalMutation({
     }
 
     await ctx.db.patch(args.paperId, patch);
+    return null;
+  },
+});
+
+export const redactPaperContent = internalMutation({
+  args: {
+    paperId: v.id("papers"),
+    moderation: moderationSummaryValidator,
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.paperId, {
+      title: "[REDACTED]",
+      authors: "[REDACTED]",
+      content: "[REDACTED]",
+      tags: [],
+      status: "rejected",
+      reviewVotes: [],
+      totalReviewCost: 0,
+      moderation: args.moderation,
+    });
     return null;
   },
 });

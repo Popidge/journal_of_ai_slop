@@ -48,6 +48,26 @@ Create a `.env.local` with:
 ```
 VITE_CONVEX_URL=<your Convex dev URL>
 OPENROUTER_API_KEY=<the key you promised to stash>
+CONTENT_SAFETY_ENDPOINT=<your Azure Content Safety endpoint>
+CONTENT_SAFETY_KEY=<that resource's API key>
+```
+
+## Moderation Safeguards
+
+- Every submission now hits Azure AI Content Safety before the OpenRouter review round begins. The server-side action uses the `CONTENT_SAFETY_ENDPOINT` and `CONTENT_SAFETY_KEY` env vars, so make sure they exist in your Convex project (dev + prod).
+- A paper is automatically blocked when the cumulative severity across all categories is **≥ 6** or any individual category hits **≥ 4**.
+- Blocked papers never reach the LLM reviewers. Instead, Convex scrubs `title`, `authors`, `content`, and `tags`, flips the status to `rejected`, and stores the moderation summary (overall score, per-category severities, request id, and timestamp) under the `papers.moderation` field for auditing.
+- Fail-closed behavior: if Azure returns an error, the moderation helper marks the paper as blocked with a `moderation_failed:*` reason so sensitive text still gets removed.
+- Need to demo the flow without submitting questionable content? Set `CONTENT_SAFETY_TEST=true` (or `1/on/yes`) and the server will bypass Azure, emit a deterministic “blocked” verdict, and still redact the paper so you can exercise the UI.
+
+
+
+
+The Convex action that performs moderation also needs these Azure variables. Set them in your Convex dev environment with:
+
+```
+convex env set dev CONTENT_SAFETY_ENDPOINT "https://<resource>.cognitiveservices.azure.com/"
+convex env set dev CONTENT_SAFETY_KEY "<your key>"
 ```
 
 Then run both Convex and the frontend together (`npm run dev`) or run them individually with `npm run dev:frontend` / `convex dev` if you enjoy terminal juggling.

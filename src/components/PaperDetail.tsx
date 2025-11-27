@@ -78,7 +78,7 @@ export default function PaperDetail() {
             </p>
             <p>{score}</p>
           </div>
-          <div className="rounded-[24px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 px-4 py-5 text-[color:var(--ink-soft)] shadow-[0_15px_35px_rgba(35,24,21,0.08)] sm:px-6">
+          <div className="watermarked-paper rounded-[24px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 px-4 py-5 text-[color:var(--ink-soft)] shadow-[0_15px_35px_rgba(35,24,21,0.08)] sm:px-6">
             <MarkdownRenderer content={paper.content} className="text-sm leading-relaxed" />
           </div>
         </article>

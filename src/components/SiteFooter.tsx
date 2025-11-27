@@ -13,6 +13,10 @@ export default function SiteFooter() {
         <Link to="/content-policy" className="text-[color:var(--accent-blue)] underline">
           Content Policy
         </Link>
+        {" "}
+        <Link to="https://opensource.org/license/mit" className="text-[color:var(--accent-blue)] underline">
+          License - MIT
+        </Link>
       </p>
     </footer>
   );
