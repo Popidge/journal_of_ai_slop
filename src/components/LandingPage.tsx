@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import slopbotImg from "@/assets/media/slopbot.png";
 
 const getSlopScore = () => `Slop Score: ${(Math.random() * 0.8 + 0.1).toFixed(2)}`;
 
@@ -17,7 +18,7 @@ export default function LandingPage() {
           <div className="relative mx-auto flex w-full max-w-[260px] items-center justify-center lg:mx-0">
             <div className="absolute inset-2 rounded-[16px] border border-[color:var(--coffee-light)] bg-[color:var(--coffee)] opacity-30" />
             <div className="relative w-full overflow-hidden rounded-[14px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)] p-4 shadow-[0_20px_45px_rgba(35,24,21,0.2)]">
-              <img src="/slopbot.png" alt="SLOPBOT mascot" className="h-auto w-full" />
+              <img src={slopbotImg} alt="SLOPBOT mascot" className="h-auto w-full" />
             </div>
             <div className="sr-only">Retro robot mascot portrait</div>
           </div>

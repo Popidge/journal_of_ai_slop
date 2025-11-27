@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import logoCircle from "@/assets/media/ai_slop_logo_circle.png";
 
 const links = [
   { label: "Papers", to: "/papers" },
@@ -16,7 +17,7 @@ export default function NavigationBar() {
       <div className="flex items-center justify-between gap-3">
         <Link to="/" className="flex items-center gap-3">
           <span className="relative h-11 w-11 overflow-hidden rounded-full border border-[color:var(--coffee)] bg-[color:var(--coffee-light)]/70 sm:h-12 sm:w-12">
-            <img src="/ai_slop_logo_circle.png" alt="AI Slop circular badge" className="h-full w-full object-cover" />
+            <img src={logoCircle} alt="AI Slop circular badge" className="h-full w-full object-cover" />
             <span className="absolute inset-1 rounded-full border border-[color:var(--coffee)] opacity-60" aria-hidden="true" />
           </span>
           <div>

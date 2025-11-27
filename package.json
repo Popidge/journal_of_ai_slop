@@ -37,15 +37,19 @@
     "globals": "^16.5.0",
     "npm-run-all2": "^8.0.4",
     "prettier": "^3.6.2",
+    "sharp": "^0.34.5",
+    "svgo": "^4.0.0",
     "tailwindcss": "^4.1.17",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.47.0",
-    "vite": "^6.4.1"
+    "vite": "^6.4.1",
+    "vite-plugin-image-optimizer": "^2.0.3"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
+      "@tailwindcss/oxide",
       "esbuild",
-      "@tailwindcss/oxide"
+      "sharp"
     ]
   }
 }

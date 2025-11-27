@@ -289,6 +289,10 @@ Footers and fine print are prime real estate for the driest jokes:
 - Content blocks as “pages”:
   - `max-w-3xl mx-auto bg-[#fdf7e9] border border-[#c49a6c] p-8`
 - Use a **global noise overlay** (low opacity) to avoid flatness, but keep it performance‑friendly (single fixed pseudo‑element)
+- **Image assets**:
+  - Hero/nav PNGs live under `src/assets/media` so they flow through Vite imports and `vite-plugin-image-optimizer` hashing.
+  - Global textures or repeating marks (e.g., coffee ring, watermark) stay in `public/` for CSS `url()` usage but are still optimized because `includePublic` is turned on in the Vite plugin.
+
 
 ---
 
