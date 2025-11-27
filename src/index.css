@@ -208,3 +208,26 @@ body::after {
     opacity: 0.95;
   }
 }
+
+@media (max-width: 640px) {
+  body {
+    font-size: 0.9rem;
+    background-size: 45vw 45vw, 40px 40px, 40px 40px, 100% 140%, 160px 160px;
+    background-position: right 0.5rem bottom 0.5rem, center, center, center, center;
+  }
+
+  body::after {
+    background-size: 100% 320px;
+    opacity: 0.45;
+  }
+
+  .wobbly-underline::after {
+    height: 4px;
+  }
+
+  .question-spinner {
+    width: 44px;
+    height: 44px;
+    font-size: 1.4rem;
+  }
+}

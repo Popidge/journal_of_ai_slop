@@ -8,9 +8,9 @@ import NavigationBar from "./components/NavigationBar";
 export default function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-transparent">
-        <div className="mx-auto max-w-[1040px] px-4 py-8 sm:px-6">
-          <div className="bg-[color:var(--paper)] border border-[color:var(--coffee-light)] shadow-[0_8px_25px_rgba(35,24,21,0.18)] rounded-[32px] p-4 sm:p-8">
+      <div className="min-h-screen bg-transparent px-2 sm:px-0">
+        <div className="mx-auto w-full max-w-[1080px] px-2 py-6 sm:px-6 lg:px-8">
+          <div className="bg-[color:var(--paper)] border border-[color:var(--coffee-light)] shadow-[0_8px_25px_rgba(35,24,21,0.18)] rounded-[24px] p-3 sm:rounded-[32px] sm:p-6 lg:p-8">
             <NavigationBar />
             <Routes>
               <Route path="/" element={<LandingPage />} />

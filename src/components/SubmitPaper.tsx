@@ -98,17 +98,17 @@ export default function SubmitPaper() {
 
   if (submittedPaperId) {
     return (
-      <div className="min-h-screen px-4 py-12 text-[color:var(--ink)]">
+      <div className="min-h-screen px-3 py-10 text-[color:var(--ink)] sm:px-4">
         <div className="mx-auto w-full max-w-2xl space-y-8">
-          <div className="rounded-[32px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-6 shadow-[0_20px_40px_rgba(35,24,21,0.12)] space-y-6">
-            <div className="text-center space-y-3">
-              <p className="text-xs uppercase tracking-[0.4em] text-[color:var(--ink-soft)]">Submission Complete</p>
-              <h1 className="text-4xl font-semibold text-[color:var(--ink)]">Submission Received!</h1>
+          <div className="space-y-6 rounded-[26px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-5 text-center shadow-[0_20px_40px_rgba(35,24,21,0.12)] sm:rounded-[32px] sm:p-6">
+            <div className="space-y-3">
+              <p className="text-[0.65rem] uppercase tracking-[0.3em] text-[color:var(--ink-soft)] sm:text-xs sm:tracking-[0.4em]">Submission Complete</p>
+              <h1 className="text-[clamp(2rem,5vw,3rem)] font-semibold text-[color:var(--ink)]">Submission Received!</h1>
               <p className="text-sm text-[color:var(--ink-soft)]">Crom is pleased. Your slop is now in the tribunal’s orbit.</p>
             </div>
-            <div className="rounded-[28px] border border-[color:var(--coffee)] bg-[color:var(--coffee-light)]/30 p-6 text-center">
-              <p className="text-xs uppercase tracking-[0.5em] text-[color:var(--ink)]">Paper ID</p>
-              <p className="mt-2 text-xl font-mono text-[color:var(--ink)]">{submittedPaperId}</p>
+            <div className="rounded-[24px] border border-[color:var(--coffee)] bg-[color:var(--coffee-light)]/30 p-5">
+              <p className="text-[0.65rem] uppercase tracking-[0.35em] text-[color:var(--ink)]">Paper ID</p>
+              <p className="mt-2 text-xl font-mono text-[color:var(--ink)] break-words">{submittedPaperId}</p>
             </div>
             <div className="space-y-3 text-sm text-[color:var(--ink-soft)]">
               <p>Review cost is being tallied while the bots bicker in the margins.</p>
@@ -117,19 +117,19 @@ export default function SubmitPaper() {
             <div className="space-y-3">
               <Link
                 to="/papers"
-                className="button-scale block w-full rounded-full border border-[color:var(--coffee)] bg-[color:var(--coffee)]/90 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-[color:var(--paper)] transition hover:-translate-y-0.5"
+                className="button-scale block w-full rounded-full border border-[color:var(--coffee)] bg-[color:var(--coffee)]/90 px-6 py-3 text-[0.8rem] font-semibold uppercase tracking-[0.25em] text-[color:var(--paper)] transition hover:-translate-y-0.5 sm:text-sm"
               >
                 View Published Papers
               </Link>
               <Link
                 to="/"
-                className="button-scale block w-full rounded-full border border-[color:var(--coffee-light)] bg-transparent px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-[color:var(--coffee)] transition hover:text-[color:var(--accent-blue)] hover:border-[color:var(--accent-blue)]"
+                className="button-scale block w-full rounded-full border border-[color:var(--coffee-light)] bg-transparent px-6 py-3 text-[0.8rem] font-semibold uppercase tracking-[0.25em] text-[color:var(--coffee)] transition hover:border-[color:var(--accent-blue)] hover:text-[color:var(--accent-blue)] sm:text-sm"
               >
                 Back to Home
               </Link>
               <button
                 onClick={() => setSubmittedPaperId(null)}
-                className="button-scale block w-full rounded-full border border-[color:var(--coffee-light)] bg-[color:var(--paper)] px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-[color:var(--ink)] transition hover:-translate-y-0.5"
+                className="button-scale block w-full rounded-full border border-[color:var(--coffee-light)] bg-[color:var(--paper)] px-6 py-3 text-[0.8rem] font-semibold uppercase tracking-[0.25em] text-[color:var(--ink)] transition hover:-translate-y-0.5 sm:text-sm"
               >
                 Submit Another Paper
               </button>
@@ -141,20 +141,20 @@ export default function SubmitPaper() {
   }
 
   return (
-    <div className="min-h-screen px-4 py-10 text-[color:var(--ink)]">
+    <div className="min-h-screen px-3 py-10 text-[color:var(--ink)] sm:px-4">
       <div className="mx-auto w-full max-w-[960px] space-y-10">
-        <div className="space-y-3">
+        <div className="space-y-3 text-center sm:text-left">
           <Link
             to="/"
-            className="text-xs font-semibold uppercase tracking-[0.35em] text-[color:var(--ink-soft)] transition hover:text-[color:var(--accent-blue)]"
+            className="text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-[color:var(--ink-soft)] transition hover:text-[color:var(--accent-blue)] sm:text-xs sm:tracking-[0.35em]"
           >
             ← Back to The Journal of AI Slop™
           </Link>
-          <h1 className="text-4xl font-semibold text-[color:var(--ink)] wobbly-underline">Submit Your Slop</h1>
+          <h1 className="text-[clamp(2.2rem,6vw,3.2rem)] font-semibold text-[color:var(--ink)] wobbly-underline">Submit Your Slop</h1>
           <p className="text-sm text-[color:var(--ink-soft)]">Where groundbreaking research meets questionable methodology.</p>
         </div>
 
-        <div className="rounded-[32px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/95 p-6 shadow-[0_20px_45px_rgba(35,24,21,0.12)] space-y-8">
+        <div className="space-y-8 rounded-[26px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/95 p-5 shadow-[0_20px_45px_rgba(35,24,21,0.12)] sm:rounded-[32px] sm:p-6">
           {error && (
             <div className="rounded-[24px] border border-[color:var(--accent-red)] bg-[color:var(--accent-red)]/10 p-4">
               <p className="text-sm text-[color:var(--accent-red)]">Crom is disappointed. {error}</p>
@@ -162,8 +162,8 @@ export default function SubmitPaper() {
           )}
 
           <form onSubmit={(e) => void handleSubmit(e)} className="space-y-8">
-            <div className="grid gap-4 md:grid-cols-[200px_minmax(0,1fr)] md:items-center">
-              <label htmlFor="title" className="text-sm font-semibold uppercase tracking-[0.25em] text-[color:var(--ink-soft)] md:text-right">
+            <div className="grid gap-2 sm:grid-cols-[190px_minmax(0,1fr)] sm:items-center sm:gap-4">
+              <label htmlFor="title" className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-soft)] sm:text-sm sm:text-right">
                 Paper Title *
               </label>
               <input
@@ -178,8 +178,8 @@ export default function SubmitPaper() {
               />
             </div>
 
-            <div className="grid gap-4 md:grid-cols-[200px_minmax(0,1fr)] md:items-center">
-              <label htmlFor="authors" className="text-sm font-semibold uppercase tracking-[0.25em] text-[color:var(--ink-soft)] md:text-right">
+            <div className="grid gap-2 sm:grid-cols-[190px_minmax(0,1fr)] sm:items-center sm:gap-4">
+              <label htmlFor="authors" className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-soft)] sm:text-sm sm:text-right">
                 Authors * (include at least one LLM)
               </label>
               <input
@@ -194,8 +194,8 @@ export default function SubmitPaper() {
               />
             </div>
 
-            <div className="grid gap-4 md:grid-cols-[200px_minmax(0,1fr)]">
-              <label htmlFor="content" className="text-sm font-semibold uppercase tracking-[0.25em] text-[color:var(--ink-soft)]">
+            <div className="grid gap-2 sm:grid-cols-[190px_minmax(0,1fr)] sm:gap-4">
+              <label htmlFor="content" className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-soft)] sm:text-sm">
                 Full Paper Content *
               </label>
               <textarea
@@ -211,8 +211,8 @@ export default function SubmitPaper() {
             </div>
 
             <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[color:var(--ink-soft)]">Tags * (at least one)</p>
-              <div className="grid gap-3 md:grid-cols-3">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-[color:var(--ink-soft)] sm:text-xs sm:tracking-[0.4em]">Tags * (at least one)</p>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {AVAILABLE_TAGS.map(tag => (
                   <label
                     key={tag}
@@ -233,26 +233,26 @@ export default function SubmitPaper() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 p-4 text-sm text-[color:var(--ink-soft)]">
-              <label className="flex items-start gap-3 text-sm font-medium uppercase tracking-[0.2em]">
+            <div className="rounded-2xl border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 p-4 text-[0.9rem] text-[color:var(--ink-soft)] sm:text-sm">
+              <label className="flex items-start gap-3 text-[0.7rem] font-medium uppercase tracking-[0.15em] sm:text-sm sm:tracking-[0.2em]">
                 <input
                   type="checkbox"
                   checked={formData.pinkySwear}
                   onChange={handlePinkySwearChange}
                   className="mt-1 h-4 w-4 rounded border border-[color:var(--coffee-light)] bg-[color:var(--paper)] text-[color:var(--coffee)] focus:ring-[color:var(--coffee)]"
                 />
-                <span className="text-[color:var(--ink-soft)]">
+                <span className="text-left text-[color:var(--ink-soft)]">
                   Pinky-Swear Acknowledgment: I solemnly agree that I will not submit this paper anywhere else. Morally binding, legally unenforcable.
                 </span>
               </label>
             </div>
 
-            <div className="space-y-3 text-center text-xs uppercase tracking-[0.4em] text-[color:var(--ink-soft)]">
+            <div className="space-y-3 text-center text-[0.65rem] uppercase tracking-[0.25em] text-[color:var(--ink-soft)] sm:text-xs sm:tracking-[0.35em]">
               <p>By submitting, you affirm that this work is 50% slop by volume, minimum. Crom is watching.</p>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="button-scale w-full rounded-full bg-[color:var(--coffee)] px-6 py-4 text-sm font-semibold text-[color:var(--paper)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-gray-400"
+                className="button-scale w-full rounded-full bg-[color:var(--coffee)] px-6 py-4 text-[0.9rem] font-semibold text-[color:var(--paper)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-gray-400 sm:text-sm"
               >
                 {isSubmitting ? "Summoning the reviewers..." : "Submit to the Slop Pipeline"}
               </button>
@@ -260,12 +260,12 @@ export default function SubmitPaper() {
           </form>
         </div>
 
-        <div className="space-y-3 rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-6 text-sm text-[color:var(--ink-soft)] shadow-[0_15px_35px_rgba(35,24,21,0.1)]">
-          <div className="flex items-center justify-between">
+        <div className="space-y-3 rounded-[24px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-5 text-sm text-[color:var(--ink-soft)] shadow-[0_15px_35px_rgba(35,24,21,0.1)] sm:rounded-[28px] sm:p-6">
+          <div className="flex flex-col gap-2 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
             <h3 className="text-lg font-semibold text-[color:var(--ink)]">Review Process</h3>
-            <span className="text-[0.6rem] uppercase tracking-[0.4em] text-[color:var(--coffee)]">Slop Audit</span>
+            <span className="text-[0.6rem] uppercase tracking-[0.3em] text-[color:var(--coffee)]">Slop Audit</span>
           </div>
-          <ul className="list-disc pl-4 space-y-2">
+          <ul className="list-disc space-y-2 pl-5 text-left text-[0.95rem] sm:text-sm">
             <li>Your paper will be reviewed by five randomly summoned AI sentinels.</li>
             <li>Decisions are published as: Publish Now, Publish After Edits, or Reject.</li>
             <li>"Publish After Edits" is currently treated as "Reject" (MVP reality).</li>
