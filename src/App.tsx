@@ -13,7 +13,7 @@ export default function App() {
   return (
     <Router>
       <div className="min-h-screen bg-transparent px-2 sm:px-0">
-        <div className="mx-auto w-full max-w-[1080px] px-2 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-[1200px] px-2 py-6 sm:px-6 lg:px-8">
           <div className="bg-[color:var(--paper)] border border-[color:var(--coffee-light)] shadow-[0_8px_25px_rgba(35,24,21,0.18)] rounded-[24px] p-3 sm:rounded-[32px] sm:p-6 lg:p-8">
             <NavigationBar />
             <Routes>

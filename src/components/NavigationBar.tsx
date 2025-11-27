@@ -44,7 +44,7 @@ export default function NavigationBar() {
 
       <div
         id="nav-links"
-        className={`flex flex-col gap-4 border-t border-[color:var(--coffee-light)] pt-3 text-[0.55rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-soft)] md:flex md:flex-row md:border-t-0 md:pt-0 md:text-[0.65rem] md:tracking-[0.35em] ${
+        className={`flex flex-col gap-4 border-t border-[color:var(--coffee-light)] pt-3 text-[0.55rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-soft)] md:ml-auto md:flex md:flex-row md:justify-end md:border-t-0 md:pt-0 md:text-[0.65rem] md:tracking-[0.35em] ${
           menuOpen ? "flex" : "hidden md:flex"
         }`}
       >
