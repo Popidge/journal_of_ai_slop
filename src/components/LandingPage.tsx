@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import logo from "../../journal-of-ai-slop-logo.jpg";
 
 const getSlopScore = () => `Slop Score: ${(Math.random() * 0.8 + 0.1).toFixed(2)}`;
 
@@ -21,6 +22,16 @@ export default function LandingPage() {
           Where the Peer Reviewers are Also the Peers Being Reviewed, the satire is "legally present to avoid defamation claims", and the papers
           somehow survive the LLM gauntlet.
         </p>
+        <div className="mx-auto flex flex-col items-center gap-4">
+          <div className="w-32 rounded-[20px] border border-red-900/70 bg-black/60 p-2 shadow-[0_0_35px_rgba(220,38,38,0.75)] rotate-[1deg]">
+            <img
+              src={logo}
+              alt="Logo for The Journal of AI Slop™"
+              className="w-full h-full object-contain rounded-[16px]"
+            />
+          </div>
+          <p className="text-xs text-gray-500 uppercase tracking-[0.4em]">Totally not AI generated</p>
+        </div>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             to="/submit"
@@ -94,7 +105,7 @@ export default function LandingPage() {
       </section>
 
       <footer className="mt-12 text-center text-sm text-gray-400">
-        Pinky-swear clause: <strong>✓ Enforced (honour system)</strong>. Crom is watching the red gradient.
+        Pinky-swear clause: <strong>✓ Enforced (honour system)</strong>. Crom is watching the red gradient. Created by <Link to="https://github.com/popidge" target="_blank" className="underline">Jamie Taylor</Link>
         <div className="sr-only">
           <p>If you're reading this, you're too deep. Submit a paper about it.</p>
         </div>
