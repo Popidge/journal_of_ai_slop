@@ -1,16 +1,19 @@
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Playfair+Display:wght@600;700&family=Space+Grotesk:wght@400;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&family=Crimson+Pro:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap");
 @import "tailwindcss";
 
 :root {
-  font-family: "Suisse Int'l", "Space Grotesk", "Inter", system-ui, -apple-system, sans-serif;
-  color: #f5f5f4;
-  background-color: #0a0000;
-  --slop-red: #dc2626;
-  --slop-black: #0a0000;
-  --slop-parchment: #f5f5f4;
-  --slop-error-yellow: #fbbf24;
-  --slop-blue: #3b82f6;
-  --slop-purple: #8b5cf6;
+  font-family: "Inter", "Lora", system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+  background-color: var(--paper);
+  --paper: #f5ecd9;
+  --ink: #231815;
+  --coffee: #6b4a2f;
+  --coffee-light: #c49a6c;
+  --accent-red: #b3412f;
+  --accent-blue: #296673;
+  --ink-soft: rgba(35, 24, 21, 0.85);
+  --paper-shadow: 0 8px 25px rgba(35, 24, 21, 0.18);
+  --noise-opacity: 0.08;
 }
 
 * {
@@ -20,86 +23,141 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: #0a0000;
+  background-color: var(--paper);
   background-image:
-    radial-gradient(circle at 10% 10%, rgba(220, 38, 38, 0.35), transparent 45%),
-    radial-gradient(circle at 80% 0%, rgba(248, 113, 113, 0.45), transparent 40%),
-    linear-gradient(180deg, transparent 0%, rgba(15, 15, 15, 0.9) 60%, #000000 100%);
-  color: #f5f5f4;
+    url("/coffeering.svg"),
+    repeating-linear-gradient(0deg, rgba(35, 24, 21, 0.04) 0, rgba(35, 24, 21, 0.04) 1px, transparent 1px, transparent 40px),
+    repeating-linear-gradient(90deg, rgba(35, 24, 21, 0.04) 0, rgba(35, 24, 21, 0.04) 1px, transparent 1px, transparent 40px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0)),
+    radial-gradient(circle, rgba(255, 255, 255, 0.05) 0, rgba(255, 255, 255, 0) 65px);
+  background-size: 25vw 25vw, 60px 60px, 60px 60px, 100% 120%, 220px 220px;
+  background-position: right 1.5rem bottom 1.5rem, center, center, center, center;
+  background-repeat: no-repeat, repeat, repeat, repeat, repeat;
+  background-blend-mode: normal, multiply, multiply, screen, soft-light;
+  color: var(--ink);
   font-family: inherit;
+  line-height: 1.6;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.4) 0.5px, rgba(255, 255, 255, 0) 1px),
+    linear-gradient(60deg, rgba(35, 24, 21, 0.02) 0.5px, rgba(35, 24, 21, 0) 1px);
+  background-size: 4px 4px;
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+  z-index: -1;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(180deg, rgba(196, 154, 108, 0.18) 0%, rgba(196, 154, 108, 0) 65%);
+  background-size: 100% 500px;
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+  filter: blur(0.3px);
+  z-index: -1;
 }
 
 ::selection {
-  background-color: rgba(220, 38, 38, 0.5);
+  background-color: rgba(179, 65, 47, 0.6);
   color: #fff;
 }
 
+.wobbly-underline {
+  position: relative;
+}
+
+.wobbly-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 100%;
+  height: 6px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='6' viewBox='0 0 200 6'%3E%3Cpath d='M0 3c30-2 60 4 90 2s60-3 90 0' stroke='%23296473' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  transform-origin: center;
+  animation: wobbly-underline 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes wobbly-underline {
+  0% {
+    transform: translateY(0) scaleX(1);
+  }
+  100% {
+    transform: translateY(1px) scaleX(1.02);
+  }
+}
+
 .paper-meta {
-  font-family: "Suisse Int'l", sans-serif;
+  font-family: "Lora", "Suisse Int'l", serif;
   font-size: 0.75rem;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #dc2626;
-  border-left: 3px solid #dc2626;
+  color: var(--coffee);
+  border-left: 3px solid var(--coffee);
   padding-left: 1rem;
 }
 
 .paper-abstract {
   position: relative;
-  font-family: "Playfair Display", "Times New Roman", serif;
+  font-family: "Lora", "Times New Roman", serif;
   font-size: 1.05rem;
   line-height: 1.7;
   text-align: left;
 }
 
 .paper-abstract::first-letter {
-  font-size: 4rem;
-  font-family: "Playfair Display", "Times New Roman", serif;
-  color: #dc2626;
+  font-size: 3.4rem;
+  font-family: "Crimson Pro", "Times New Roman", serif;
+  color: var(--coffee);
   float: left;
-  line-height: 0.85;
-  margin: 0 0.35rem 0.1rem 0;
+  line-height: 0.95;
+  margin-right: 0.35rem;
   text-transform: uppercase;
 }
 
 .paper-title-glow {
-  box-shadow: 0 0 30px rgba(220, 38, 38, 0.35);
   transition: box-shadow 0.4s ease;
+  box-shadow: 0 0 30px rgba(35, 24, 21, 0.12);
 }
 
 .paper-title-glow:hover {
-  box-shadow: 0 0 40px rgba(220, 38, 38, 0.65);
-}
-
-.slop-flicker {
-  animation: flicker 3s ease-in-out infinite;
-}
-
-.slop-misalign {
-  margin-left: 1px;
-}
-
-.slop-pulse-error {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  box-shadow: 0 0 45px rgba(35, 24, 21, 0.2);
 }
 
 .question-spinner {
-  font-family: "JetBrains Mono", monospace;
   width: 56px;
   height: 56px;
-  border: 2px solid rgba(220, 38, 38, 0.6);
+  border: 2px solid rgba(35, 24, 21, 0.55);
   border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 2rem;
-  color: #dc2626;
+  color: var(--coffee);
   animation: spin-question 1.8s linear infinite;
-  filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.6));
+  filter: drop-shadow(0 0 8px rgba(35, 24, 21, 0.3));
+  position: relative;
 }
 
 .question-spinner::before {
-  content: "?";
+  content: "";
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(35, 24, 21, 0.55);
+  border-radius: 999px;
+  position: absolute;
 }
 
 .button-scale {
@@ -111,26 +169,7 @@ body {
 }
 
 .button-scale[data-quirk="true"]:active {
-  transform: scale(1.02);
-}
-
-.reviewer-card {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background-color: rgba(12, 12, 12, 0.7);
-  padding: 1.25rem;
-  border-radius: 1.25rem;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
-  position: relative;
-}
-
-.reviewer-card::after {
-  content: "Desk-bashing incidents: 1";
-  position: absolute;
-  top: -10px;
-  right: -10px;
-  font-size: 0.7rem;
-  letter-spacing: 0.2em;
-  color: #fbbf24;
+  transform: translateY(-1px) scale(1.01);
 }
 
 .author-score::after {
@@ -140,7 +179,7 @@ body {
   left: 0;
   font-family: "JetBrains Mono", monospace;
   font-size: 0.65rem;
-  color: #3b82f6;
+  color: var(--accent-blue);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -159,33 +198,5 @@ body {
   }
   60% {
     opacity: 0.95;
-  }
-}
-
-@keyframes pulse {
-  0%
-  {
-    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.6);
-  }
-  70% {
-    box-shadow: 0 0 0 15px rgba(220, 38, 38, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
-  }
-}
-
-@keyframes spin-question {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (max-width: 1199px) {
-  body {
-    --grid-warp: 1px;
   }
 }

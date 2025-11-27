@@ -1,260 +1,304 @@
-# The Journal of AI Slop™: Design Brief
+That logo absolutely slaps. It changes the whole vibe—from “sinister midnight lab” to “slightly deranged coffee‑stained journal club”. Let’s reframe the design brief around *that*.
 
-## Design Philosophy: **"Peak Credibility, Valley Reliability"**
-
-The Journal of AI Slop™ must **look** like it belongs in a university library while **feeling** like a fever dream in a server farm. It's *Nature* meets *Tim & Eric*.
+I’ll keep this practical so you can hand it straight to Kilo / your own brain as an implementation spec.
 
 ---
 
-## 1. Typography: **"Times New Bastard"**
+## 0. Core Aesthetic
 
-### Primary Typeface: **Tiempos Headline** (or similar serif)
-- **Usage**: Paper titles, section headers
-- **Why**: Tiempos is the *Nature* / *Science* workhorse—authoritative, classical, screams "I have tenure"
-- **Subversion**: Use it for titles like "The Cat Sat on the Growling Cloud: An Eldritch Analysis"
+**Tagline for the design:**  
+> *“Serious journal, found in a staff room, annotated by gremlins.”*
 
-### Secondary Typeface: **Suisse Int'l** (or similar neutral sans)
-- **Usage**: Body text, metadata, navigation
-- **Why**: Clean, functional, doesn't distract from the nonsense
-- **Subversion**: Render it in `#ff0000` for "reject" decisions
+Visual anchors from the logo:
+- Parchment / coffee‑stain background
+- Hand‑drawn circle / imperfections
+- Retro robot with mortarboard
+- Tagline: *All Sarcasm, No Rigour*
+- Warm, analogue, almost zine‑like
 
-### Accent Typeface: **JetBrains Mono** (monospace)
-- **Usage**: Code snippets, API errors, "Review could not be parsed"
-- **Why**: Feels technical and precise
-- **Subversion**: Use it for the *least* technical content (e.g., "Crom's disappointment level: 0.0")
-
----
-
-## 2. Color Palette: **"Academic Bruise"**
-
-### Primary Colors:
-- **Deep Red-Black**: `#0a0000` (background)
-- **Blood Red**: `#dc2626` (accents, borders, "publish" states)
-- **Parchment Gray**: `#f5f5f4` (paper content areas, but inverted to dark mode)
-
-### Subversive Accents:
-- **Error Yellow**: `#fbbf24` for "Certified Unparsable" badges
-- **Brenda Blue**: `#3b82f6` for the "Marketing Comprehension" warnings
-- **Quantum Purple**: `#8b5cf6` for Hamiltonian references (use sparingly, ironically)
-
-**The Twist**: Every color has 90% saturation—too intense for real academia, just right for slop.
+The site should feel like:
+- A **digital facsimile of a badly treated print journal**
+- Designed by someone who *knows* proper academic layout… and is choosing to quietly vandalise it
 
 ---
 
-## 3. Layout: **"Grid of Lies"**
+## 1. Colour System – “Coffee, Ink, and Mild Regret”
 
-### Desktop Structure (12-column grid, like *Nature*):
-```
-┌─────────────────────────────────────────────────────────────┐
-│  [LOGO] The Journal of AI Slop™      Submit | About | RSS   │ ← Sticky nav
-├──────────┬────────────────────────────────────────────────────┤
-│          │                                                    │
-│  FILTER  │    PAPER TITLE (48pt Tiempos, line-height 1.1)    │ ← Hero section
-│  Sidebar │    Authors: Jamie Taylor¹, GPT-5-Nano²            │
-│          │    ¹VR Arena Ops ²Large Language Model           │
-│          │                                                    │
-│  ─────── │    [TAGS] Pseudo academic | Nonsense | 🤷♂️      │
-│  Browse  │                                                    │
-│  by tag  │    [ABSTRACT]                                    │
-│          │    Lorem ipsum dolor sit amet...                 │
-│          │                                                    │
-│  ─────── │    [FULL TEXT]                                   │
-│  Latest  │    ...                                           │
-│  Slop    │                                                    │
-│          │    ───────────────────────────────────────────── │
-│          │    PEER REVIEWS (collapsible, default expanded) │
-│          │    Reviewer 1: [PUBLISH NOW] "This is peak..."   │
-│          │    Reviewer 4: [REJECT] "Review could not..."    │
-│          │                                                    │
-│          │    ───────────────────────────────────────────── │
-│          │    [METADATA] Word count: 742 | Review cost: $0.18│
-│          │    Pinky-swear: ✓ Enforced (honour system)       │
-└──────────┴────────────────────────────────────────────────────┘
+Base it on the logo’s palette.
+
+### Core palette
+
+- **Paper Background**
+  - `#f5ecd9` – warm parchment
+  - Use as `body` background with a subtle texture
+
+- **Coffee / Ring**
+  - Dark coffee: `#6b4a2f`
+  - Light coffee: `#c49a6c`
+  - Borders, headings, dividers, callouts
+
+- **Ink**
+  - Very dark brown (almost black): `#231815`
+  - For main text instead of pure black
+
+- **Accent**
+  - Desaturated red: `#b3412f` (warnings, “Reject”)
+  - Muted teal or blue for links: `#296673`
+
+### Tailwind-ish tokens
+
+```ts
+paper:  #f5ecd9
+ink:    #231815
+coffee: #6b4a2f
+coffee-light: #c49a6c
+accent-red:   #b3412f
+accent-blue:  #296673
 ```
 
-### Mobile: **"Stack of Nonsense"**
-- Single column, but **reviewer cards** are horizontally scrollable
-- **Sticky "Submit Slop" button** at bottom (always visible, always red)
+**Subversion:** Colour language is cosy & analogue, but labels and microcopy are snarky.
 
 ---
 
-## 4. Interactive Elements: **"Functional Gaslighting"**
+## 2. Typography – “Respectable on the Surface”
 
-### Hover States:
-- **Paper titles**: Subtle red glow (`box-shadow: 0 0 20px rgba(220, 38, 38, 0.3)`)
-- **Author names**: On hover, show their "Slop Score" (a random number between 0.1 and 0.9)
-- **API errors**: Gentle pulse animation, like a heartbeat monitor flatlining
+Target fonts that echo the logo’s slightly rustic, printed look.
 
-### Loading States:
-- **"Review in Progress"**: Show 5 skeleton loader cards, but one is **rotated 45 degrees** (the GPT-5-Nano slot)
-- **Spinner**: Not a circle—a **question mark** that spins indefinitely
+### Headings
 
-### Form Validation:
-- **Success**: Green checkmark + "Crom is pleased"
-- **Error**: Red X + "Even the form thinks your slop is too slop"
+- **Serif with character** – e.g.:
+  - `Lora`, `Crimson Pro`, `Cormorant Garamond`, or `IBM Plex Serif`
+- Use for:
+  - Journal name
+  - Paper titles
+  - Section headings within papers
 
----
+### Body
 
-## 5. Iconography: **"Academic Hieroglyphs"**
+- **Readable serif** (same as headings but smaller) _or_ a very neutral sans like `Inter` for UI chrome
+- Body text size: 16–18px, generous line-height (~1.6)
 
-### Custom Icons (line style, 2px stroke):
-- **Publish**: Checkmark inside a **graduation cap** (subverted: cap is upside-down)
-- **Reject**: X inside a **wastebasket** (but the bin is on fire)
-- **Parse Error**: ⚠️ triangle with **tiny JSON brackets** inside
-- **Cost**: £ symbol, but the bar is **wiggly** (unstable value)
-- **Crom**: A **very serious owl** wearing a **tiny crown** (SVG, not emoji)
+### Accents
 
-### Favicon:
-- **16x16**: The letters "AI" but the "I" is **italicized and falling over**
+- **Monospace** for:
+  - Code
+  - Errors
+  - “Peer Review by Bot” style messages  
+  (e.g. `JetBrains Mono`, `Fira Code`)
 
----
+**Subversion:**  
+Typesetting is fairly “proper journal”, but you use it to say things like:
 
-## 6. Animation & Motion: **"Dignified Chaos"**
-
-### Page Transitions:
-- **Fade in**: 300ms ease-in (normal)
-- **Fade out**: 300ms ease-out, but **20% chance** it **stutters** (like a bad video call)
-
-### Scroll Behavior:
-- **Parallax**: The **background gradient** moves at 0.5x speed, creating subtle nausea
-- **Reveal animations**: Content slides up 20px, but **reviewer cards** slide in from **random directions**
-
-### Micro-interactions:
-- **Button clicks**: Scale down to 0.98, but **one in ten** scales to **1.02** (feels broken, but isn't)
+> *“This decision was made by five language models and one increasingly tired VR tech.”*
 
 ---
 
-## 7. Content Styling: **"Structured Nonsense"**
+## 3. Layout – “Print Journal Scanned Into the Web”
 
-### Paper Metadata:
-```css
-.paper-meta {
-  font-family: 'Suisse Int'l', sans-serif;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #dc2626; /* Blood red */
-  border-left: 3px solid #dc2626;
-  padding-left: 1rem;
-}
+Think **Nature / JCB article layout**, but on parchment.
+
+### Global Layout
+
+- Max width: `960–1040px`
+- Centered column, plenty of margin “air”
+- Light drop shadow on main content area:
+  - as if pages are sitting on a desk:  
+    `box-shadow: 0 8px 25px rgba(0,0,0,0.18)`
+
+### Landing Page
+
+**Hero section:**
+
+- Left: the logo as an image, ~200–260px wide
+- Right: stack:
+  - Big title: “The Journal of AI Slop™”
+  - Subtitle (in smaller serif or sans): *All Sarcasm, No Rigour*
+  - One or two sentences:  
+    “A very serious journal for very unserious AI‑co‑authored research.”
+  - Primary button: “Submit Your Slop”
+  - Secondary: “Browse Published Nonsense”
+
+Below hero:
+
+- **Latest Papers grid/list**  
+  1 or 2 columns of “paper cards”:
+  - Title, authors, tags, verdict status
+
+### Paper Detail Page
+
+- Title large, centered or left, serif
+- Authors and affiliations in smaller serif, italic
+- Below: tags as **pill labels** in coffee‑brown, outline style
+- Main content in a “page” card:
+  - Off‑white background on parchment
+  - Subtle top/bottom rules in coffee colour
+  - Markdown headings styled like print journal sections
+
+- Peer reviews:
+  - Each review as a **comment card** with:
+    - Reviewer number
+    - Model name
+    - Verdict badge (“PUBLISH NOW”, “REJECT”, etc.)
+  - Styled like sticky notes or margin annotations
+
+---
+
+## 4. Components & Styling Details
+
+### 4.1 Navigation Bar
+
+- Pinned at top, but **not** hyper‑modern
+- Light paper strip with coffee‑ring fragment as subtle background
+- Left: small logo mark (robot head in a ring)
+- Right: text links
+
+```text
+[ The Journal of AI Slop™ ]    Papers | Submit | About | FAQ
 ```
 
-### Reviewer Cards:
-- **Layout**: Same as *Nature*'s "Article metrics" sidebar
-- **Subversion**: Replace "Citation count" with **"Desk-bashing incidents: 1"**
-
-### Abstract Styling:
-- **First letter**: Drop cap, 4rem, Tiempos, red
-- **First line**: Small caps (but the caps are **slightly misaligned**)
+Hover: underline + text colour shift from ink → accent‑blue.
 
 ---
 
-## 8. Dark Mode-First: **"Academia After Hours"**
+### 4.2 Paper Cards (List View)
 
-**Critical Decision**: The Journal of AI Slop™ is **dark mode by default**. This is the biggest subversion—real journals are blinding white. Dark mode says:
-- "We work at 2 AM"
-- "Our eyes are ruined from VR headsets"
-- "The truth lives in the shadows"
+Each paper in list:
 
-**Light mode toggle**: Exists, but **inverts the colors** to **even darker** (pure black background, #000000 text).
+- Card styling:
+  - Background: `#fdf7e9`
+  - Border: 1px `coffee-light`
+  - Slight inner shadow / noise texture
+- Inside:
+  - Title (link, serif)
+  - Authors (small italic)
+  - Tags row (chips)
+  - Status pill at top‑right:  
+    - Greenish‑ink “ACCEPTED”  
+    - Red “REJECTED”  
+    - Coffee “UNDER REVIEW”
 
----
+Optional: a faint fake “library stamp” in a corner (SVG watermark), e.g.:
 
-## 9. Easter Eggs: **"Peer-Reviewed Pranks"**
-
-### Hidden in the DOM:
-```html
-<!-- In the footer, invisible until you inspect -->
-<div class="sr-only">
-  <p>If you're reading this, you're too deep. Submit a paper about it.</p>
-</div>
-```
-
-### Console Logs:
-```javascript
-// In main.tsx
-console.log('%c The Journal of AI Slop™ ', 'background: #dc2626; color: #0a0000; font-size: 20px; font-weight: bold;');
-console.log('%c Crom is watching. ', 'color: #dc2626; font-size: 14px;');
-console.log('%c Parse errors are not bugs. They are features. ', 'color: #fbbf24; font-style: italic;');
-```
-
-### Keyboard Shortcut:
-- **Ctrl+Shift+S**: Plays a **sad trombone sound** (Web Audio API, 200ms)
+> “REVIEWED BY BOT”
 
 ---
 
-## 10. Responsiveness: **"Broken on Purpose"**
+### 4.3 Peer Review Section
 
-### Breakpoints:
-- **Desktop**: 1200px+ (perfect grid)
-- **Tablet**: 768px–1199px (grid starts to **warp**, columns are 1px misaligned)
-- **Mobile**: <768px (single column, but **random margins** between sections)
+Visual gag: This is where the site leans into the joke.
 
-### Performance:
-- **Lighthouse score**: 75 (deliberately not 100—too perfect is suspicious)
-- **Largest Contentful Paint**: The **title**, but it **flickers** once on load (like an old CRT monitor)
+- Heading: “Peer Reviews (By Bots)”
+- Reviews stacked vertically:
 
----
+Card layout:
 
-## 11. Brand Voice: **"Sirius but Slightly Unwell"**
+- Top row:
+  - “Reviewer 3” (small caps)
+  - Verdict badge (ink text on tinted background)
+- Body:
+  - Italic quote reasoning
+- Footer line:
+  - `Model: openai/gpt-5-nano • Cost: $0.003 • Parse Status: Certified Unparsable`
 
-### Tone Guidelines:
-- **Use academic jargon** correctly, but **apply it to nonsense**
-- **Cite fake papers** with real DOI formatting
-- **Acknowledge limitations** that are absurd ("Our sample size was limited by the number of Lando Norris Ultras in the fridge")
+Styling notes:
 
-### Microcopy:
-- **Loading**: "Summoning reviewers..."
-- **Error**: "Crom is disappointed. Try again."
-- **Success**: "Your slop has been published. May God have mercy on your soul."
+- Slightly darker parchment than paper body
+- Left border strip (3–4px) coloured by verdict:
+  - Green‑ish for publish
+  - Red for reject
+  - Yellow for “could not be parsed”
 
----
+If `isParseError` flag exists, add a badge:
 
-## 12. The "Get Fucked, Academia" Finishing Touches
-
-### DOI Generation:
-- Real DOIs are `10.1234/abc123`. Yours are `10.slop/🤷♂️-j57f9ke`
-- The 🤷♂️ emoji **is part of the DOI** (URL-encoded, of course)
-
-### Citation Export:
-- **BibTeX**: Includes a `note = {This is slop.}`
-- **RIS**: Has a `TY  - JOUR` but the `JO` field is `AI Slop Journal (Not Real)`
-
-### Print Stylesheet:
-- If someone tries to print, **rotate the entire page 180 degrees**
-- Add a watermark: "Why are you printing slop?"
+> `Certified Unparsable` (small, yellow, with tiny broken‑braces icon)
 
 ---
 
-## Implementation Checklist
+### 4.4 Submit Form
 
-**CSS Framework**: Tailwind v4 (already done) + **custom plugin** for `slop-*` utilities
+- Looks like a journal submission form photocopied too many times
+- Field labels left, inputs right, in a loose grid
+- Above the submit button:
 
-**Key Utilities**:
-```css
-.slop-flicker {
-  animation: flicker 3s infinite;
-}
+> “By submitting, you affirm that this work is 50% slop by volume, minimum.”
 
-.slop-misalign {
-  margin-left: 1px; /* Just wrong enough */
-}
+Button styling:
 
-.slop-pulse-error {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-```
+- Big, rounded, coffee‑fill
+- Label: “Submit to the Slop Pipeline”
 
-**Fonts**: Self-host **Tiempos** and **Suisse Int'l** (don't rely on system fonts—this is serious slop)
-
-**Images**: All icons are **SVG** with **hand-coded paths** (no perfect circles, all slightly wonky)
+On hover: light jitter animation (1–2px randomised translate)
 
 ---
 
-## Final Design Principle
+## 5. Texture & Illustration
 
-> **"If it looks like a £10,000 website, but feels like a £10 website, you've nailed it."**
+### Background Texture
 
-The Journal of AI Slop™ should be **immediately credible** and **gradually concerning**. A first-time visitor should think "This looks legit" and only realize it's satire when they read **"Review could not be parsed into JSON"** on the third paper.
+- Use a **subtle seamless paper texture** over `#f5ecd9`
+- Add **very faint** coffee splashes in corners (SVG or PNG)
+- But keep contrast high enough for accessibility
 
-**Crom's Design Commandment**: *"Thou shalt not use Comic Sans. The slop must be serious."*
+### Robot Mascot
+
+- Reuse logo robot in:
+  - Empty states (“No slop yet. The bot is waiting.”)
+  - 404 page (robot dropped its papers)
+  - Tiny favicon / corner watermark
+
+---
+
+## 6. Motion & Micro‑Interactions (Gentle, Analog)
+
+- Page transitions: minimal; 150–200ms fade/slide
+- On scroll: headers can pick up a **tiny** parallax vs background paper
+- Hovering a paper title:
+  - Underline appears like a **wobbly hand‑drawn line** (SVG path, not perfect)
+
+Loading states:
+
+- “Summoning Review Panel…”  
+  Accompanied by a tiny spinner that looks like a **spinning coffee ring**
+
+---
+
+## 7. Tone & Copy Guidelines
+
+Match the logo’s tagline energy: *All Sarcasm, No Rigour*.
+
+- Wherever a serious journal would say:
+  - “Authors must ensure the accuracy of all claims”  
+  you say:
+  - “Authors must ensure their co‑author LLM gets at least one line of blame in the Acknowledgements.”
+- Keep UI labels short and deadpan:
+  - “View Slop”
+  - “Generate Slop”
+  - “Slop Pipeline Status: Operational”
+
+Footers and fine print are prime real estate for the driest jokes:
+> “ISSN: pending. Regret: ongoing.”
+
+---
+
+## 8. Implementation Notes (Dev‑Friendly)
+
+- **CSS / Tailwind primitives**:
+  - `bg-[url('/paper-texture.png')] bg-repeat`
+  - `shadow-[0_8px_25px_rgba(0,0,0,0.18)]`
+  - `border-[#c49a6c] rounded-lg`
+- Content blocks as “pages”:
+  - `max-w-3xl mx-auto bg-[#fdf7e9] border border-[#c49a6c] p-8`
+- Use a **global noise overlay** (low opacity) to avoid flatness, but keep it performance‑friendly (single fixed pseudo‑element)
+
+---
+
+## 9. How It Subverts Expectations
+
+- **Looks**: Comfortably like a small but real humanities or pedagogy journal.
+- **Reads**: Increasingly unhinged the further down you scroll.
+- **Behaves**: Technically competent (fast, responsive, clean), but:
+  - celebrates parse errors
+  - exposes model names and costs
+  - treats “Peer Review by Bot” as both a joke and a fact.
+
+Real journals are sterile and self‑important. This one is **warm, tactile, and openly ridiculous**, while still being **designed like someone who’s read way too many PDFs**.

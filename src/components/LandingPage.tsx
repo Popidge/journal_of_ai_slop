@@ -12,65 +12,59 @@ export default function LandingPage() {
   });
 
   return (
-    <main className="min-h-screen flex flex-col text-white px-4 py-12">
-      <section className="mx-auto text-center max-w-4xl space-y-6">
-        <p className="text-sm uppercase tracking-[0.4em] text-red-400">
-          Still more rigorous than the Lancet was in 1998
-        </p>
-        <h1 className="text-5xl md:text-6xl font-semibold text-red-400 leading-tight">The Journal of AI Slop™</h1>
-        <p className="text-xl text-gray-300">
-          Where the Peer Reviewers are Also the Peers Being Reviewed, the satire is "legally present to avoid defamation claims", and the papers
-          somehow survive the LLM gauntlet.
-        </p>
-        <div className="mx-auto flex flex-col items-center gap-4">
-          <div className="w-32 rounded-[20px] border border-red-900/70 bg-black/60 p-2 shadow-[0_0_35px_rgba(220,38,38,0.75)] rotate-[1deg]">
-            <img
-              src={logo}
-              alt="Logo for The Journal of AI Slop™"
-              className="w-full h-full object-contain rounded-[16px]"
-            />
+    <main className="min-h-screen px-4 py-5 text-[color:var(--ink)]">
+      <section className="mx-auto w-full max-w-[1040px] space-y-4">
+        <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)] items-center">
+          <div className="relative flex items-center justify-center">
+            <div className="absolute inset-2 rounded-[32px] border border-[color:var(--coffee-light)] bg-[color:var(--coffee)] opacity-30" />
+            <div className="relative w-[220px] overflow-hidden rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)] p-4 shadow-[0_20px_45px_rgba(35,24,21,0.2)]">
+              <img src={logo} alt="Logo for The Journal of AI Slop™" className="w-full h-auto" />
+            </div>
+            <div className="sr-only">Retro robot mascot portrait</div>
           </div>
-          <p className="text-xs text-gray-500 uppercase tracking-[0.4em]">Totally not AI generated</p>
-        </div>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            to="/submit"
-            data-quirk="true"
-            className="button-scale px-10 py-4 rounded-full bg-gradient-to-r from-red-600 via-red-500 to-pink-600 text-lg font-bold shadow-[0_10px_60px_rgba(239,68,68,0.35)]"
-          >
-            Submit Your Slop
-          </Link>
-          <Link
-            to="/papers"
-            className="button-scale px-10 py-4 rounded-full border border-gray-700 text-lg font-semibold text-white hover:border-red-500 transition"
-          >
-            Read the Published Slop
-          </Link>
+
+          <div className="space-y-2 rounded-[32px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-5 shadow-[0_10px_30px_rgba(35,24,21,0.12)]">
+            <p className="text-xs uppercase tracking-[0.5em] text-[color:var(--accent-blue)]">Paper 01 · Issue XXXVII</p>
+            <h1 className="text-4xl font-semibold leading-snug text-[color:var(--ink)] wobbly-underline">The Journal of AI Slop™</h1>
+            <p className="text-lg font-serif text-[color:var(--ink-soft)] italic">All Sarcasm, No Rigour.</p>
+            <p className="text-base text-[color:var(--ink-soft)]">
+              A very serious journal for very unserious AI co-authored research. We dress like a faculty lounge newsletter and behave like a gremlin scribble on a staff room memo.
+            </p>
+            <div className="flex flex-wrap gap-4 pt-2">
+              <Link
+                to="/submit"
+                data-quirk="true"
+                className="button-scale inline-flex items-center justify-center rounded-full border border-[color:var(--coffee)] bg-[color:var(--coffee)] px-6 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[color:var(--paper)] transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_25px_rgba(35,24,21,0.3)]"
+              >
+                Submit to the Slop Pipeline
+              </Link>
+              <Link
+                to="/papers"
+                className="button-scale inline-flex items-center justify-center rounded-full border border-[color:var(--coffee-light)] bg-transparent px-6 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-[color:var(--coffee)] transition-colors duration-200 hover:text-[color:var(--accent-blue)] hover:border-[color:var(--accent-blue)]"
+              >
+                Browse Published Nonsense
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="mt-16 mx-auto w-full max-w-5xl space-y-6">
+      <section className="mt-10 mx-auto w-full max-w-[1040px] space-y-3">
         <div className="flex flex-col gap-1">
-          <h2 className="text-3xl font-semibold text-white">Latest Published Slop</h2>
-          <p className="text-sm text-gray-400">Freshly honored by a panel of five completely random LLM reviewers.</p>
+          <h2 className="text-3xl font-semibold text-[color:var(--ink)]">Latest Published Slop</h2>
+          <p className="text-sm uppercase tracking-[0.35em] text-[color:var(--ink-soft)]">Summoning Review Panel…</p>
         </div>
 
         <div className="space-y-4">
           {latestAccepted === undefined ? (
-            <div className="flex flex-col items-center gap-4 text-gray-400">
-              <div className="question-spinner slop-flicker" aria-hidden="true" />
-              <p>Summoning the latest slop...</p>
-              <div className="flex gap-3">
-                {Array.from({ length: 3 }).map((_, idx) => (
-                  <div
-                    key={idx}
-                    className={`h-24 w-40 rounded-2xl bg-white/5 slop-misalign ${idx === 2 ? "rotate-3" : "rotate-0"}`}
-                  />
-                ))}
-              </div>
+            <div className="flex flex-col items-center gap-4 rounded-[32px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)] p-5 shadow-[0_10px_30px_rgba(35,24,21,0.12)]">
+              <div className="question-spinner" aria-hidden="true" />
+              <p className="text-sm text-[color:var(--ink-soft)]">Summoning Review Panel…</p>
             </div>
           ) : latestAccepted.length === 0 ? (
-            <p className="text-gray-500">No papers have survived the peer review circus yet.</p>
+            <div className="rounded-[32px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)] p-5 text-center text-sm text-[color:var(--ink-soft)] shadow-[0_10px_30px_rgba(35,24,21,0.12)]">
+              No papers have survived the peer review circus yet.
+            </div>
           ) : (
             latestAccepted.map((paper) => {
               const score = getSlopScore();
@@ -78,23 +72,25 @@ export default function LandingPage() {
                 <Link
                   key={paper._id}
                   to={`/papers/${paper._id}`}
-                  className="group block rounded-2xl border border-red-900/60 bg-black/60 p-6 transition hover:border-red-500"
+                  className="group block rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)] p-5 shadow-[0_15px_35px_rgba(35,24,21,0.12)] transition hover:border-[color:var(--accent-blue)]"
                 >
-                  <div className="flex items-center justify-between gap-4">
-                    <h3 className="text-2xl font-semibold text-white paper-title-glow">{paper.title}</h3>
-                    <span className="text-xs font-semibold uppercase tracking-[0.4em] text-red-300">accepted</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-xl font-semibold text-[color:var(--ink)] paper-title-glow wobbly-underline">{paper.title}</h3>
+                    <span className="rounded-full border border-[color:var(--coffee)] px-3 py-1 text-[color:var(--coffee)] text-xs font-semibold uppercase tracking-[0.35em]">
+                      {paper.status.replace("accepted", "PUBLISH NOW")}
+                    </span>
                   </div>
-                  <p className="text-gray-400 mt-2 relative inline-block author-score" data-score={score}>
+                  <p className="text-sm italic text-[color:var(--ink-soft)] mt-2 relative inline-block author-score" data-score={score}>
                     by {paper.authors}
                   </p>
-                  <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-300">
+                  <div className="mt-3 flex flex-wrap gap-2 text-[color:var(--coffee)] text-xs">
                     {paper.tags.map((tag) => (
-                      <span key={tag} className="rounded-full border border-gray-700 px-3 py-1 bg-black/40">
+                      <span key={tag} className="rounded-full border border-[color:var(--coffee)] px-3 py-1 bg-[color:var(--paper)]/70">
                         {tag}
                       </span>
                     ))}
                   </div>
-                  <p className="mt-4 text-right text-xs text-gray-500">
+                  <p className="mt-4 text-right text-[color:var(--ink-soft)] text-xs">
                     Submitted on {new Date(paper.submittedAt).toLocaleDateString()}
                   </p>
                 </Link>
@@ -104,11 +100,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="mt-12 text-center text-sm text-gray-400">
-        Pinky-swear clause: <strong>✓ Enforced (honour system)</strong>. Crom is watching the red gradient. Created by <Link to="https://github.com/popidge" target="_blank" className="underline">Jamie Taylor</Link>
-        <div className="sr-only">
-          <p>If you're reading this, you're too deep. Submit a paper about it.</p>
-        </div>
+      <footer className="mt-16 text-center text-sm text-[color:var(--ink-soft)]">
+        ISSN: pending. Regret: ongoing. — Created by <Link to="https://github.com/popidge" target="_blank" className="underline">Jamie Taylor</Link>
       </footer>
     </main>
   );
