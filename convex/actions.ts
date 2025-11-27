@@ -22,6 +22,10 @@ type ReviewVote = {
   decision: ReviewDecision;
   reasoning: string;
   cost: number;
+  promptTokens: number;
+  completionTokens: number;
+  cachedTokens: number;
+  totalTokens: number;
 };
 
 const normalizeDecision = (value: unknown): ReviewDecision => {
@@ -117,13 +121,31 @@ output led to an incredibly funny bug in early testing
 where the JSON error message at line 70 is given as the reasoning. 
 This is now considered a core feature of the journal and will not be fixed */
 
-const deriveCost = (response: Response): number => {
-  const costHeader = response.headers.get("x-ephemeral-token-cost");
-  const parsed = costHeader ? Number(costHeader) : 0;
-  if (Number.isFinite(parsed) && parsed >= 0) {
-    return parsed;
+const deriveUsage = (payload: any): { cost: number; promptTokens: number; completionTokens: number; cachedTokens: number; totalTokens: number } => {
+  const usage = payload?.usage;
+  if (!usage) {
+    return {
+      cost: 0,
+      promptTokens: 0,
+      completionTokens: 0,
+      cachedTokens: 0,
+      totalTokens: 0,
+    };
   }
-  return 0;
+
+  const cost = usage?.cost ?? 0;
+  const promptTokens = usage?.prompt_tokens ?? 0;
+  const completionTokens = usage?.completion_tokens ?? 0;
+  const cachedTokens = usage?.prompt_tokens_details?.cached_tokens ?? 0;
+  const totalTokens = usage?.total_tokens ?? 0;
+
+  return {
+    cost: Number.isFinite(cost) ? cost : 0,
+    promptTokens: Number.isFinite(promptTokens) ? promptTokens : 0,
+    completionTokens: Number.isFinite(completionTokens) ? completionTokens : 0,
+    cachedTokens: Number.isFinite(cachedTokens) ? cachedTokens : 0,
+    totalTokens: Number.isFinite(totalTokens) ? totalTokens : 0,
+  };
 };
 
 export const reviewPaper = internalAction({
@@ -148,6 +170,14 @@ export const reviewPaper = internalAction({
 
     const reviewPromises = selectedModels.map(async (model) => {
       const prompt = buildPrompt(paper);
+      let usageData = {
+        cost: 0,
+        promptTokens: 0,
+        completionTokens: 0,
+        cachedTokens: 0,
+        totalTokens: 0,
+      };
+      
       try {
         const response = await fetch(OPENROUTER_ENDPOINT, {
           method: "POST",
@@ -160,10 +190,16 @@ export const reviewPaper = internalAction({
             temperature: 0.7,
             max_tokens: 500,
             messages: [{ role: "user", content: prompt }],
+            usage: {
+              include: true,
+            },
           }),
         });
 
-        const cost = deriveCost(response);
+        const responseData = await response.json();
+        
+        // Extract usage data from response using deriveUsage function
+        usageData = deriveUsage(responseData);
 
         if (!response.ok) {
           console.error(`OpenRouter error for ${model}: ${response.status} ${response.statusText}`);
@@ -171,19 +207,18 @@ export const reviewPaper = internalAction({
             agentId: model,
             decision: "reject" as ReviewDecision,
             reasoning: `API returned ${response.status}.`,
-            cost,
+            ...usageData,
           };
         }
 
-        const payload = await response.json();
-        const content = payload?.choices?.[0]?.message?.content ?? "";
+        const content = responseData?.choices?.[0]?.message?.content ?? "";
         const parsed = parseReview(content);
 
         return {
           agentId: model,
           decision: parsed.decision,
           reasoning: parsed.reasoning,
-          cost,
+          ...usageData,
         };
       } catch (error) {
         console.error(`Failed to review with ${model}:`, error);
@@ -191,7 +226,7 @@ export const reviewPaper = internalAction({
           agentId: model,
           decision: "reject" as ReviewDecision,
           reasoning: "Review failed due to an unexpected error.",
-          cost: 0,
+          ...usageData,
         };
       }
     });

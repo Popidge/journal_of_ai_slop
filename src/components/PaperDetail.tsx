@@ -73,7 +73,7 @@ export default function PaperDetail() {
           <div className="flex flex-wrap gap-6 text-xs text-[color:var(--ink-soft)]">
             <p>Submitted on {new Date(paper.submittedAt).toLocaleDateString()}</p>
             <p>
-              Review cost: {paper.totalReviewCost != null ? `${paper.totalReviewCost.toFixed(2)}` : "Calculating..."}
+              Review cost:${paper.totalReviewCost != null ? `${paper.totalReviewCost.toFixed(6)}` : "Calculating..."}
             </p>
             <p>{score}</p>
           </div>
@@ -116,7 +116,7 @@ export default function PaperDetail() {
                     <p className="text-sm italic text-[color:var(--ink-soft)]">“{review.reasoning}”</p>
                     <div className="flex flex-wrap justify-between gap-3 text-[0.65rem] font-mono text-[color:var(--ink-soft)]">
                       <span>Model: {review.agentId}</span>
-                      <span>Cost: ${review.cost.toFixed(4)}</span>
+                      <span>Cost: ${review.cost.toFixed(6)}</span>
                       <span>Parse Status: {verifiedParseError ? "Certified Unparsable" : "Certified"}</span>
                     </div>
                   </div>

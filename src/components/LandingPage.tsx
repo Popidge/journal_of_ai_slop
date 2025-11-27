@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import logo from "../../journal-of-ai-slop-logo.jpg";
 
 const getSlopScore = () => `Slop Score: ${(Math.random() * 0.8 + 0.1).toFixed(2)}`;
 
@@ -16,9 +15,9 @@ export default function LandingPage() {
       <section className="mx-auto w-full max-w-[1040px] space-y-4">
         <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)] items-center">
           <div className="relative flex items-center justify-center">
-            <div className="absolute inset-2 rounded-[32px] border border-[color:var(--coffee-light)] bg-[color:var(--coffee)] opacity-30" />
-            <div className="relative w-[220px] overflow-hidden rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)] p-4 shadow-[0_20px_45px_rgba(35,24,21,0.2)]">
-              <img src={logo} alt="Logo for The Journal of AI Slop™" className="w-full h-auto" />
+            <div className="absolute inset-2 rounded-[16px] border border-[color:var(--coffee-light)] bg-[color:var(--coffee)] opacity-30" />
+            <div className="relative w-[240px] overflow-hidden rounded-[14px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)] p-4 shadow-[0_20px_45px_rgba(35,24,21,0.2)]">
+              <img src="/slopbot.png" alt="SLOPBOT mascot" className="w-full h-auto" />
             </div>
             <div className="sr-only">Retro robot mascot portrait</div>
           </div>

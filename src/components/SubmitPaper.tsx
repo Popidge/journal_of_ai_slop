@@ -242,13 +242,13 @@ export default function SubmitPaper() {
                   className="mt-1 h-4 w-4 rounded border border-[color:var(--coffee-light)] bg-[color:var(--paper)] text-[color:var(--coffee)] focus:ring-[color:var(--coffee)]"
                 />
                 <span className="text-[color:var(--ink-soft)]">
-                  Pinky-Swear Acknowledgment: I solemnly affirm that this work is at least 50% slop by volume. Crom is watching. 🤚
+                  Pinky-Swear Acknowledgment: I solemnly agree that I will not submit this paper anywhere else. Morally binding, legally unenforcable.
                 </span>
               </label>
             </div>
 
             <div className="space-y-3 text-center text-xs uppercase tracking-[0.4em] text-[color:var(--ink-soft)]">
-              <p>By submitting, you affirm that this work is 50% slop by volume, minimum.</p>
+              <p>By submitting, you affirm that this work is 50% slop by volume, minimum. Crom is watching.</p>
               <button
                 type="submit"
                 disabled={isSubmitting}

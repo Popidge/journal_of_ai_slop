@@ -18,6 +18,10 @@ const reviewVoteValidator = v.object({
   ),
   reasoning: v.string(),
   cost: v.number(),
+  promptTokens: v.optional(v.number()),
+  completionTokens: v.optional(v.number()),
+  cachedTokens: v.optional(v.number()),
+  totalTokens: v.optional(v.number()),
 });
 
 const paperProjection = v.object({
@@ -31,6 +35,10 @@ const paperProjection = v.object({
   status: statusValidator,
   reviewVotes: v.optional(v.array(reviewVoteValidator)),
   totalReviewCost: v.optional(v.number()),
+  promptTokens: v.optional(v.number()),
+  completionTokens: v.optional(v.number()),
+  cachedTokens: v.optional(v.number()),
+  totalTokens: v.optional(v.number()),
 });
 
 export const submitPaper = mutation({
