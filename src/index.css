@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Playfair+Display:wght@600;700&family=Space+Grotesk:wght@400;600&display=swap");
+@import "tailwindcss";
 
 :root {
   font-family: "Suisse Int'l", "Space Grotesk", "Inter", system-ui, -apple-system, sans-serif;

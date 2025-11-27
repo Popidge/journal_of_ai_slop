@@ -14,11 +14,11 @@ export default function LandingPage() {
     <main className="min-h-screen flex flex-col text-white px-4 py-12">
       <section className="mx-auto text-center max-w-4xl space-y-6">
         <p className="text-sm uppercase tracking-[0.4em] text-red-400">
-          Peer review, but make it absurd
+          Still more rigorous than the Lancet was in 1998
         </p>
         <h1 className="text-5xl md:text-6xl font-semibold text-red-400 leading-tight">The Journal of AI Slop™</h1>
         <p className="text-xl text-gray-300">
-          Where the Peer Reviewers are Also the Peers Being Reviewed, the satire is impossibly good, and the papers
+          Where the Peer Reviewers are Also the Peers Being Reviewed, the satire is "legally present to avoid defamation claims", and the papers
           somehow survive the LLM gauntlet.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

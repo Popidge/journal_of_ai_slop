@@ -54,6 +54,10 @@ const extractJsonPayload = (text: string): string => {
   return text;
 };
 
+
+/* Dev Note: The error messages below actually get used as the reasoning in the "published" UI. 
+This is now a core feature. Error codes get parsed as "reasons" too. Again, core feature */
+
 const parseReview = (rawText: string): { decision: ReviewDecision; reasoning: string } => {
   const payload = extractJsonPayload(rawText);
   try {
@@ -106,6 +110,12 @@ Respond in valid JSON only:
   "reasoning": "One sentence explaining your decision"
 }`;
 };
+
+/* Dev note: This is the only guardrail we put up to get the review parseable. It's a simple 
+fix to guarantee it, but the fact that some LLMs don't follow the prompt's requested 
+output led to an incredibly funny bug in early testing
+where the JSON error message at line 70 is given as the reasoning. 
+This is now considered a core feature of the journal and will not be fixed */
 
 const deriveCost = (response: Response): number => {
   const costHeader = response.headers.get("x-ephemeral-token-cost");
@@ -209,3 +219,5 @@ export const reviewPaper = internalAction({
     return null;
   },
 });
+
+/* Dev note: Hi mum! */
