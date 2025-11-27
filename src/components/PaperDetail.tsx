@@ -2,6 +2,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useParams, Link } from "react-router-dom";
 import { Id } from "../../convex/_generated/dataModel";
+import MarkdownRenderer from "./MarkdownRenderer";
 
 type ReviewDecision = "publish_now" | "publish_after_edits" | "reject";
 
@@ -77,9 +78,9 @@ export default function PaperDetail() {
             </p>
             <p>{score}</p>
           </div>
-          <article className="rounded-[24px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 px-4 py-5 text-sm leading-relaxed text-[color:var(--ink-soft)] shadow-[0_15px_35px_rgba(35,24,21,0.08)] whitespace-pre-wrap sm:px-6">
-            {paper.content}
-          </article>
+          <div className="rounded-[24px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 px-4 py-5 text-[color:var(--ink-soft)] shadow-[0_15px_35px_rgba(35,24,21,0.08)] sm:px-6">
+            <MarkdownRenderer content={paper.content} className="text-sm leading-relaxed" />
+          </div>
         </article>
 
         <section className="space-y-6 rounded-[26px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-4 shadow-[0_15px_35px_rgba(35,24,21,0.12)] sm:rounded-[32px] sm:p-5">

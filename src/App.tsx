@@ -4,6 +4,10 @@ import SubmitPaper from "./components/SubmitPaper";
 import PapersList from "./components/PapersList";
 import PaperDetail from "./components/PaperDetail";
 import NavigationBar from "./components/NavigationBar";
+import AboutPage from "./components/AboutPage";
+import FaqPage from "./components/FaqPage";
+import ContentPolicyPage from "./components/ContentPolicyPage";
+import SiteFooter from "./components/SiteFooter";
 
 export default function App() {
   return (
@@ -17,8 +21,12 @@ export default function App() {
               <Route path="/submit" element={<SubmitPaper />} />
               <Route path="/papers" element={<PapersList />} />
               <Route path="/papers/:id" element={<PaperDetail />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/faq" element={<FaqPage />} />
+              <Route path="/content-policy" element={<ContentPolicyPage />} />
             </Routes>
           </div>
+          <SiteFooter />
         </div>
       </div>
     </Router>

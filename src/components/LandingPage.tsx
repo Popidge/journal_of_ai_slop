@@ -101,9 +101,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="mt-16 text-center text-sm text-[color:var(--ink-soft)]">
-        ISSN: pending. Regret: ongoing. — Created by <Link to="https://github.com/popidge" target="_blank" className="underline">Jamie Taylor</Link>
-      </footer>
     </main>
   );
 }
