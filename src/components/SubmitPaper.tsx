@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Link } from "react-router-dom";
+import { useRateLimit } from "../hooks/useRateLimit";
 
 const AVAILABLE_TAGS = [
   "Actually Academic",
@@ -12,6 +13,9 @@ const AVAILABLE_TAGS = [
 ] as const;
 
 const LLM_SIGNIFIERS = ["GPT", "Claude", "Gemini", "Grok", "LLaMA", "Bard", "Kimi", "Minimax", "Phi", "Qwen"] as const;
+
+const SUBMISSION_LIMIT = 3;
+const RATE_WINDOW_MS = 3600000;
 
 export default function SubmitPaper() {
   const [formData, setFormData] = useState({
@@ -25,6 +29,10 @@ export default function SubmitPaper() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedPaperId, setSubmittedPaperId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const rateLimit = useRateLimit(SUBMISSION_LIMIT, RATE_WINDOW_MS);
+  const patiencePercent = Math.max(0, Math.min(100, (rateLimit.remaining / SUBMISSION_LIMIT) * 100));
+  const minutesUntilReset = Math.max(1, Math.ceil(rateLimit.timeUntilReset / 60000));
 
   const submitPaper = useMutation(api.papers.submitPaper);
 
@@ -49,6 +57,12 @@ export default function SubmitPaper() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (rateLimit.isLimited) {
+      alert(
+        `Crom says: "You've submitted enough slop for now. Contemplate your choices for ${minutesUntilReset} minutes, then try again."`
+      );
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -81,6 +95,7 @@ export default function SubmitPaper() {
         tags: formData.tags,
       });
 
+      rateLimit.recordSubmission();
       setSubmittedPaperId(paperId);
       setFormData({
         title: "",
@@ -251,12 +266,31 @@ export default function SubmitPaper() {
               <p>By submitting, you affirm that this work is 50% slop by volume, minimum. Crom is watching.</p>
               <button
                 type="submit"
-                disabled={isSubmitting}
-                className="button-scale w-full rounded-full bg-[color:var(--coffee)] px-6 py-4 text-[0.9rem] font-semibold text-[color:var(--paper)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-gray-400 sm:text-sm"
+                disabled={isSubmitting || rateLimit.isLimited}
+                className={`button-scale w-full rounded-full bg-[color:var(--coffee)] px-6 py-4 text-[0.9rem] font-semibold text-[color:var(--paper)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-gray-400 sm:text-sm ${rateLimit.isLimited ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 {isSubmitting ? "Summoning the reviewers..." : "Submit to the Slop Pipeline"}
               </button>
             </div>
+
+            {rateLimit.count > 0 && (
+              <div className="mt-4 rounded-lg border border-[color:var(--coffee-light)] bg-[color:var(--coffee-light)]/40 p-3">
+                <p className="text-sm text-[color:var(--ink)]">
+                  ⚠️ Crom's Patience Meter: {rateLimit.remaining}/{SUBMISSION_LIMIT} submissions this hour
+                </p>
+                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[color:var(--coffee)]/30">
+                  <div
+                    className="h-full bg-[color:var(--coffee)] transition-all"
+                    style={{ width: `${patiencePercent}%` }}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-[color:var(--ink-soft)]">
+                  {rateLimit.isLimited
+                    ? `Try again in ${minutesUntilReset} minutes while Crom contemplates your slop.`
+                    : `${rateLimit.remaining} submissions remain before Crom meters the slow-down.`}
+                </p>
+              </div>
+            )}
           </form>
         </div>
 
