@@ -1,6 +1,9 @@
 import { useQuery } from "convex/react";
 import { Link } from "react-router-dom";
 import { api } from "../../convex/_generated/api";
+import { useEcoMode } from "@/contexts/EcoModeContext";
+import { useEnvironmentalImpact } from "@/hooks/useEnvironmentalImpact";
+import { formatTokens, formatCurrency, formatEnergy, formatCo2, tokensToEnergyMWh, tokensToCo2g } from "@/utils/ecoMetrics";
 
 const getSlopScore = () => `Slop Score: ${(Math.random() * 0.8 + 0.1).toFixed(2)}`;
 
@@ -12,6 +15,8 @@ const mapStatus = (status: string) => {
 
 export default function PapersList() {
   const papers = useQuery(api.papers.listPapers, { status: "accepted", limit: 50 });
+  const { ecoMode } = useEcoMode();
+  const { energyPerTokenWh, co2PerWh, ready } = useEnvironmentalImpact();
 
   return (
     <div className="min-h-screen px-3 py-10 text-[color:var(--ink)] sm:px-4">
@@ -45,6 +50,14 @@ export default function PapersList() {
             papers.map((paper) => {
               const statusLabel = mapStatus(paper.status);
               const score = getSlopScore();
+              const tokens =
+                paper.totalTokens ??
+                paper.reviewVotes?.reduce((sum, vote) => sum + (vote?.totalTokens ?? 0), 0) ??
+                0;
+              const hasTokenData =
+                paper.totalTokens != null || (paper.reviewVotes && paper.reviewVotes.length > 0);
+              const energy = tokensToEnergyMWh(tokens, energyPerTokenWh);
+              const co2 = tokensToCo2g(tokens, energyPerTokenWh, co2PerWh);
               return (
                 <Link
                   key={paper._id}
@@ -73,9 +86,19 @@ export default function PapersList() {
 
                   <div className="mt-5 flex flex-col gap-2 text-[0.7rem] text-[color:var(--ink-soft)] sm:flex-row sm:items-center sm:justify-between">
                     <p>Submitted on {new Date(paper.submittedAt).toLocaleDateString()}</p>
-                    <p>
-                      Review cost: {paper.totalReviewCost != null ? `${paper.totalReviewCost.toFixed(4)}` : "Calculating..."}
-                    </p>
+                    {ecoMode ? (
+                      <>
+                        <p>Energy: {ready && hasTokenData ? formatEnergy(energy) : "Calculating energy..."}</p>
+                        <p>CO₂: {ready && hasTokenData ? formatCo2(co2) : "Calculating impact..."}</p>
+                      </>
+                    ) : (
+                      <>
+                        <p>
+                          Review cost: {paper.totalReviewCost != null ? formatCurrency(paper.totalReviewCost) : "Calculating..."}
+                        </p>
+                        <p>Tokens: {hasTokenData ? formatTokens(tokens) : "Calculating..."}</p>
+                      </>
+                    )}
                   </div>
                 </Link>
               );

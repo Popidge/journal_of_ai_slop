@@ -4,6 +4,9 @@ import { api } from "../../convex/_generated/api";
 import { useParams, Link } from "react-router-dom";
 import { Id } from "../../convex/_generated/dataModel";
 import MarkdownRenderer from "./MarkdownRenderer";
+import { useEcoMode } from "@/contexts/EcoModeContext";
+import { useEnvironmentalImpact } from "@/hooks/useEnvironmentalImpact";
+import { formatCo2, formatEnergy, formatTokens, formatCurrency, tokensToCo2g, tokensToEnergyMWh } from "@/utils/ecoMetrics";
 
 type ReviewDecision = "publish_now" | "publish_after_edits" | "reject";
 
@@ -35,6 +38,10 @@ export default function PaperDetail() {
   const paper = useQuery(api.papers.getPaper, { id: id as Id<"papers"> });
   const detailRef = useRef<HTMLDivElement>(null);
 
+  const { ecoMode } = useEcoMode();
+  const { energyPerTokenWh, co2PerWh, ready } = useEnvironmentalImpact();
+
+
   useEffect(() => {
     if (paper) {
       detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -45,11 +52,22 @@ export default function PaperDetail() {
     return <div className="min-h-screen flex items-center justify-center text-[color:var(--ink-soft)]">Loading paper…</div>;
   }
 
+  const computedTotalTokens =
+    paper?.totalTokens ??
+    paper?.reviewVotes?.reduce((sum, vote) => sum + (vote?.totalTokens ?? 0), 0) ??
+    0;
+  const hasTokenData =
+    paper?.totalTokens != null || (paper?.reviewVotes && paper.reviewVotes.length > 0);
+  const totalEnergy = tokensToEnergyMWh(computedTotalTokens, energyPerTokenWh);
+  const totalCo2 = tokensToCo2g(computedTotalTokens, energyPerTokenWh, co2PerWh);
+
+
   if (paper === null) {
     return <div className="min-h-screen flex items-center justify-center text-[color:var(--accent-red)]">Paper not found</div>;
   }
 
   const score = getSlopScore();
+
 
   return (
     <div ref={detailRef} className="min-h-screen px-3 py-10 text-[color:var(--ink)] sm:px-4">
@@ -81,9 +99,23 @@ export default function PaperDetail() {
           </div>
           <div className="flex flex-col gap-2 text-[0.7rem] text-[color:var(--ink-soft)] sm:flex-row sm:flex-wrap sm:gap-6">
             <p>Submitted on {new Date(paper.submittedAt).toLocaleDateString()}</p>
-            <p>
-              Review cost:${paper.totalReviewCost != null ? `${paper.totalReviewCost.toFixed(6)}` : "Calculating..."}
-            </p>
+            <div className="flex flex-col gap-1">
+              {ecoMode ? (
+                <>
+                  <p>
+                    Energy consumption: {ready && hasTokenData ? formatEnergy(totalEnergy) : "Calculating energy..."}
+                  </p>
+                  <p>CO₂ output: {ready && hasTokenData ? formatCo2(totalCo2) : "Calculating impact..."}</p>
+                </>
+              ) : (
+                <>
+                  <p>
+                    Review cost: {paper.totalReviewCost != null ? formatCurrency(paper.totalReviewCost) : "Calculating..."}
+                  </p>
+                  <p>Tokens: {hasTokenData ? formatTokens(computedTotalTokens) : "Calculating..."}</p>
+                </>
+              )}
+            </div>
             <p>{score}</p>
           </div>
           <div className="watermarked-paper rounded-[24px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 px-4 py-5 text-[color:var(--ink-soft)] shadow-[0_15px_35px_rgba(35,24,21,0.08)] sm:px-6">
@@ -105,6 +137,9 @@ export default function PaperDetail() {
               {paper.reviewVotes.map((review, idx) => {
                 const borderColor = verdictColor(review.decision);
                 const verifiedParseError = isParseError(review.reasoning);
+                const reviewTokens = review.totalTokens ?? 0;
+                const reviewEnergy = tokensToEnergyMWh(reviewTokens, energyPerTokenWh);
+                const reviewCo2 = tokensToCo2g(reviewTokens, energyPerTokenWh, co2PerWh);
                 return (
                   <div
                     key={idx}
@@ -125,7 +160,21 @@ export default function PaperDetail() {
                     <p className="text-sm italic text-[color:var(--ink-soft)]">“{review.reasoning}”</p>
                     <div className="flex flex-wrap justify-between gap-3 text-[0.6rem] font-mono text-[color:var(--ink-soft)] sm:text-[0.65rem]">
                       <span>Model: {review.agentId}</span>
-                      <span>Cost: ${review.cost.toFixed(6)}</span>
+                      {ecoMode ? (
+                        <>
+                          <span>
+                            Energy: {ready ? formatEnergy(reviewEnergy) : "Calculating energy..."}
+                          </span>
+                          <span>
+                            CO₂: {ready ? formatCo2(reviewCo2) : "Calculating impact..."}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Cost: ${review.cost.toFixed(6)}</span>
+                          <span>Tokens: {formatTokens(reviewTokens)}</span>
+                        </>
+                      )}
                       <span>Parse Status: {verifiedParseError ? "Certified Unparsable" : "Certified"}</span>
                     </div>
                   </div>
