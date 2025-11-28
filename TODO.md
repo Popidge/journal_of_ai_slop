@@ -4,8 +4,8 @@ It will be updated inconsistently and probably forgotten, and is basically a scr
 
 # TODO
 
-- [ ] Implement vercel image optimisation
-- [ ] Implement ISR for published articles to aid academic research crawlers (lol)
+- [X] Implement vercel image optimisation - done via vite build
+- [ ] Implement ISR for published articles to aid academic research crawlers (lol) - may just do some json injection hackery
 - [ ] Implement a proper search feature
 - [ ] Implement a proper RSS feed
 - [ ] Implement a proper sitemap

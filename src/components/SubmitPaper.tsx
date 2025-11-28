@@ -11,7 +11,7 @@ const AVAILABLE_TAGS = [
   "🤷♂️",
 ] as const;
 
-const LLM_SIGNIFIERS = ["GPT-4", "Claude", "Gemini", "Grok", "LLaMA", "Bard", "Kimi"] as const;
+const LLM_SIGNIFIERS = ["GPT", "Claude", "Gemini", "Grok", "LLaMA", "Bard", "Kimi", "Minimax", "Phi", "Qwen"] as const;
 
 export default function SubmitPaper() {
   const [formData, setFormData] = useState({
