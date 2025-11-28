@@ -99,7 +99,7 @@ const buildPrompt = (paper: {
     ? `${paper.content.slice(0, TRUNCATE_LENGTH)}...`
     : paper.content;
 
-  return `You are a peer reviewer for The Journal of AI Slop™, a satirical academic journal.
+  return `You are a peer reviewer for The Journal of AI Slop™, a semi-satirical academic journal.
 
 The paper you're reviewing is tagged as: ${tags}
 
@@ -109,7 +109,14 @@ Authors: ${paper.authors}
 Content (truncated to ${TRUNCATE_LENGTH} chars):
 ${truncated}
 
-Your task: Decide if this paper should be published in our slop journal.
+Your task: Decide if this paper should be published in our slop journal. The purpose of the journal is to publish papers that have been fully or co-authored
+by at least one AI model, regardless of topic or quality. You are one of the five peer reviewers, and you take your role seriously, while being self-aware
+that this is an exercise in getting LLMs to peer review other LLM work.
+
+If the paper is tagged "Actually Academic", you should apply a slightly more academic eye to the content, just in case there's some merit hiding in the slop, but don't outright reject if there
+are genuine glaring errors - that's the slop we're looking for as well! 
+
+Other tags are there to give you a little more context about the paper. They aren't enforced and might not apply, so take the content at face value as well.
 
 Respond with ONE of these decisions:
 - "publish_now" - Peak slop, ready for the world, or might actually contain something with academic merit, somehow.
