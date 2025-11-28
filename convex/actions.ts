@@ -411,7 +411,7 @@ export const reviewPaper = internalAction({
 
     if (totalReviewCost > MAX_REVIEW_COST) {
       console.warn(
-        `Review for ${paper.title} exceeded budget: $${totalReviewCost.toFixed(2)} (limit $${MAX_REVIEW_COST.toFixed(2)})`,
+        `Review for ${paper.title} exceeded budget: ${totalReviewCost.toFixed(2)} (limit ${MAX_REVIEW_COST.toFixed(2)})`,
       );
     }
 
@@ -425,6 +425,33 @@ export const reviewPaper = internalAction({
       reviewVotes,
       totalReviewCost,
     });
+
+    return null;
+  },
+});
+
+export const processNextQueuedReview = internalAction({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    const queueItem = await ctx.runMutation(internal.papersQueue.acquireNextPaperForReview, {});
+    if (!queueItem) {
+      console.info("Council cron ticked but queue is empty.");
+      return null;
+    }
+
+    try {
+      await ctx.runAction(internal.actions.reviewPaper, { paperId: queueItem.paperId });
+      await ctx.runMutation(internal.papersQueue.completeQueueItem, { queueId: queueItem.queueId });
+    } catch (error) {
+      const failureReason = error instanceof Error ? error.message : "Unknown failure";
+      console.error("Queued review failed", { queueItem, failureReason });
+      await ctx.runMutation(internal.papersQueue.rejectAndDropQueueItem, {
+        queueId: queueItem.queueId,
+        paperId: queueItem.paperId,
+        reason: `Auto-rejected after review failure: ${failureReason}`,
+      });
+    }
 
     return null;
   },

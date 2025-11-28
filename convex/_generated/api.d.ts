@@ -9,7 +9,9 @@
  */
 
 import type * as actions from "../actions.js";
+import type * as crons from "../crons.js";
 import type * as papers from "../papers.js";
+import type * as papersQueue from "../papersQueue.js";
 
 import type {
   ApiFromModules,
@@ -19,7 +21,9 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   actions: typeof actions;
+  crons: typeof crons;
   papers: typeof papers;
+  papersQueue: typeof papersQueue;
 }>;
 
 /**

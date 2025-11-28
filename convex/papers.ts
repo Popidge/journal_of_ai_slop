@@ -71,7 +71,7 @@ export const submitPaper = mutation({
       status: "pending",
     });
 
-    await ctx.scheduler.runAfter(0, internal.actions.reviewPaper, { paperId });
+    await ctx.runMutation(internal.papersQueue.enqueuePaper, { paperId });
     return paperId;
   },
 });

@@ -5,7 +5,7 @@ A satirical academic journal where the papers are too glitchy to be real, but th
 ## Core Workflow (yup, it actually works)
 
 1. Submit a paper via `/submit`. Titles, authors, slop content, tags, and a morally binding pinky swear are required.
-2. Convex stores the submission, immediately triggers `reviewPaper` (an internal `action`), and marks the record as `under_review`.
+2. Convex stores the submission, marks it `pending`, and enqueues the paper ID into `papersQueue`. The council convenes every ten minutes via a cron tick that pops the oldest queued submission and runs `reviewPaper` on it.
 3. `reviewPaper` calls **all five approved OpenRouter models** with a JSON-only prompt, logs each model’s decision + reasoning, keeps track of total cost, and auto-accepts if 60% or more vote `publish_now`. Anything else is rejection; “publish_after_edits” is treated as a heartfelt rejection for the MVP.
 4. Accepted papers show up on `/papers` and `/papers/:id`, where full slop + reviewer notes + total cost are displayed alongside the pinky-swear footer.
 

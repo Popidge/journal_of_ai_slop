@@ -15,6 +15,8 @@ const moderationSummary = v.object({
   requestId: v.optional(v.string()),
 });
 
+const queueStatus = v.union(v.literal("pending"), v.literal("processing"));
+
 export default defineSchema({
   // Papers table for The Journal of AI Slop™
   papers: defineTable({
@@ -38,4 +40,13 @@ export default defineSchema({
     moderation: v.optional(moderationSummary),
 
   }).index("by_status", ["status"]).index("by_submittedAt", ["submittedAt"]),
+
+  papersQueue: defineTable({
+    paperId: v.id("papers"),
+    queuedAt: v.number(),
+    status: queueStatus,
+    lastError: v.optional(v.string()),
+  })
+    .index("by_paperId", ["paperId"])
+    .index("by_status_and_queuedAt", ["status", "queuedAt"]),
 });
