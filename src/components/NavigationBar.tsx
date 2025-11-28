@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import logoCircle from "@/assets/media/ai_slop_logo_circle.png";
+import { useEcoMode } from "@/contexts/EcoModeContext";
 
 const links = [
   { label: "Papers", to: "/papers" },
@@ -11,6 +12,7 @@ const links = [
 
 export default function NavigationBar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { ecoMode, toggleEcoMode } = useEcoMode();
 
   return (
     <nav className="mb-6 flex flex-col gap-3 rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/85 px-4 py-3 shadow-[0_10px_25px_rgba(35,24,21,0.15)] backdrop-blur-sm md:flex-row md:items-center md:gap-6">
@@ -25,22 +27,50 @@ export default function NavigationBar() {
             <p className="text-[0.7rem] font-semibold text-[color:var(--ink)] sm:text-xs">All Sarcasm, No Rigour</p>
           </div>
         </Link>
-        <button
-          type="button"
-          onClick={() => setMenuOpen(prev => !prev)}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--coffee-light)] bg-[color:var(--paper)] text-[color:var(--ink)] shadow-[0_4px_10px_rgba(35,24,21,0.12)] transition hover:-translate-y-0.5 md:hidden"
-          aria-expanded={menuOpen}
-          aria-controls="nav-links"
-        >
-          <span className="sr-only">Toggle navigation</span>
-          <span
-            className={`block h-0.5 w-6 origin-center transform rounded-full bg-[color:var(--ink)] transition ${menuOpen ? "translate-y-1 rotate-45" : "-translate-y-1"}`}
-          />
-          <span className={`mt-1 block h-0.5 w-6 rounded-full bg-[color:var(--ink)] transition ${menuOpen ? "opacity-0" : "opacity-100"}`} />
-          <span
-            className={`block h-0.5 w-6 origin-center transform rounded-full bg-[color:var(--ink)] transition ${menuOpen ? "-translate-y-1 -rotate-45" : "translate-y-1"}`}
-          />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleEcoMode}
+            aria-pressed={ecoMode}
+            className={`flex items-center gap-2 rounded-full border px-3 py-2 text-[0.55rem] font-semibold uppercase tracking-[0.25em] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--accent-blue)] ${
+              ecoMode
+                ? "border-[color:var(--coffee)] bg-[color:var(--coffee)]/90 text-[color:var(--paper)]"
+                : "border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 text-[color:var(--ink)]"
+            }`}
+          >
+            <span className="sr-only">Toggle Eco Mode</span>
+            <span
+              className={`relative h-7 w-14 rounded-full border transition ${
+                ecoMode
+                  ? "border-[color:var(--coffee)] bg-[color:var(--coffee-light)]/60"
+                  : "border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90"
+              }`}
+            >
+              <span
+                className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-[color:var(--paper)] shadow transition ${ecoMode ? "translate-x-6" : "translate-x-0"}`}
+              />
+            </span>
+            <span className={`${ecoMode ? "text-[color:var(--paper)]" : "text-[color:var(--ink)]"}`}>
+              Eco mode {ecoMode ? "On" : "Off"}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMenuOpen(prev => !prev)}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--coffee-light)] bg-[color:var(--paper)] text-[color:var(--ink)] shadow-[0_4px_10px_rgba(35,24,21,0.12)] transition hover:-translate-y-0.5 md:hidden"
+            aria-expanded={menuOpen}
+            aria-controls="nav-links"
+          >
+            <span className="sr-only">Toggle navigation</span>
+            <span
+              className={`block h-0.5 w-6 origin-center transform rounded-full bg-[color:var(--ink)] transition ${menuOpen ? "translate-y-1 rotate-45" : "-translate-y-1"}`}
+            />
+            <span className={`mt-1 block h-0.5 w-6 rounded-full bg-[color:var(--ink)] transition ${menuOpen ? "opacity-0" : "opacity-100"}`} />
+            <span
+              className={`block h-0.5 w-6 origin-center transform rounded-full bg-[color:var(--ink)] transition ${menuOpen ? "-translate-y-1 -rotate-45" : "translate-y-1"}`}
+            />
+          </button>
+        </div>
       </div>
 
       <div

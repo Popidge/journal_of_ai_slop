@@ -76,6 +76,20 @@ body::after {
   z-index: -1;
 }
 
+body.eco-mode-active {
+  filter: saturate(1.05) contrast(1.02);
+}
+
+.eco-mode-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at top, rgba(43, 121, 69), rgba(34, 90, 47));
+  mix-blend-mode: hue;
+  opacity: 0.35;
+  z-index: 20;
+}
+
 ::selection {
   background-color: rgba(179, 65, 47, 0.6);
   color: #fff;

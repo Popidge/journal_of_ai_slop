@@ -121,6 +121,7 @@ export const updatePaperStatus = internalMutation({
     status: statusValidator,
     reviewVotes: v.optional(v.array(reviewVoteValidator)),
     totalReviewCost: v.optional(v.number()),
+    totalTokens: v.optional(v.number()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -130,6 +131,9 @@ export const updatePaperStatus = internalMutation({
     }
     if (args.totalReviewCost !== undefined) {
       patch.totalReviewCost = args.totalReviewCost;
+    }
+    if (args.totalTokens !== undefined) {
+      patch.totalTokens = args.totalTokens;
     }
 
     await ctx.db.patch(args.paperId, patch);
@@ -152,6 +156,7 @@ export const redactPaperContent = internalMutation({
       status: "rejected",
       reviewVotes: [],
       totalReviewCost: 0,
+      totalTokens: 0,
       moderation: args.moderation,
     });
     return null;

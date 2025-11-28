@@ -37,6 +37,7 @@ export default defineSchema({
       totalTokens: v.optional(v.number()),
     }))),
     totalReviewCost: v.optional(v.number()),
+    totalTokens: v.optional(v.number()),
     moderation: v.optional(moderationSummary),
 
   }).index("by_status", ["status"]).index("by_submittedAt", ["submittedAt"]),
@@ -49,4 +50,9 @@ export default defineSchema({
   })
     .index("by_paperId", ["paperId"])
     .index("by_status_and_queuedAt", ["status", "queuedAt"]),
+  environmentalImpactValues: defineTable({
+    label: v.string(),
+    energyPerTokenWh: v.number(),
+    co2PerWh: v.number(),
+  }).index("by_label", ["label"]),
 });

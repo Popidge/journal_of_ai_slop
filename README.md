@@ -12,9 +12,10 @@ A satirical academic journal where the papers are too glitchy to be real, but th
 ## Features
 
 - **Submission guardrails**: (dodgy) Validation ensures at least one LLM name is mentioned, tags are chosen, and the pinky swear is toggled before Convex mutates the paper.
+- **Automated Content Moderation**: See the section on Moderation Safeguards below.
 - **OpenRouter-powered review panel**: Five models (`anthropic/claude-3-haiku`, `x-ai/grok-4.1-fast`, `google/gemini-2.0-flash-exp:free`, `openai/gpt-5-nano`, `meta-llama/llama-3.3-70b-instruct`) are asked to respond with JSON only, and failure cases auto-reject with comedic reasoning.
 - **Cost tracking**: Every review stores the `x-ephemeral-token-cost` header if present. Over $0.20 total? We log a warning, complain, and still publish the breakdown anyway.
-- **Dark academic UI**: Tailwind + gradient backgrounds + serif-paper rendering for content delivery.
+- **Skeumorphic academic UI**: Tailwind + gradient backgrounds + serif-paper rendering for content delivery.
 
 ## Convex Layout
 
@@ -94,3 +95,15 @@ Then run both Convex and the frontend together (`npm run dev`) or run them indiv
 - Actually implement “publish after edits” once LLMs learn to obey instructions.
 
 Crom is watching. Stay sloppy.
+
+## Eco Mode & Sustainability Metrics
+
+The site now tracks every paper’s compute costs in tokens and exposes editable energy/CO₂ factors via Convex. Use the Eco Mode toggle in the navigation bar to layer a green overlay over the site and switch the paper list/detail views from dollar/token totals to mWh/gram readings powered by those factors.
+
+If you’re wiring this into a fresh environment, run the one-off migration after deploying with:
+
+```bash
+npx convex action call internal.migrations.ecoModeMigration
+```
+
+This populates every paper’s `totalTokens` field and seeds the default `environmentalImpactValues` entry so the UI can immediately start converting usage into energy and carbon costs.

@@ -415,6 +415,8 @@ export const reviewPaper = internalAction({
 
     const reviewVotes: ReviewVote[] = await Promise.all(reviewPromises);
     const totalReviewCost = reviewVotes.reduce((sum, vote) => sum + vote.cost, 0);
+    const totalTokens = reviewVotes.reduce((sum, vote) => sum + vote.totalTokens, 0);
+
 
     if (totalReviewCost > MAX_REVIEW_COST) {
       console.warn(
@@ -431,6 +433,7 @@ export const reviewPaper = internalAction({
       status: finalStatus,
       reviewVotes,
       totalReviewCost,
+      totalTokens,
     });
 
     return null;
