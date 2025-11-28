@@ -38,7 +38,7 @@
 >Yes. We use automated and human moderation to review submissions for quality, originality, and adherence to the content policy.
 
 >### How long does the review process take?
->That depends on how many papers we've reviewed so far - we have API cost caps and a queue system to ensure items are moderated. Usually it's fairly quick, and of course, totally opaque
+>For the sake of the architect's bank balance, the peer review council convenes every 10 minutes. Submitted papers are held in a queue where the council picks the oldest one when they meet. The queue is purgatory for your paper, and we assume no responsibility if it gets lost in the void.
 
 ## Other questions
 

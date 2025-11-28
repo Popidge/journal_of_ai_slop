@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useParams, Link } from "react-router-dom";
@@ -32,6 +33,13 @@ const isParseError = (reasoning: string) => reasoning.toLowerCase().includes("pa
 export default function PaperDetail() {
   const { id } = useParams<{ id: string }>();
   const paper = useQuery(api.papers.getPaper, { id: id as Id<"papers"> });
+  const detailRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (paper) {
+      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [paper]);
 
   if (paper === undefined) {
     return <div className="min-h-screen flex items-center justify-center text-[color:var(--ink-soft)]">Loading paper…</div>;
@@ -44,7 +52,7 @@ export default function PaperDetail() {
   const score = getSlopScore();
 
   return (
-    <div className="min-h-screen px-3 py-10 text-[color:var(--ink)] sm:px-4">
+    <div ref={detailRef} className="min-h-screen px-3 py-10 text-[color:var(--ink)] sm:px-4">
       <div className="mx-auto w-full max-w-[1040px] space-y-8">
         <Link
           to="/papers"
