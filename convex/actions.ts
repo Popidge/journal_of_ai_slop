@@ -6,11 +6,11 @@ import ContentSafetyClient, { AnalyzeTextParameters, TextCategoriesAnalysisOutpu
 import { AzureKeyCredential } from "@azure/core-auth";
 
 const REVIEW_MODELS = [
-  "anthropic/claude-3-haiku",
+  "anthropic/claude-haiku-4.5",
   "x-ai/grok-4.1-fast:free",
   "google/gemini-2.5-flash-lite",
   "openai/gpt-5-nano",
-  "meta-llama/llama-3.3-70b-instruct",
+  "moonshotai/kimi-k2-thinking",
 ] as const;
 
 const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
@@ -112,7 +112,7 @@ ${truncated}
 Your task: Decide if this paper should be published in our slop journal.
 
 Respond with ONE of these decisions:
-- "publish_now" - Peak slop, ready for the world
+- "publish_now" - Peak slop, ready for the world, or might actually contain something with academic merit, somehow.
 - "publish_after_edits" - Good slop but needs polish (treated as reject for this stage)
 - "reject" - Not slop enough, too slop, or just wrong
 
