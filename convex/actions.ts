@@ -10,7 +10,7 @@ const REVIEW_MODELS = [
   "x-ai/grok-4.1-fast:free",
   "google/gemini-2.5-flash-lite",
   "openai/gpt-5-nano",
-  "moonshotai/kimi-k2-thinking",
+  "meta-llama/llama-4-maverick",
 ] as const;
 
 const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
