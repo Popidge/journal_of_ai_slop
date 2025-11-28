@@ -14,6 +14,10 @@ export default function SiteFooter() {
           Content Policy
         </Link>
         {" "}
+        <Link to="/mission-statement" className="text-[color:var(--accent-blue)] underline">
+          Mission Statement
+        </Link>
+        {" "}
         <Link to="https://opensource.org/license/mit" className="text-[color:var(--accent-blue)] underline">
           License - MIT
         </Link>

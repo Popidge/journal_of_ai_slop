@@ -7,6 +7,7 @@ import NavigationBar from "./components/NavigationBar";
 import AboutPage from "./components/AboutPage";
 import FaqPage from "./components/FaqPage";
 import ContentPolicyPage from "./components/ContentPolicyPage";
+import MissionStatementPage from "./components/MissionStatementPage";
 import SiteFooter from "./components/SiteFooter";
 
 export default function App() {
@@ -24,6 +25,7 @@ export default function App() {
               <Route path="/about" element={<AboutPage />} />
               <Route path="/faq" element={<FaqPage />} />
               <Route path="/content-policy" element={<ContentPolicyPage />} />
+              <Route path="/mission-statement" element={<MissionStatementPage />} />
             </Routes>
           </div>
           <SiteFooter />
