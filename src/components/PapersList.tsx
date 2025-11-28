@@ -74,7 +74,7 @@ export default function PapersList() {
                   <div className="mt-5 flex flex-col gap-2 text-[0.7rem] text-[color:var(--ink-soft)] sm:flex-row sm:items-center sm:justify-between">
                     <p>Submitted on {new Date(paper.submittedAt).toLocaleDateString()}</p>
                     <p>
-                      Review cost: {paper.totalReviewCost != null ? `${paper.totalReviewCost.toFixed(2)}` : "Calculating..."}
+                      Review cost: {paper.totalReviewCost != null ? `${paper.totalReviewCost.toFixed(4)}` : "Calculating..."}
                     </p>
                   </div>
                 </Link>
