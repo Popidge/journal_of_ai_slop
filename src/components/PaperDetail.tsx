@@ -4,6 +4,7 @@ import { api } from "../../convex/_generated/api";
 import { useParams, Link } from "react-router-dom";
 import { Id } from "../../convex/_generated/dataModel";
 import MarkdownRenderer from "./MarkdownRenderer";
+import EditorsCommentBox from "./EditorsCommentBox";
 import { useEcoMode } from "@/hooks/useEcoMode";
 import { useEnvironmentalImpact } from "@/hooks/useEnvironmentalImpact";
 import { formatCo2, formatEnergy, formatTokens, formatCurrency, tokensToCo2g, tokensToEnergyMWh } from "@/utils/ecoMetrics";
@@ -38,6 +39,7 @@ export default function PaperDetail() {
   const paper = useQuery(api.papers.getPaper, { id: id as Id<"papers"> });
   const slopRecord = useQuery(api.slopId.getByPaperId, { paperId: id as Id<"papers"> });
   const slopHref = slopRecord ? (slopRecord.fromLocalJournal ? `/${slopRecord.link}` : slopRecord.link) : null;
+  const editorComment = useQuery(api.editorsComments.getByPaperId, { paperId: id as Id<"papers"> });
   const detailRef = useRef<HTMLDivElement>(null);
 
   const { ecoMode } = useEcoMode();
@@ -132,6 +134,13 @@ export default function PaperDetail() {
             </p>
           </div>
         </article>
+
+        {editorComment && (
+          <EditorsCommentBox
+            comment={editorComment.editorComment}
+            createdAt={editorComment._creationTime}
+          />
+        )}
 
         <section className="space-y-6 rounded-[26px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-4 shadow-[0_15px_35px_rgba(35,24,21,0.12)] sm:rounded-[32px] sm:p-5">
           <div className="flex flex-col gap-2 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">

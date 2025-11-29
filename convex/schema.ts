@@ -42,6 +42,11 @@ export default defineSchema({
 
   }).index("by_status", ["status"]).index("by_submittedAt", ["submittedAt"]),
 
+  editorsComments: defineTable({
+    paperId: v.id("papers"),
+    editorComment: v.string(),
+  }).index("by_paperId", ["paperId"]),
+
   papersQueue: defineTable({
     paperId: v.id("papers"),
     queuedAt: v.number(),
