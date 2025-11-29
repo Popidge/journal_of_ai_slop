@@ -1,4 +1,5 @@
 import { query, internalMutation } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 
 const identifierValidator = v.object({
@@ -12,7 +13,7 @@ const identifierValidator = v.object({
 
 const slopIdPattern = /^slop:\d{4}:\d{10}$/;
 
-const fetchIdentifierByPaperId = async (ctx: any, paperId: string) => {
+const fetchIdentifierByPaperId = async (ctx: any, paperId: Id<"papers">) => {
   return await ctx.db
     .query("slopIdentifiers")
     .withIndex("by_paperId", (q: any) => q.eq("paperId", paperId))
@@ -65,7 +66,7 @@ export const listAcceptedPaperIdsMissingSlop = query({
   args: {},
   returns: v.array(v.id("papers")),
   handler: async (ctx) => {
-    const missing: string[] = [];
+    const missing: Array<Id<"papers">> = [];
     const accepted = ctx.db
       .query("papers")
       .withIndex("by_status", (q: any) => q.eq("status", "accepted"));
