@@ -8,6 +8,7 @@ const links = [
   { label: "Submit", to: "/submit" },
   { label: "About", to: "/about" },
   { label: "FAQ", to: "/faq" },
+  { label: "Licensing", to: "/licensing#content" },
 ];
 
 export default function NavigationBar() {

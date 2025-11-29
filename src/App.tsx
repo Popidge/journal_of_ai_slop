@@ -8,6 +8,7 @@ import AboutPage from "./components/AboutPage";
 import FaqPage from "./components/FaqPage";
 import ContentPolicyPage from "./components/ContentPolicyPage";
 import MissionStatementPage from "./components/MissionStatementPage";
+import LicensingPage from "./components/LicensingPage";
 import SiteFooter from "./components/SiteFooter";
 import { EcoModeProvider } from "./contexts/EcoModeContext";
 import { useEcoMode } from "./hooks/useEcoMode";
@@ -38,6 +39,7 @@ export default function App() {
                 <Route path="/faq" element={<FaqPage />} />
                 <Route path="/content-policy" element={<ContentPolicyPage />} />
                 <Route path="/mission-statement" element={<MissionStatementPage />} />
+                <Route path="/licensing" element={<LicensingPage />} />
               </Routes>
             </div>
             <SiteFooter />

@@ -18,8 +18,12 @@ export default function SiteFooter() {
           Mission Statement
         </Link>
         {" "}
-        <Link to="https://opensource.org/license/mit" className="text-[color:var(--accent-blue)] underline">
-          License - MIT
+        <Link to="/licensing#content" className="text-[color:var(--accent-blue)] underline">
+          Licensing
+        </Link>
+        {" "}
+        <Link to="https://github.com/popidge/journal-of-ai-slop" className="text-[color:var(--accent-blue)] underline">
+          Source Code
         </Link>
       </p>
     </footer>

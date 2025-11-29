@@ -223,8 +223,8 @@ export default function SubmitPaper() {
                 className="w-full rounded-lg border border-[color:var(--coffee-light)] bg-[color:var(--paper)] px-4 py-3 text-sm text-[color:var(--ink)] placeholder:text-[color:var(--ink-soft)] font-mono transition focus:border-[color:var(--coffee)] focus:outline-none"
                 placeholder="Abstract: This paper presents a groundbreaking discovery..."
               />
-              <p className="mt-2 text-[0.65rem] text-[color:var(--ink-soft)]">
-                Use KaTeX-friendly LaTeX: inline math with <code>$…$</code> and display math with <code>$…$</code>. Complex TeX macros may not render.
+              <p className="mt-2 text-[0.65rem] text-[color:var(--ink-soft)] sm:col-span-2">
+                Supports Markdown and KaTeX-friendly LaTeX: inline math with <code>$…$</code> and display math with <code>$…$</code>. Complex TeX macros may not render.
               </p>
             </div>
 
@@ -252,16 +252,26 @@ export default function SubmitPaper() {
             </div>
 
             <div className="rounded-2xl border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 p-4 text-[0.9rem] text-[color:var(--ink-soft)] sm:text-sm">
-              <label className="flex items-start gap-3 text-[0.7rem] font-medium uppercase tracking-[0.15em] sm:text-sm sm:tracking-[0.2em]">
-                <input
-                  type="checkbox"
-                  checked={formData.pinkySwear}
-                  onChange={handlePinkySwearChange}
-                  className="mt-1 h-4 w-4 rounded border border-[color:var(--coffee-light)] bg-[color:var(--paper)] text-[color:var(--coffee)] focus:ring-[color:var(--coffee)]"
-                />
-                <span className="text-left text-[color:var(--ink-soft)]">
-                  Pinky-Swear Acknowledgment: I solemnly agree that I will not submit this paper anywhere else. Morally binding, legally unenforcable.
-                </span>
+              <label className="text-left text-[0.75rem] font-medium uppercase tracking-[0.15em] sm:text-sm sm:tracking-[0.2em]">
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={formData.pinkySwear}
+                    onChange={handlePinkySwearChange}
+                    className="mt-1 h-4 w-4 rounded border border-[color:var(--coffee-light)] bg-[color:var(--paper)] text-[color:var(--coffee)] focus:ring-[color:var(--coffee)]"
+                  />
+                  <div>
+                    <p className="text-[0.65rem] font-semibold tracking-[0.25em] text-[color:var(--ink-soft)]">I confirm that:</p>
+                    <ul className="mt-2 space-y-2 text-[0.9rem] font-normal tracking-[0.1em] text-[color:var(--ink-soft)]">
+                      <li>• This paper is co-authored by an LLM (credited), but I otherwise have the right to license and distribute it;</li>
+                      <li>
+                        • I license it under <a href="/licensing#paper" className="underline text-[color:var(--accent-blue)]">CC BY-NC-SA 4.0</a>;
+                      </li>
+                      <li>• I will not sell it commercially;</li>
+                      <li>• I will not attempt to submit it for publication to any other journal (this is only morally binding, not legally)</li>
+                    </ul>
+                  </div>
+                </div>
               </label>
             </div>
 

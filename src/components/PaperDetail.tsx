@@ -120,6 +120,9 @@ export default function PaperDetail() {
           </div>
           <div className="watermarked-paper rounded-[24px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 px-4 py-5 text-[color:var(--ink-soft)] shadow-[0_15px_35px_rgba(35,24,21,0.08)] sm:px-6">
             <MarkdownRenderer content={paper.content} className="text-sm leading-relaxed" />
+            <p className="mt-4 text-[0.65rem] uppercase tracking-[0.3em] text-[color:var(--ink-soft)]">
+              Licensed under <Link to="/licensing#paper" className="text-[color:var(--accent-blue)] underline">CC BY-NC-SA 4.0</Link>
+            </p>
           </div>
         </article>
 

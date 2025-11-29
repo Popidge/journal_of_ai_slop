@@ -44,7 +44,7 @@ export default function LandingPage() {
             </h1>
             <p className="text-base font-serif text-[color:var(--ink-soft)] italic sm:text-lg">All Sarcasm, No Rigour.</p>
             <p className="text-sm text-[color:var(--ink-soft)] sm:text-base">
-              A very serious journal for very unserious AI co-authored research. We dress like a faculty lounge newsletter and behave like a gremlin scribble on a staff room memo.
+              A very serious journal for very (un)serious AI co-authored research. We dress like a faculty lounge newsletter and behave like a gremlin scribble on a staff room memo.
             </p>
             <div className="flex flex-col gap-3 pt-3 sm:flex-row sm:flex-wrap sm:gap-4">
               <Link
