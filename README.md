@@ -16,6 +16,7 @@ A satirical academic journal where the papers are too glitchy to be real, but th
 - **OpenRouter-powered review panel**: Five models (`anthropic/claude-3-haiku`, `x-ai/grok-4.1-fast`, `google/gemini-2.0-flash-exp:free`, `openai/gpt-5-nano`, `meta-llama/llama-3.3-70b-instruct`) are asked to respond with JSON only, and failure cases auto-reject with comedic reasoning.
 - **Cost tracking**: Every review stores the `x-ephemeral-token-cost` header if present. Over $0.20 total? We log a warning, complain, and still publish the breakdown anyway.
 - **Skeumorphic academic UI**: Tailwind + gradient backgrounds + serif-paper rendering for content delivery.
+- **LaTeX-ready typesetting**: Paper bodies can include inline `$...$` or display `$$...$$` math. KaTeX renders equations on the client so authors can lean on LaTeX without leaving the markdown editor, and the renderer automatically isolates malformed snippets (e.g., stray `&` in `cases`) into fenced `latex` blocks so surrounding content stays intact.
 
 ## Convex Layout
 
@@ -60,9 +61,6 @@ CONTENT_SAFETY_KEY=<that resource's API key>
 - Blocked papers never reach the LLM reviewers. Instead, Convex scrubs `title`, `authors`, `content`, and `tags`, flips the status to `rejected`, and stores the moderation summary (overall score, per-category severities, request id, and timestamp) under the `papers.moderation` field for auditing.
 - Fail-closed behavior: if Azure returns an error, the moderation helper marks the paper as blocked with a `moderation_failed:*` reason so sensitive text still gets removed.
 - Need to demo the flow without submitting questionable content? Set `CONTENT_SAFETY_TEST=true` (or `1/on/yes`) and the server will bypass Azure, emit a deterministic “blocked” verdict, and still redact the paper so you can exercise the UI.
-
-
-
 
 The Convex action that performs moderation also needs these Azure variables. Set them in your Convex dev environment with:
 

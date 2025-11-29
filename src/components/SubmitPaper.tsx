@@ -223,6 +223,9 @@ export default function SubmitPaper() {
                 className="w-full rounded-lg border border-[color:var(--coffee-light)] bg-[color:var(--paper)] px-4 py-3 text-sm text-[color:var(--ink)] placeholder:text-[color:var(--ink-soft)] font-mono transition focus:border-[color:var(--coffee)] focus:outline-none"
                 placeholder="Abstract: This paper presents a groundbreaking discovery..."
               />
+              <p className="mt-2 text-[0.65rem] text-[color:var(--ink-soft)]">
+                Use KaTeX-friendly LaTeX: inline math with <code>$…$</code> and display math with <code>$…$</code>. Complex TeX macros may not render.
+              </p>
             </div>
 
             <div className="space-y-3">

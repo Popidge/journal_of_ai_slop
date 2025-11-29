@@ -9,7 +9,8 @@ import FaqPage from "./components/FaqPage";
 import ContentPolicyPage from "./components/ContentPolicyPage";
 import MissionStatementPage from "./components/MissionStatementPage";
 import SiteFooter from "./components/SiteFooter";
-import { EcoModeProvider, useEcoMode } from "./contexts/EcoModeContext";
+import { EcoModeProvider } from "./contexts/EcoModeContext";
+import { useEcoMode } from "./hooks/useEcoMode";
 
 function EcoModeOverlay() {
   const { ecoMode } = useEcoMode();

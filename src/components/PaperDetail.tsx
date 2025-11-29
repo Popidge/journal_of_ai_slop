@@ -4,7 +4,7 @@ import { api } from "../../convex/_generated/api";
 import { useParams, Link } from "react-router-dom";
 import { Id } from "../../convex/_generated/dataModel";
 import MarkdownRenderer from "./MarkdownRenderer";
-import { useEcoMode } from "@/contexts/EcoModeContext";
+import { useEcoMode } from "@/hooks/useEcoMode";
 import { useEnvironmentalImpact } from "@/hooks/useEnvironmentalImpact";
 import { formatCo2, formatEnergy, formatTokens, formatCurrency, tokensToCo2g, tokensToEnergyMWh } from "@/utils/ecoMetrics";
 

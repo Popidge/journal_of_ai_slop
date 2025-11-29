@@ -1,11 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-
-type EcoModeContextValue = {
-  ecoMode: boolean;
-  toggleEcoMode: () => void;
-};
-
-const EcoModeContext = createContext<EcoModeContextValue | null>(null);
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { EcoModeContext } from "@/contexts/ecoModeContext";
 
 export function EcoModeProvider({ children }: { children: ReactNode }) {
   const [ecoMode, setEcoMode] = useState(false);
@@ -21,12 +15,4 @@ export function EcoModeProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(() => ({ ecoMode, toggleEcoMode }), [ecoMode, toggleEcoMode]);
   return <EcoModeContext.Provider value={value}>{children}</EcoModeContext.Provider>;
-}
-
-export function useEcoMode() {
-  const context = useContext(EcoModeContext);
-  if (!context) {
-    throw new Error("useEcoMode must be used within an EcoModeProvider");
-  }
-  return context;
 }

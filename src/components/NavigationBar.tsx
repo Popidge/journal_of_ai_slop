@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import logoCircle from "@/assets/media/ai_slop_logo_circle.png";
-import { useEcoMode } from "@/contexts/EcoModeContext";
+import { useEcoMode } from "@/hooks/useEcoMode";
 
 const links = [
   { label: "Papers", to: "/papers" },

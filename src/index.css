@@ -1,5 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Lora:wght@400;600;700&family=Crimson+Pro:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap");
 @import "tailwindcss";
+@import "katex/dist/katex.min.css";
 
 :root {
   font-family: "Courier Prime", "Lora", "Inter", system-ui, -apple-system, serif;
@@ -310,6 +311,35 @@ body.eco-mode-active {
   background: rgba(35, 24, 21, 0.08);
   padding: 0.1rem 0.35rem;
   border-radius: 0.3rem;
+}
+
+.markdown-body .katex {
+  color: var(--ink);
+  font-size: 1.05rem;
+}
+
+.markdown-body .katex-display {
+  margin: 1.2rem 0;
+  padding: 0.25rem 0;
+  text-align: center;
+}
+
+.markdown-body .katex-display .katex {
+  display: inline-flex;
+  justify-content: center;
+}
+
+.markdown-body .katex-error {
+  display: inline-flex;
+  align-items: center;
+  color: var(--accent-red);
+  border: 1px dashed rgba(179, 65, 47, 0.7);
+  background: rgba(196, 154, 108, 0.08);
+  padding: 0 0.35rem;
+  border-radius: 0.35rem;
+  font-style: normal;
+  font-size: 0.95rem;
+  line-height: 1.4;
 }
 
 .markdown-body pre {

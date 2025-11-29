@@ -1,7 +1,7 @@
 import { useQuery } from "convex/react";
 import { Link } from "react-router-dom";
 import { api } from "../../convex/_generated/api";
-import { useEcoMode } from "@/contexts/EcoModeContext";
+import { useEcoMode } from "@/hooks/useEcoMode";
 import { useEnvironmentalImpact } from "@/hooks/useEnvironmentalImpact";
 import { formatTokens, formatCurrency, formatEnergy, formatCo2, tokensToEnergyMWh, tokensToCo2g } from "@/utils/ecoMetrics";
 
