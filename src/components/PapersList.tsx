@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery } from "convex/react";
 import { Link } from "react-router-dom";
 import { api } from "../../convex/_generated/api";
@@ -6,6 +7,13 @@ import { useEnvironmentalImpact } from "@/hooks/useEnvironmentalImpact";
 import { formatTokens, formatCurrency, formatEnergy, formatCo2, tokensToEnergyMWh, tokensToCo2g } from "@/utils/ecoMetrics";
 
 const getSlopScore = () => `Slop Score: ${(Math.random() * 0.8 + 0.1).toFixed(2)}`;
+
+type SlopRecord = {
+  slopId: string;
+  paperId?: string;
+  link: string;
+  fromLocalJournal: boolean;
+};
 
 const mapStatus = (status: string) => {
   if (status === "accepted") return "PUBLISH NOW";
@@ -17,6 +25,17 @@ export default function PapersList() {
   const papers = useQuery(api.papers.listPapers, { status: "accepted", limit: 50 });
   const { ecoMode } = useEcoMode();
   const { energyPerTokenWh, co2PerWh, ready } = useEnvironmentalImpact();
+  const paperIds = useMemo(() => (papers ?? []).map((paper) => paper._id), [papers]);
+  const slopRecords = useQuery(api.slopId.getByPaperIds, { paperIds });
+  const slopByPaperId = useMemo(() => {
+    const map = new Map<string, SlopRecord>();
+    (slopRecords ?? []).forEach((identifier) => {
+      if (identifier.paperId) {
+        map.set(identifier.paperId, identifier);
+      }
+    });
+    return map;
+  }, [slopRecords]);
 
   return (
     <div className="min-h-screen px-3 py-10 text-[color:var(--ink)] sm:px-4">
@@ -58,6 +77,8 @@ export default function PapersList() {
                 paper.totalTokens != null || (paper.reviewVotes && paper.reviewVotes.length > 0);
               const energy = tokensToEnergyMWh(tokens, energyPerTokenWh);
               const co2 = tokensToCo2g(tokens, energyPerTokenWh, co2PerWh);
+              const slopRecord = slopByPaperId.get(paper._id);
+              const slopHref = slopRecord ? (slopRecord.fromLocalJournal ? `/${slopRecord.link}` : slopRecord.link) : null;
               return (
                 <Link
                   key={paper._id}
@@ -100,6 +121,14 @@ export default function PapersList() {
                       </>
                     )}
                   </div>
+                  {slopRecord && slopHref && (
+                    <p className="mt-2 text-[0.65rem] text-[color:var(--coffee)]">
+                      Slop ID:&nbsp;
+                      <a href={slopHref} className="font-mono underline decoration-[color:var(--coffee)] text-[color:var(--accent-blue)]">
+                        {slopRecord.slopId}
+                      </a>
+                    </p>
+                  )}
                 </Link>
               );
             })

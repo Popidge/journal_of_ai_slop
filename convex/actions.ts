@@ -2,6 +2,8 @@
 import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
+import { createHash } from "node:crypto";
+import { Id } from "./_generated/dataModel";
 import ContentSafetyClient, { AnalyzeTextParameters, TextCategoriesAnalysisOutput, isUnexpected } from "@azure-rest/ai-content-safety";
 import { AzureKeyCredential } from "@azure/core-auth";
 
@@ -20,6 +22,22 @@ const CATEGORY_SEVERITY_THRESHOLD = 4;
 const OVERALL_SEVERITY_THRESHOLD = 6;
 const MODERATION_CATEGORIES = ["Hate", "SelfHarm", "Sexual", "Violence"] as const;
 
+const SLOP_ID_DIGITS = 10;
+const HASH_BYTES = 5;
+
+const deriveSlopId = (paperId: Id<"papers">): string => {
+  const hash = createHash("sha256").update(paperId).digest();
+  let value = 0n;
+  for (let i = 0; i < HASH_BYTES; i++) {
+    value = (value << 8n) | BigInt(hash[i]);
+  }
+  const decimal = value.toString().padStart(SLOP_ID_DIGITS, "0");
+  const digits = decimal.length > SLOP_ID_DIGITS ? decimal.slice(0, SLOP_ID_DIGITS) : decimal;
+  const year = new Date().getUTCFullYear();
+  return `slop:${year}:${digits}`;
+};
+
+const localPaperLink = (paperId: Id<"papers">) => `papers/${paperId}`;
 
 
 type ReviewDecision = "publish_now" | "publish_after_edits" | "reject";
@@ -435,6 +453,37 @@ export const reviewPaper = internalAction({
       totalReviewCost,
       totalTokens,
     });
+
+    if (finalStatus === "accepted") {
+      const slopId = deriveSlopId(paper._id);
+      await ctx.runMutation(internal.slopId.upsertSlopId, {
+        paperId: args.paperId,
+        slopId,
+        link: localPaperLink(args.paperId),
+        fromLocalJournal: true,
+      });
+    }
+
+    return null;
+  },
+});
+
+export const regenerateSlopIds = internalAction({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    const listMissing = (internal.slopId as any).listAcceptedPaperIdsMissingSlop;
+    const paperIds = await ctx.runQuery(listMissing, {});
+
+    for (const paperId of paperIds) {
+      const slopId = deriveSlopId(paperId);
+      await ctx.runMutation(internal.slopId.upsertSlopId, {
+        paperId,
+        slopId,
+        link: localPaperLink(paperId),
+        fromLocalJournal: true,
+      });
+    }
 
     return null;
   },

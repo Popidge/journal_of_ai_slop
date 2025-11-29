@@ -14,6 +14,7 @@ import type * as environmentalImpact from "../environmentalImpact.js";
 import type * as migrations_eco_mode_migration from "../migrations/eco_mode_migration.js";
 import type * as papers from "../papers.js";
 import type * as papersQueue from "../papersQueue.js";
+import type * as slopId from "../slopId.js";
 
 import type {
   ApiFromModules,
@@ -28,6 +29,7 @@ declare const fullApi: ApiFromModules<{
   "migrations/eco_mode_migration": typeof migrations_eco_mode_migration;
   papers: typeof papers;
   papersQueue: typeof papersQueue;
+  slopId: typeof slopId;
 }>;
 
 /**

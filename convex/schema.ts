@@ -55,4 +55,13 @@ export default defineSchema({
     energyPerTokenWh: v.number(),
     co2PerWh: v.number(),
   }).index("by_label", ["label"]),
+
+  slopIdentifiers: defineTable({
+    slopId: v.string(),
+    paperId: v.optional(v.id("papers")),
+    link: v.string(),
+    fromLocalJournal: v.boolean(),
+  })
+    .index("by_slopId", ["slopId"])
+    .index("by_paperId", ["paperId"]),
 });

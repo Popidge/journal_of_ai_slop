@@ -36,6 +36,8 @@ const isParseError = (reasoning: string) => reasoning.toLowerCase().includes("pa
 export default function PaperDetail() {
   const { id } = useParams<{ id: string }>();
   const paper = useQuery(api.papers.getPaper, { id: id as Id<"papers"> });
+  const slopRecord = useQuery(api.slopId.getByPaperId, { paperId: id as Id<"papers"> });
+  const slopHref = slopRecord ? (slopRecord.fromLocalJournal ? `/${slopRecord.link}` : slopRecord.link) : null;
   const detailRef = useRef<HTMLDivElement>(null);
 
   const { ecoMode } = useEcoMode();
@@ -97,6 +99,11 @@ export default function PaperDetail() {
               </span>
             ))}
           </div>
+          {slopRecord && slopHref && (
+            <p className="text-[0.7rem] text-[color:var(--coffee)]">
+              Slop ID: <a href={slopHref} className="font-mono underline decoration-[color:var(--coffee)] text-[color:var(--accent-blue)]">{slopRecord.slopId}</a>
+            </p>
+          )}
           <div className="flex flex-col gap-2 text-[0.7rem] text-[color:var(--ink-soft)] sm:flex-row sm:flex-wrap sm:gap-6">
             <p>Submitted on {new Date(paper.submittedAt).toLocaleDateString()}</p>
             <div className="flex flex-col gap-1">
