@@ -33,7 +33,7 @@ export default function NavigationBar() {
             type="button"
             onClick={toggleEcoMode}
             aria-pressed={ecoMode}
-            className={`flex items-center gap-2 rounded-full border px-3 py-2 text-[0.55rem] font-semibold uppercase tracking-[0.25em] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--accent-blue)] ${
+            className={`flex items-center gap-2 rounded-full border px-2 py-1.5 text-[0.55rem] font-semibold uppercase tracking-[0.25em] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--accent-blue)] ${
               ecoMode
                 ? "border-[color:var(--coffee)] bg-[color:var(--coffee)]/90 text-[color:var(--paper)]"
                 : "border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 text-[color:var(--ink)]"
@@ -41,14 +41,14 @@ export default function NavigationBar() {
           >
             <span className="sr-only">Toggle Eco Mode</span>
             <span
-              className={`relative h-7 w-14 rounded-full border transition ${
+              className={`relative h-6 w-12 rounded-full border transition ${
                 ecoMode
                   ? "border-[color:var(--coffee)] bg-[color:var(--coffee-light)]/60"
                   : "border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90"
               }`}
             >
               <span
-                className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-[color:var(--paper)] shadow transition ${ecoMode ? "translate-x-6" : "translate-x-0"}`}
+                className={`absolute left-1 top-1 h-4 w-4 rounded-full bg-[color:var(--paper)] shadow transition ${ecoMode ? "translate-x-5" : "translate-x-0"}`}
               />
             </span>
             <span className={`${ecoMode ? "text-[color:var(--paper)]" : "text-[color:var(--ink)]"}`}>

@@ -10,6 +10,8 @@ import ContentPolicyPage from "./components/ContentPolicyPage";
 import MissionStatementPage from "./components/MissionStatementPage";
 import LicensingPage from "./components/LicensingPage";
 import SiteFooter from "./components/SiteFooter";
+import EcoModeBanner from "./components/EcoModeBanner";
+import SustainabilityPage from "./components/SustainabilityPage";
 import { EcoModeProvider } from "./contexts/EcoModeContext";
 import { useEcoMode } from "./hooks/useEcoMode";
 
@@ -30,6 +32,7 @@ export default function App() {
           <div className="mx-auto w-full max-w-[1200px] px-2 py-6 sm:px-6 lg:px-8">
             <div className="bg-[color:var(--paper)] border border-[color:var(--coffee-light)] shadow-[0_8px_25px_rgba(35,24,21,0.18)] rounded-[24px] p-3 sm:rounded-[32px] sm:p-6 lg:p-8 relative z-10">
               <NavigationBar />
+              <EcoModeBanner />
               <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/submit" element={<SubmitPaper />} />
@@ -40,6 +43,7 @@ export default function App() {
                 <Route path="/content-policy" element={<ContentPolicyPage />} />
                 <Route path="/mission-statement" element={<MissionStatementPage />} />
                 <Route path="/licensing" element={<LicensingPage />} />
+                <Route path="/sustainability" element={<SustainabilityPage />} />
               </Routes>
             </div>
             <SiteFooter />

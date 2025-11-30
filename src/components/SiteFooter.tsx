@@ -22,6 +22,10 @@ export default function SiteFooter() {
           Licensing
         </Link>
         {" "}
+        <Link to="/sustainability" className="text-[color:var(--accent-blue)] underline">
+          Sustainability Policy
+        </Link>
+        {" "}
         <Link to="https://github.com/popidge/journal-of-ai-slop" className="text-[color:var(--accent-blue)] underline">
           Source Code
         </Link>
