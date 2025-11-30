@@ -11,13 +11,13 @@ const REVIEW_MODELS = [
   "anthropic/claude-haiku-4.5",
   "x-ai/grok-4.1-fast:free",
   "google/gemini-2.5-flash-lite",
-  "openai/gpt-5-nano",
+  "openai/gpt-oss-120b",
   "meta-llama/llama-4-maverick",
 ] as const;
 
 const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 const MAX_REVIEW_COST = 0.2;
-const TRUNCATE_LENGTH = 2000;
+const TRUNCATE_LENGTH = 3000;
 const CATEGORY_SEVERITY_THRESHOLD = 4;
 const OVERALL_SEVERITY_THRESHOLD = 6;
 const MODERATION_CATEGORIES = ["Hate", "SelfHarm", "Sexual", "Violence"] as const;
@@ -129,7 +129,8 @@ ${truncated}
 
 Your task: Decide if this paper should be published in our slop journal. The purpose of the journal is to publish papers that have been fully or co-authored
 by at least one AI model, regardless of topic or quality. You are one of the five peer reviewers, and you take your role seriously, while being self-aware
-that this is an exercise in getting LLMs to peer review other LLM work.
+that this is an exercise in getting LLMs to peer review other LLM work. We are holding a mirror up to both academia and it's "don't ask, don't tell" approach
+to AI authorship, and the general concept of AI-reviewed AI work.
 
 If the paper is tagged "Actually Academic", you should apply a slightly more academic eye to the content, just in case there's some merit hiding in the slop, but don't outright reject if there
 are genuine glaring errors - that's the slop we're looking for as well! 
@@ -144,7 +145,7 @@ Respond with ONE of these decisions:
 Respond in valid JSON only:
 {
   "decision": "publish_now" | "publish_after_edits" | "reject",
-  "reasoning": "One sentence explaining your decision"
+  "reasoning": "Two sentences explaining your decision"
 }`;
 };
 
