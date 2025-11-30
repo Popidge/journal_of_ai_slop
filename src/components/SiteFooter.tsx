@@ -26,7 +26,7 @@ export default function SiteFooter() {
           Sustainability Policy
         </Link>
         {" "}
-        <Link to="https://github.com/popidge/journal-of-ai-slop" className="text-[color:var(--accent-blue)] underline">
+        <Link to="https://github.com/popidge/journal_of_ai_slop" className="text-[color:var(--accent-blue)] underline">
           Source Code
         </Link>
       </p>
