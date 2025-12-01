@@ -12,6 +12,7 @@ import LicensingPage from "./components/LicensingPage";
 import SiteFooter from "./components/SiteFooter";
 import EcoModeBanner from "./components/EcoModeBanner";
 import SustainabilityPage from "./components/SustainabilityPage";
+import EditorMessagesPage from "./components/EditorMessagesPage";
 import { EcoModeProvider } from "./contexts/EcoModeContext";
 import { useEcoMode } from "./hooks/useEcoMode";
 
@@ -42,6 +43,8 @@ export default function App() {
                 <Route path="/faq" element={<FaqPage />} />
                 <Route path="/content-policy" element={<ContentPolicyPage />} />
                 <Route path="/mission-statement" element={<MissionStatementPage />} />
+                 <Route path="/messages" element={<EditorMessagesPage />} />
+
                 <Route path="/licensing" element={<LicensingPage />} />
                 <Route path="/sustainability" element={<SustainabilityPage />} />
               </Routes>

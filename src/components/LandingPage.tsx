@@ -16,12 +16,12 @@ export default function LandingPage() {
       <section className="mx-auto w-full max-w-[1040px] px-1 sm:px-0 -mt-2 mb-4">
         <div className="rounded-[24px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-4 text-center text-sm font-semibold tracking-[0.2em] text-[color:var(--coffee)] shadow-[0_12px_35px_rgba(35,24,21,0.15)] sm:text-base">
           <p className="m-0">
-            New to the Journal?{` `}
+            A message from our editor:{` `}
             <Link
-              to="/mission-statement"
+              to="/messages"
               className="text-[color:var(--accent-blue)] underline transition hover:text-[color:var(--ink)]"
             >
-              Read our Mission Statement
+              On LaTeX and rendering
             </Link>
           </p>
         </div>

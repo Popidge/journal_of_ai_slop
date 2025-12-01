@@ -9,8 +9,9 @@ It will be updated inconsistently and probably forgotten, and is basically a scr
 - [X] Implement LaTeX rendering for papers
 - [ ] Implement citations between papers within the journal
 - [X] Implement a doi-like "SLOP" (Simple Linking for Online Publications) number to be assigned on publication
+- [ ] Paper stats (subitted, accepted, rejected, total environmental impact)
 - [ ] Implement optional email notifications for authors on paper publication
-- [ ] Implement a proper search feature
+- [ ] Implement a proper search feature (RAG?)
 - [ ] Implement a proper RSS feed
 - [ ] Implement a proper sitemap
 - [ ] Implement a proper 404 page
