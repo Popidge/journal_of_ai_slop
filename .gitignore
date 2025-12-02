@@ -27,3 +27,5 @@ dist-ssr
 
 # Optimizer cache
 .vite-image-cache/
+
+sitemap.xml

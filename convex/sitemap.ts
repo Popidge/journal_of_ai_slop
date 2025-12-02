@@ -9,6 +9,20 @@ export const listAcceptedPapersForSitemap = internalQuery({
     v.object({
       paperId: v.id("papers"),
       lastmod: v.number(),
+      title: v.string(),
+      authors: v.string(),
+      tags: v.array(v.string()),
+      submittedAt: v.number(),
+      content: v.string(),
+      totalTokens: v.optional(v.number()),
+      reviewCount: v.number(),
+      slopIdentifier: v.optional(
+        v.object({
+          slopId: v.string(),
+          link: v.string(),
+          fromLocalJournal: v.boolean(),
+        }),
+      ),
     }),
   ),
   handler: async (ctx) => {
@@ -18,10 +32,36 @@ export const listAcceptedPapersForSitemap = internalQuery({
       .order("desc")
       .collect();
 
-    return rows.map((row) => ({
-      paperId: row._id,
-      lastmod: typeof row.submittedAt === "number" ? row.submittedAt : row._creationTime,
-    }));
+    const enrichedRows = [];
+    for (const row of rows) {
+      const identifier = await ctx.db
+        .query("slopIdentifiers")
+        .withIndex("by_paperId", (q) => q.eq("paperId", row._id))
+        .unique();
+
+      const slopIdentifier = identifier
+        ? {
+            slopId: identifier.slopId,
+            link: identifier.link,
+            fromLocalJournal: identifier.fromLocalJournal,
+          }
+        : undefined;
+
+      enrichedRows.push({
+        paperId: row._id,
+        lastmod: typeof row.submittedAt === "number" ? row.submittedAt : row._creationTime,
+        title: row.title,
+        authors: row.authors,
+        tags: row.tags,
+        submittedAt: row.submittedAt,
+        content: row.content,
+        totalTokens: row.totalTokens,
+        reviewCount: row.reviewVotes?.length ?? 0,
+        slopIdentifier,
+      });
+    }
+
+    return enrichedRows;
   },
 });
 

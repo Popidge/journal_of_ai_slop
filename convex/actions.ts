@@ -521,7 +521,42 @@ export const regenerateSitemap = internalAction({
   handler: async (ctx) => {
     const papers = await ctx.runQuery(internal.sitemap.listAcceptedPapersForSitemap, {});
 
-    const urls: Array<{ loc: string; lastmod?: string }> = [
+    const buildMetadata = (paper: (typeof papers)[number]) => {
+      const tokens = typeof paper.totalTokens === "number" ? paper.totalTokens : 0;
+      const description = paper.content.slice(0, 200).replace(/\s+/g, " ").trim();
+      const keywords = paper.tags.join(", ");
+      const publishedDate = new Date(paper.submittedAt).toISOString().split("T")[0];
+
+      const metadata: string[] = [
+        `    <meta:title>${escapeXmlValue(paper.title)}</meta:title>`,
+        `    <meta:description>${escapeXmlValue(description)}</meta:description>`,
+        `    <meta:authors>${escapeXmlValue(paper.authors)}</meta:authors>`,
+        `    <meta:keywords>${escapeXmlValue(keywords)}</meta:keywords>`,
+        `    <meta:tags>${escapeXmlValue(keywords)}</meta:tags>`,
+        `    <meta:review-count>${paper.reviewCount}</meta:review-count>`,
+        `    <meta:impact>${tokens}</meta:impact>`,
+        `    <meta:token-count>${tokens}</meta:token-count>`,
+        `    <meta:published-date>${escapeXmlValue(publishedDate)}</meta:published-date>`,
+      ];
+
+      if (paper.slopIdentifier?.slopId) {
+        metadata.push(`    <meta:identifier>${escapeXmlValue(paper.slopIdentifier.slopId)}</meta:identifier>`);
+      }
+
+      if (paper.slopIdentifier?.link && !paper.slopIdentifier.fromLocalJournal) {
+        metadata.push(`    <meta:canonical>${escapeXmlValue(paper.slopIdentifier.link)}</meta:canonical>`);
+      }
+
+      return metadata;
+    };
+
+    type SitemapEntry = {
+      loc: string;
+      lastmod?: string;
+      metadata?: string[];
+    };
+
+    const urls: SitemapEntry[] = [
       ...SITEMAP_STATIC_PATHS.map((path) => ({ loc: absolutePath(path) })),
       ...papers.map((paper) => {
         const lastmod = Number.isFinite(paper.lastmod)
@@ -530,6 +565,7 @@ export const regenerateSitemap = internalAction({
         return {
           loc: `${SITE_URL}/papers/${paper.paperId}`,
           lastmod,
+          metadata: buildMetadata(paper),
         };
       }),
     ];
@@ -539,9 +575,14 @@ export const regenerateSitemap = internalAction({
         const fragments = [
           "  <url>",
           `    <loc>${escapeXmlValue(entry.loc)}</loc>`,
+          "    <changefreq>never</changefreq>",
+          "    <priority>0.8</priority>",
         ];
         if (entry.lastmod) {
           fragments.push(`    <lastmod>${escapeXmlValue(entry.lastmod)}</lastmod>`);
+        }
+        if (entry.metadata) {
+          fragments.push(...entry.metadata);
         }
         fragments.push("  </url>");
         return fragments.join("\n");
@@ -550,7 +591,7 @@ export const regenerateSitemap = internalAction({
 
     const xml = [
       '<?xml version="1.0" encoding="UTF-8"?>',
-      `<urlset xmlns="${SITEMAP_XML_NAMESPACE}">`,
+      `<urlset xmlns="${SITEMAP_XML_NAMESPACE}" xmlns:meta="http://www.google.com/schemas/sitemap-meta/0.9">`,
       entriesXml,
       "</urlset>",
     ].join("\n");

@@ -3,6 +3,10 @@
     {
       "source": "/(.*)",
       "destination": "/"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://rapid-puma-302.convex.site/sitemap.xml"
     }
   ],
   "cleanUrls": true

@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet";
 import { useEffect, useRef } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -75,6 +76,31 @@ export default function PaperDetail() {
 
   return (
     <div ref={detailRef} className="min-h-screen px-3 py-10 text-[color:var(--ink)] sm:px-4">
+      <Helmet>
+        <title>{paper.title} | The Journal of AI Slop™</title>
+        <meta name="description" content={paper.content.slice(0, 200)} />
+        <meta name="keywords" content={paper.tags.join(", ")} />
+        <meta name="author" content={paper.authors} />
+        <meta property="og:title" content={paper.title} />
+        <meta property="og:description" content={paper.content.slice(0, 200)} />
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content={`https://journalofaislop.com/papers/${paper._id}`} />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ScholarlyArticle",
+            headline: paper.title,
+            author: paper.authors.split(",").map((name) => ({
+              "@type": "Person",
+              name: name.trim(),
+            })),
+            datePublished: new Date(paper.submittedAt).toISOString(),
+            keywords: paper.tags,
+            description: paper.content.slice(0, 200),
+            identifier: paper._id,
+          })}
+        </script>
+      </Helmet>
       <div className="mx-auto w-full max-w-[1040px] space-y-8">
         <Link
           to="/papers"
