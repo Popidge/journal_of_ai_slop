@@ -56,6 +56,8 @@ const SITEMAP_STATIC_PATHS = [
   "sustainability",
 ];
 const SITEMAP_XML_NAMESPACE = "http://www.sitemaps.org/schemas/sitemap/0.9";
+const SITEMAP_META_NAMESPACE = "http://www.google.com/schemas/sitemap-meta/0.9";
+const SITEMAP_NEWS_NAMESPACE = "http://www.google.com/schemas/sitemap-news/0.9";
 const escapeXmlValue = (value: string) =>
   value
     .replace(/&/g, "&amp;")
@@ -523,14 +525,23 @@ export const regenerateSitemap = internalAction({
 
     const buildMetadata = (paper: (typeof papers)[number]) => {
       const tokens = typeof paper.totalTokens === "number" ? paper.totalTokens : 0;
-      const description = paper.content.slice(0, 200).replace(/\s+/g, " ").trim();
       const keywords = paper.tags.join(", ");
       const publishedDate = new Date(paper.submittedAt).toISOString().split("T")[0];
 
+      const newsMetadata = [
+        "    <news:news>",
+        "      <news:publication>",
+        "        <news:name>The Journal of AI Slop™</news:name>",
+        "        <news:language>en</news:language>",
+        "      </news:publication>",
+        `      <news:publication_date>${escapeXmlValue(publishedDate)}</news:publication_date>`,
+        `      <news:title>${escapeXmlValue(paper.title)}</news:title>`,
+        `      <news:keywords>${escapeXmlValue(keywords)}</news:keywords>`,
+        "    </news:news>",
+      ];
+
       const metadata: string[] = [
-        `    <meta:title>${escapeXmlValue(paper.title)}</meta:title>`,
-        `    <meta:description>${escapeXmlValue(description)}</meta:description>`,
-        `    <meta:authors>${escapeXmlValue(paper.authors)}</meta:authors>`,
+        ...newsMetadata,
         `    <meta:keywords>${escapeXmlValue(keywords)}</meta:keywords>`,
         `    <meta:tags>${escapeXmlValue(keywords)}</meta:tags>`,
         `    <meta:review-count>${paper.reviewCount}</meta:review-count>`,
@@ -591,7 +602,7 @@ export const regenerateSitemap = internalAction({
 
     const xml = [
       '<?xml version="1.0" encoding="UTF-8"?>',
-      `<urlset xmlns="${SITEMAP_XML_NAMESPACE}" xmlns:meta="http://www.google.com/schemas/sitemap-meta/0.9">`,
+      `<urlset xmlns="${SITEMAP_XML_NAMESPACE}" xmlns:meta="${SITEMAP_META_NAMESPACE}" xmlns:news="${SITEMAP_NEWS_NAMESPACE}">`,
       entriesXml,
       "</urlset>",
     ].join("\n");
