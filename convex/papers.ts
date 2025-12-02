@@ -1,4 +1,5 @@
 import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
+import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 
@@ -8,6 +9,8 @@ const statusValidator = v.union(
   v.literal("accepted"),
   v.literal("rejected"),
 );
+
+const publicStatusValidator = v.union(v.literal("accepted"), v.literal("rejected"));
 
 const reviewVoteValidator = v.object({
   agentId: v.string(),
@@ -121,6 +124,31 @@ export const listPapers = query({
     }
 
     return await ctx.db.query("papers").order("desc").take(limit);
+  },
+});
+
+export const listPublicPapersPage = query({
+  args: {
+    paginationOpts: paginationOptsValidator,
+    status: v.optional(publicStatusValidator),
+  },
+  returns: v.object({
+    papers: v.array(paperProjection),
+    cursor: v.union(v.string(), v.null()),
+  }),
+  handler: async (ctx, args) => {
+    const status = args.status ?? "accepted";
+    const page = await ctx.db
+      .query("papers")
+      .withIndex("by_status", (q: any) => q.eq("status", status))
+      .order("desc")
+      .paginate(args.paginationOpts);
+
+    const papers = page.page.filter((paper) => !paper.moderation?.blocked);
+    return {
+      papers,
+      cursor: page.continueCursor ?? null,
+    };
   },
 });
 
