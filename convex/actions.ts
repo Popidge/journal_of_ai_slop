@@ -6,6 +6,7 @@ import { createHash } from "node:crypto";
 import { Id } from "./_generated/dataModel";
 import ContentSafetyClient, { AnalyzeTextParameters, TextCategoriesAnalysisOutput, isUnexpected } from "@azure-rest/ai-content-safety";
 import { AzureKeyCredential } from "@azure/core-auth";
+import { sendPaperStatusNotification } from "./paperNotifications";
 
 const REVIEW_MODELS = [
   "anthropic/claude-haiku-4.5",
@@ -326,7 +327,10 @@ const analyzeWithContentSafety = async (paper: PaperForModeration): Promise<Mode
 };
 
 export const reviewPaper = internalAction({
-  args: { paperId: v.id("papers") },
+  args: {
+    paperId: v.id("papers"),
+    notificationEmail: v.optional(v.string()),
+  },
   returns: v.null(),
   handler: async (ctx, args) => {
     if (!process.env.OPENROUTER_API_KEY) {
@@ -337,6 +341,8 @@ export const reviewPaper = internalAction({
     if (!paper) {
       throw new Error("Paper not found");
     }
+
+    const notificationEmail = args.notificationEmail?.trim();
 
     const moderationVerdict = await analyzeWithContentSafety(paper);
     console.info("[content-safety] verdict", {
@@ -465,10 +471,24 @@ export const reviewPaper = internalAction({
       });
     }
 
+    if (notificationEmail && (finalStatus === "accepted" || finalStatus === "rejected")) {
+      const reviewSummary = reviewVotes
+        .map((vote) => `${vote.agentId}: ${vote.reasoning}`)
+        .slice(0, 3)
+        .join(" · ");
+
+      await sendPaperStatusNotification({
+        to: notificationEmail,
+        paperId: args.paperId,
+        paperTitle: paper.title,
+        status: finalStatus,
+        reviewSummary: reviewSummary || undefined,
+      });
+    }
+
     return null;
   },
 });
-
 export const regenerateSlopIds = internalAction({
   args: {},
   returns: v.null(),
@@ -501,7 +521,10 @@ export const processNextQueuedReview = internalAction({
     }
 
     try {
-      await ctx.runAction(internal.actions.reviewPaper, { paperId: queueItem.paperId });
+      await ctx.runAction(internal.actions.reviewPaper, {
+        paperId: queueItem.paperId,
+        notificationEmail: queueItem.notificationEmail ?? undefined,
+      });
       await ctx.runMutation(internal.papersQueue.completeQueueItem, { queueId: queueItem.queueId });
     } catch (error) {
       const failureReason = error instanceof Error ? error.message : "Unknown failure";

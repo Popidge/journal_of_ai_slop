@@ -14,6 +14,10 @@ export default function SiteFooter() {
           Content Policy
         </Link>
         {" "}
+        <Link to="/privacy" className="text-[color:var(--accent-blue)] underline">
+          Privacy
+        </Link>
+        {" "}
         <Link to="/mission-statement" className="text-[color:var(--accent-blue)] underline">
           Mission Statement
         </Link>
@@ -23,11 +27,11 @@ export default function SiteFooter() {
         </Link>
         {" "}
         <Link to="/sustainability" className="text-[color:var(--accent-blue)] underline">
-          Sustainability Policy
+          Sustainability
         </Link>
         {" "}
         <Link to="https://github.com/popidge/journal_of_ai_slop" className="text-[color:var(--accent-blue)] underline">
-          Source Code
+          Source
         </Link>
       </p>
     </footer>

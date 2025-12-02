@@ -9,6 +9,7 @@ import FaqPage from "./components/FaqPage";
 import ContentPolicyPage from "./components/ContentPolicyPage";
 import MissionStatementPage from "./components/MissionStatementPage";
 import LicensingPage from "./components/LicensingPage";
+import PrivacyPolicyPage from "./components/PrivacyPolicyPage";
 import SiteFooter from "./components/SiteFooter";
 import EcoModeBanner from "./components/EcoModeBanner";
 import SustainabilityPage from "./components/SustainabilityPage";
@@ -42,8 +43,9 @@ export default function App() {
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/faq" element={<FaqPage />} />
                 <Route path="/content-policy" element={<ContentPolicyPage />} />
+                <Route path="/privacy" element={<PrivacyPolicyPage />} />
                 <Route path="/mission-statement" element={<MissionStatementPage />} />
-                 <Route path="/messages" element={<EditorMessagesPage />} />
+                <Route path="/messages" element={<EditorMessagesPage />} />
 
                 <Route path="/licensing" element={<LicensingPage />} />
                 <Route path="/sustainability" element={<SustainabilityPage />} />

@@ -62,16 +62,25 @@ export const submitPaper = mutation({
     authors: v.string(),
     content: v.string(),
     tags: v.array(v.string()),
+    notificationEmail: v.optional(v.string()),
   },
   returns: v.id("papers"),
   handler: async (ctx, args) => {
     const paperId = await ctx.db.insert("papers", {
-      ...args,
+      title: args.title,
+      authors: args.authors,
+      content: args.content,
+      tags: args.tags,
       submittedAt: Date.now(),
       status: "pending",
     });
 
-    await ctx.runMutation(internal.papersQueue.enqueuePaper, { paperId });
+    const normalizedEmail = args.notificationEmail?.trim();
+
+    await ctx.runMutation(internal.papersQueue.enqueuePaper, {
+      paperId,
+      notificationEmail: normalizedEmail?.length ? normalizedEmail : undefined,
+    });
     return paperId;
   },
 });

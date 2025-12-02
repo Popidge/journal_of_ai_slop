@@ -1,0 +1,1 @@
+{"mcpServers":{"Astro docs":{"command":"npx","args":["-y","mcp-remote","https://mcp.docs.astro.build/mcp"],"alwaysAllow":["search_astro_docs"],"disabled":true}}}

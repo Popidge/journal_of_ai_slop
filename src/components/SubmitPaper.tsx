@@ -23,6 +23,7 @@ export default function SubmitPaper() {
     authors: "",
     content: "",
     tags: [] as string[],
+    notificationEmail: "",
     pinkySwear: false,
   });
 
@@ -88,11 +89,17 @@ export default function SubmitPaper() {
         throw new Error("You must agree to the pinky-swear clause");
       }
 
+      const notificationEmail = formData.notificationEmail.trim();
+      if (notificationEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(notificationEmail)) {
+        throw new Error("Notification email must be a valid email address.");
+      }
+
       const paperId = await submitPaper({
         title: formData.title,
         authors: formData.authors,
         content: formData.content,
         tags: formData.tags,
+        notificationEmail: notificationEmail || undefined,
       });
 
       rateLimit.recordSubmission();
@@ -102,6 +109,7 @@ export default function SubmitPaper() {
         authors: "",
         content: "",
         tags: [],
+        notificationEmail: "",
         pinkySwear: false,
       });
     } catch (err) {
@@ -248,6 +256,26 @@ export default function SubmitPaper() {
                     />
                   </label>
                 ))}
+              </div>
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-[190px_minmax(0,1fr)] sm:items-center sm:gap-4">
+              <label htmlFor="notificationEmail" className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-soft)] sm:text-sm sm:text-right">
+                Email (Optional)
+              </label>
+              <div className="space-y-1">
+                <input
+                  type="email"
+                  id="notificationEmail"
+                  name="notificationEmail"
+                  value={formData.notificationEmail}
+                  onChange={handleInputChange}
+                  placeholder="you@email.com"
+                  className="w-full rounded-lg border border-[color:var(--coffee-light)] bg-[color:var(--paper)] px-4 py-3 text-sm text-[color:var(--ink)] placeholder:text-[color:var(--ink-soft)] transition focus:border-[color:var(--coffee)] focus:outline-none"
+                />
+                <p className="text-[0.65rem] text-[color:var(--ink-soft)]">
+                  Optional. We'll let you know when your slop is published or formally rejected. Once informed, your email will be removed from our database.
+                </p>
               </div>
             </div>
 

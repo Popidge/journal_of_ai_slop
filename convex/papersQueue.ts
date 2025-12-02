@@ -5,20 +5,28 @@ import { internal } from "./_generated/api";
 const queuedPaperResult = v.object({
   queueId: v.id("papersQueue"),
   paperId: v.id("papers"),
+  notificationEmail: v.optional(v.string()),
 });
 
 export const enqueuePaper = internalMutation({
   args: {
     paperId: v.id("papers"),
+    notificationEmail: v.optional(v.string()),
   },
   returns: v.id("papersQueue"),
   handler: async (ctx, args) => {
+    const normalizedEmail = args.notificationEmail?.trim();
+
     const existing = await ctx.db
       .query("papersQueue")
       .withIndex("by_paperId", (q) => q.eq("paperId", args.paperId))
       .take(1);
 
     if (existing.length > 0) {
+      const existingEmail = existing[0].notificationEmail;
+      if (normalizedEmail?.length && normalizedEmail !== existingEmail) {
+        await ctx.db.patch(existing[0]._id, { notificationEmail: normalizedEmail });
+      }
       return existing[0]._id;
     }
 
@@ -26,6 +34,7 @@ export const enqueuePaper = internalMutation({
       paperId: args.paperId,
       queuedAt: Date.now(),
       status: "pending",
+      notificationEmail: normalizedEmail?.length ? normalizedEmail : undefined,
     });
   },
 });
@@ -50,6 +59,7 @@ export const acquireNextPaperForReview = internalMutation({
     return {
       queueId: candidate._id,
       paperId: candidate.paperId,
+      notificationEmail: candidate.notificationEmail,
     };
   },
 });

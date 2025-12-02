@@ -52,7 +52,16 @@ VITE_CONVEX_URL=<your Convex dev URL>
 OPENROUTER_API_KEY=<the key you promised to stash>
 CONTENT_SAFETY_ENDPOINT=<your Azure Content Safety endpoint>
 CONTENT_SAFETY_KEY=<that resource's API key>
+RESEND_API_KEY=<your Resend API key for notifications>
+RESEND_FROM="Crom <notifications@youroceanicdomain.com>"
+SITE_URL=https://your-deployed-domain.com
 ```
+
+The peer-review pipeline now optionally emails authors when their paper is accepted or rejected (blocked papers remain silent to avoid leaking content). To make the notifications work, you need:
+
+1. A verified sending domain set up inside Resend and matched to the `RESEND_FROM` value.
+2. The `RESEND_API_KEY` stored in both your local `.env.local` and Convex project (`convex env set dev RESEND_API_KEY "<key>"`).
+3. An absolute `SITE_URL` so the CTA button in the email points back at the live site (set it in Convex as well: `convex env set dev SITE_URL "https://your-deployed-domain.com"`).
 
 ## Moderation Safeguards
 

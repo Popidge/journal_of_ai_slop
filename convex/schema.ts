@@ -52,6 +52,7 @@ export default defineSchema({
     queuedAt: v.number(),
     status: queueStatus,
     lastError: v.optional(v.string()),
+    notificationEmail: v.optional(v.string()),
   })
     .index("by_paperId", ["paperId"])
     .index("by_status_and_queuedAt", ["status", "queuedAt"]),
