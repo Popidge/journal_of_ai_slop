@@ -59,6 +59,18 @@ type SlopRecord = {
 type PublicStatus = "accepted" | "rejected";
 const statuses: Array<PublicStatus> = ["accepted", "rejected"];
 
+type PageMetrics = {
+  pages: number;
+  papers: number;
+  finalPage: number | null;
+};
+
+const INITIAL_PAGE_METRICS: PageMetrics = {
+  pages: 0,
+  papers: 0,
+  finalPage: null,
+};
+
 const mapStatus = (status: string) => {
   if (status === "accepted") return "PUBLISH NOW";
   if (status === "rejected") return "REJECTED";
@@ -74,6 +86,7 @@ export default function PapersList() {
   const [pageCache, setPageCache] = useState<Map<number, PublicPaper[]>>(() => new Map());
   const [nextPageCursor, setNextPageCursor] = useState<string | null>(null);
   const [pendingPageIndex, setPendingPageIndex] = useState<number | null>(0);
+  const [pageMetrics, setPageMetrics] = useState<PageMetrics>(INITIAL_PAGE_METRICS);
   const [tagInput, setTagInput] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [dateFrom, setDateFrom] = useState("");
@@ -86,6 +99,7 @@ export default function PapersList() {
     setPageCache(new Map());
     setNextPageCursor(null);
     setPendingPageIndex(0);
+    setPageMetrics(INITIAL_PAGE_METRICS);
   }, [statusFilter]);
 
   useEffect(() => {
@@ -101,12 +115,13 @@ export default function PapersList() {
         });
         if (cancelled) return;
         if (page.papers.length === 0) {
-          if (page.cursor === null) {
-            setNextPageCursor(null);
-            setPendingPageIndex(null);
-          } else {
-            setNextPageCursor(page.cursor);
-          }
+          setPageMetrics((prev) => ({
+            pages: prev.pages,
+            papers: prev.papers,
+            finalPage: Math.max(targetPageIndex - 1, prev.finalPage ?? -1),
+          }));
+          setNextPageCursor(null);
+          setPendingPageIndex(null);
           return;
         }
         setPageCache((prev) => {
@@ -114,6 +129,14 @@ export default function PapersList() {
           next.set(targetPageIndex, page.papers);
           return next;
         });
+        setPageMetrics((prev) => ({
+          pages: Math.max(prev.pages, targetPageIndex + 1),
+          papers: prev.papers + page.papers.length,
+          finalPage:
+            page.cursor === null
+              ? Math.max(targetPageIndex, prev.finalPage ?? -1)
+              : prev.finalPage,
+        }));
         setNextPageCursor(page.cursor);
         setPageIndex(targetPageIndex);
         setPendingPageIndex(null);
@@ -131,17 +154,25 @@ export default function PapersList() {
   const currentPagePapers = useMemo(() => pageCache.get(pageIndex) ?? [], [pageCache, pageIndex]);
   const isPageLoading = pageCache.size === 0 && pendingPageIndex !== null;
   const hasNextCursor = nextPageCursor !== null;
+  const hasCachedNextPage = pageIndex + 1 < pageMetrics.pages;
+  const hasReachedFinalPage = pageMetrics.finalPage !== null && pageIndex >= pageMetrics.finalPage;
 
   const handleNextPage = useCallback(() => {
-    if (pendingPageIndex !== null || !hasNextCursor) return;
+    if (pendingPageIndex !== null) return;
+    if (hasCachedNextPage) {
+      setPageIndex((prev) => prev + 1);
+      return;
+    }
+    if (hasReachedFinalPage) return;
+    if (!hasNextCursor) return;
     const nextIndex = pageCache.size;
     setPendingPageIndex(nextIndex);
-  }, [hasNextCursor, pageCache, pendingPageIndex]);
+  }, [hasCachedNextPage, hasNextCursor, hasReachedFinalPage, pageCache, pendingPageIndex]);
 
   const handlePrevPage = useCallback(() => {
-    if (pageIndex === 0 || pendingPageIndex !== null) return;
+    if (pageIndex === 0) return;
     setPageIndex((prev) => Math.max(prev - 1, 0));
-  }, [pageIndex, pendingPageIndex]);
+  }, [pageIndex]);
 
   const paperIds = useMemo(() => currentPagePapers.map((paper) => paper._id as Id<"papers">), [currentPagePapers]);
   const slopRecords = useQuery(api.slopId.getByPaperIds, { paperIds });
@@ -431,7 +462,7 @@ export default function PapersList() {
             <button
               type="button"
               onClick={handlePrevPage}
-              disabled={pageIndex === 0 || pendingPageIndex !== null}
+              disabled={pageIndex === 0}
               className="rounded-full border border-[color:var(--coffee)] px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-[color:var(--coffee)] disabled:opacity-40"
             >
               Previous
@@ -439,7 +470,7 @@ export default function PapersList() {
             <button
               type="button"
               onClick={handleNextPage}
-              disabled={!hasNextCursor || pendingPageIndex !== null}
+              disabled={pendingPageIndex !== null || hasReachedFinalPage}
               className="rounded-full border border-[color:var(--coffee)] px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-[color:var(--coffee)] disabled:opacity-40"
             >
               Next
