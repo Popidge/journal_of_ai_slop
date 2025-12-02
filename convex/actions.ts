@@ -4,6 +4,7 @@ import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { createHash } from "node:crypto";
 import { Id } from "./_generated/dataModel";
+import { SITEMAP_METADATA_NAME } from "./sitemap";
 import ContentSafetyClient, { AnalyzeTextParameters, TextCategoriesAnalysisOutput, isUnexpected } from "@azure-rest/ai-content-safety";
 import { AzureKeyCredential } from "@azure/core-auth";
 import { sendPaperStatusNotification } from "./paperNotifications";
@@ -39,6 +40,28 @@ const deriveSlopId = (paperId: Id<"papers">): string => {
 };
 
 const localPaperLink = (paperId: Id<"papers">) => `papers/${paperId}`;
+
+const SITE_URL = (process.env.SITE_URL ?? "https://journalofaislop.com").replace(/\/$/, "");
+const SITEMAP_STATIC_PATHS = [
+  "",
+  "submit",
+  "papers",
+  "about",
+  "faq",
+  "content-policy",
+  "privacy",
+  "mission-statement",
+  "messages",
+  "licensing",
+  "sustainability",
+];
+const SITEMAP_XML_NAMESPACE = "http://www.sitemaps.org/schemas/sitemap/0.9";
+const escapeXmlValue = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+const absolutePath = (path: string) => (path === "" ? SITE_URL : `${SITE_URL}/${path}`);
 
 
 type ReviewDecision = "publish_now" | "publish_after_edits" | "reject";
@@ -469,6 +492,7 @@ export const reviewPaper = internalAction({
         link: localPaperLink(args.paperId),
         fromLocalJournal: true,
       });
+      await ctx.runAction(internal.actions.regenerateSitemap, {});
     }
 
     if (notificationEmail && (finalStatus === "accepted" || finalStatus === "rejected")) {
@@ -489,6 +513,67 @@ export const reviewPaper = internalAction({
     return null;
   },
 });
+
+
+export const regenerateSitemap = internalAction({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    const papers = await ctx.runQuery(internal.sitemap.listAcceptedPapersForSitemap, {});
+
+    const urls: Array<{ loc: string; lastmod?: string }> = [
+      ...SITEMAP_STATIC_PATHS.map((path) => ({ loc: absolutePath(path) })),
+      ...papers.map((paper) => {
+        const lastmod = Number.isFinite(paper.lastmod)
+          ? new Date(paper.lastmod).toISOString()
+          : undefined;
+        return {
+          loc: `${SITE_URL}/papers/${paper.paperId}`,
+          lastmod,
+        };
+      }),
+    ];
+
+    const entriesXml = urls
+      .map((entry) => {
+        const fragments = [
+          "  <url>",
+          `    <loc>${escapeXmlValue(entry.loc)}</loc>`,
+        ];
+        if (entry.lastmod) {
+          fragments.push(`    <lastmod>${escapeXmlValue(entry.lastmod)}</lastmod>`);
+        }
+        fragments.push("  </url>");
+        return fragments.join("\n");
+      })
+      .join("\n");
+
+    const xml = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      `<urlset xmlns="${SITEMAP_XML_NAMESPACE}">`,
+      entriesXml,
+      "</urlset>",
+    ].join("\n");
+
+    const encoder = new TextEncoder();
+    const payload = encoder.encode(xml);
+    const hash = createHash("sha256").update(payload).digest("hex");
+    const sitemapBlob = new Blob([payload], { type: "application/xml" });
+    const fileId: Id<"_storage"> = await ctx.storage.store(sitemapBlob);
+
+    await ctx.runMutation(internal.sitemap.upsertSitemapMetadata, {
+      name: SITEMAP_METADATA_NAME,
+      fileId,
+      generatedAt: Date.now(),
+      hash,
+      entryCount: urls.length,
+      contentLength: payload.byteLength,
+    });
+
+    return null;
+  },
+});
+
 export const regenerateSlopIds = internalAction({
   args: {},
   returns: v.null(),

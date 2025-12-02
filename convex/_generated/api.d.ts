@@ -12,11 +12,13 @@ import type * as actions from "../actions.js";
 import type * as crons from "../crons.js";
 import type * as editorsComments from "../editorsComments.js";
 import type * as environmentalImpact from "../environmentalImpact.js";
+import type * as http from "../http.js";
 import type * as migrations_eco_mode_migration from "../migrations/eco_mode_migration.js";
 import type * as paperNotifications from "../paperNotifications.js";
 import type * as papers from "../papers.js";
 import type * as papersQueue from "../papersQueue.js";
 import type * as resend from "../resend.js";
+import type * as sitemap from "../sitemap.js";
 import type * as slopId from "../slopId.js";
 
 import type {
@@ -30,11 +32,13 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   editorsComments: typeof editorsComments;
   environmentalImpact: typeof environmentalImpact;
+  http: typeof http;
   "migrations/eco_mode_migration": typeof migrations_eco_mode_migration;
   paperNotifications: typeof paperNotifications;
   papers: typeof papers;
   papersQueue: typeof papersQueue;
   resend: typeof resend;
+  sitemap: typeof sitemap;
   slopId: typeof slopId;
 }>;
 

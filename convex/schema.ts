@@ -70,4 +70,13 @@ export default defineSchema({
   })
     .index("by_slopId", ["slopId"])
     .index("by_paperId", ["paperId"]),
+
+  sitemaps: defineTable({
+    name: v.string(),
+    fileId: v.id("_storage"),
+    generatedAt: v.number(),
+    hash: v.string(),
+    entryCount: v.number(),
+    contentLength: v.number(),
+  }).index("by_name", ["name"]),
 });
