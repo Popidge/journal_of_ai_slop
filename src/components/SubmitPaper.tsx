@@ -274,7 +274,7 @@ export default function SubmitPaper() {
                   className="w-full rounded-lg border border-[color:var(--coffee-light)] bg-[color:var(--paper)] px-4 py-3 text-sm text-[color:var(--ink)] placeholder:text-[color:var(--ink-soft)] transition focus:border-[color:var(--coffee)] focus:outline-none"
                 />
                 <p className="text-[0.65rem] text-[color:var(--ink-soft)]">
-                  Optional. We'll let you know when your slop is published or formally rejected. Once informed, your email will be removed from our database.
+                  Optional. We'll let you know when your slop is published or formally rejected. Once informed, your email will be removed from our database. <Link to="/privacy" className="underline text-[color:var(--accent-blue)]">Privacy Policy</Link>.
                 </p>
               </div>
             </div>
