@@ -93,6 +93,9 @@ export default function PapersList() {
   const [dateTo, setDateTo] = useState("");
   const [hasEditorsCommentOnly, setHasEditorsCommentOnly] = useState(false);
   const [keyword, setKeyword] = useState("");
+  const [commentedPapers, setCommentedPapers] = useState<PublicPaper[] | null>(null);
+  const [commentedPapersLoading, setCommentedPapersLoading] = useState(false);
+  const [commentedPapersError, setCommentedPapersError] = useState<string | null>(null);
 
   useEffect(() => {
     setPageIndex(0);
@@ -151,8 +154,43 @@ export default function PapersList() {
     };
   }, [pendingPageIndex, nextPageCursor, statusFilter, convex]);
 
+  useEffect(() => {
+    if (!hasEditorsCommentOnly) {
+      setCommentedPapers(null);
+      setCommentedPapersError(null);
+      setCommentedPapersLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setCommentedPapersLoading(true);
+    void (async () => {
+      try {
+        const papers = await convex.query(api.papers.listCommentedPapers, { status: statusFilter });
+        if (cancelled) return;
+        setCommentedPapers(papers);
+        setCommentedPapersError(null);
+      } catch (error) {
+        if (cancelled) return;
+        console.error("Failed to load commented papers", error);
+        setCommentedPapersError("Failed to load editor-commented papers.");
+      } finally {
+        if (!cancelled) {
+          setCommentedPapersLoading(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hasEditorsCommentOnly, statusFilter, convex]);
+
   const currentPagePapers = useMemo(() => pageCache.get(pageIndex) ?? [], [pageCache, pageIndex]);
-  const isPageLoading = pageCache.size === 0 && pendingPageIndex !== null;
+  const activePapers = useMemo(
+    () => (hasEditorsCommentOnly ? commentedPapers ?? [] : currentPagePapers),
+    [hasEditorsCommentOnly, commentedPapers, currentPagePapers],
+  );
+  const isPageLoading = !hasEditorsCommentOnly && pageCache.size === 0 && pendingPageIndex !== null;
+  const isCommentLoading = hasEditorsCommentOnly && commentedPapersLoading;
   const hasNextCursor = nextPageCursor !== null;
   const hasCachedNextPage = pageIndex + 1 < pageMetrics.pages;
   const hasReachedFinalPage = pageMetrics.finalPage !== null && pageIndex >= pageMetrics.finalPage;
@@ -174,7 +212,7 @@ export default function PapersList() {
     setPageIndex((prev) => Math.max(prev - 1, 0));
   }, [pageIndex]);
 
-  const paperIds = useMemo(() => currentPagePapers.map((paper) => paper._id as Id<"papers">), [currentPagePapers]);
+  const paperIds = useMemo(() => activePapers.map((paper) => paper._id as Id<"papers">), [activePapers]);
   const slopRecords = useQuery(api.slopId.getByPaperIds, { paperIds });
   const slopByPaperId = useMemo(() => {
     const map = new Map<string, SlopRecord>();
@@ -187,19 +225,21 @@ export default function PapersList() {
   }, [slopRecords]);
 
   const editorsComments = useQuery(api.editorsComments.getByPaperIds, { paperIds });
+  const commentedPaperIdsSet = useMemo(() => new Set(commentedPapers?.map((paper) => paper._id) ?? []), [commentedPapers]);
   const hasEditorComment = useMemo(() => {
     const map = new Map<string, boolean>();
     (editorsComments ?? []).forEach((comment) => {
       map.set(comment.paperId, true);
     });
+    commentedPaperIdsSet.forEach((id) => map.set(id, true));
     return map;
-  }, [editorsComments]);
+  }, [commentedPaperIdsSet, editorsComments]);
 
   const availableTags = useMemo(() => {
     const tags = new Set<string>();
-    currentPagePapers.forEach((paper) => paper.tags.forEach((tag: string) => tags.add(tag)));
+    activePapers.forEach((paper) => paper.tags.forEach((tag: string) => tags.add(tag)));
     return Array.from(tags).sort();
-  }, [currentPagePapers]);
+  }, [activePapers]);
 
   const parsedDateFrom = dateFrom ? new Date(dateFrom).setHours(0, 0, 0, 0) : null;
   const parsedDateTo = dateTo ? new Date(dateTo).setHours(23, 59, 59, 999) : null;
@@ -210,9 +250,9 @@ export default function PapersList() {
     .filter(Boolean);
 
   const filteredPapers = useMemo(() => {
-    if (currentPagePapers.length === 0) return [];
+    if (activePapers.length === 0) return [];
     const tagsLower = selectedTags.map((tag) => tag.toLowerCase());
-    return currentPagePapers.filter((paper) => {
+    return activePapers.filter((paper) => {
       if (paper.moderation?.blocked) return false;
       if (selectedTags.length > 0) {
         const paperTags = paper.tags.map((tag: string) => tag.toLowerCase());
@@ -235,8 +275,13 @@ export default function PapersList() {
       }
       return true;
     });
-  }, [currentPagePapers, selectedTags, parsedDateFrom, parsedDateTo, hasEditorsCommentOnly, hasEditorComment, normalizedKeywordParts]);
+  }, [activePapers, selectedTags, parsedDateFrom, parsedDateTo, hasEditorsCommentOnly, hasEditorComment, normalizedKeywordParts]);
 
+  const isLoading = hasEditorsCommentOnly ? isCommentLoading : isPageLoading;
+  const paginationControlsVisible = !hasEditorsCommentOnly;
+  const emptyMessage = hasEditorsCommentOnly
+    ? "No editor-commented slop matches the current filters."
+    : `No ${statusFilter} slop matches the current filters. Try adjusting the keywords or dates.`;
   const addTag = useCallback(() => {
     const trimmed = tagInput.trim();
     if (!trimmed) return;
@@ -376,15 +421,19 @@ export default function PapersList() {
         </section>
 
         <div className="space-y-4">
-          {isPageLoading ? (
+          {isLoading ? (
             <div className="flex flex-col items-center gap-3 rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/95 p-6 text-center shadow-[0_15px_35px_rgba(35,24,21,0.12)]">
               <div className="question-spinner" aria-hidden="true" />
               <p className="text-sm text-[color:var(--ink-soft)]">Summoning Review Panel…</p>
               <p className="text-[0.65rem] uppercase tracking-[0.3em] text-[color:var(--ink-soft)]">Warming up the coffee rings.</p>
             </div>
+          ) : commentedPapersError ? (
+            <div className="rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/95 p-6 text-center text-sm text-[color:var(--ink-soft)] shadow-[0_15px_35px_rgba(35,24,21,0.12)]">
+              {commentedPapersError}
+            </div>
           ) : filteredPapers.length === 0 ? (
             <div className="rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/95 p-6 text-center text-sm text-[color:var(--ink-soft)] shadow-[0_15px_35px_rgba(35,24,21,0.12)]">
-              No {statusFilter} slop matches the current filters. Try adjusting the keywords or dates.
+              {emptyMessage}
             </div>
           ) : (
             filteredPapers.map((paper) => {
@@ -456,27 +505,29 @@ export default function PapersList() {
           )}
         </div>
 
-        <div className="flex items-center justify-between rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 px-4 py-3 text-[0.75rem] text-[color:var(--ink-soft)] shadow-[0_15px_35px_rgba(35,24,21,0.12)] sm:px-6">
-          <span>Page {pageIndex + 1}</span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={handlePrevPage}
-              disabled={pageIndex === 0}
-              className="rounded-full border border-[color:var(--coffee)] px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-[color:var(--coffee)] disabled:opacity-40"
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              onClick={handleNextPage}
-              disabled={pendingPageIndex !== null || hasReachedFinalPage}
-              className="rounded-full border border-[color:var(--coffee)] px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-[color:var(--coffee)] disabled:opacity-40"
-            >
-              Next
-            </button>
+        {paginationControlsVisible && (
+          <div className="flex items-center justify-between rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 px-4 py-3 text-[0.75rem] text-[color:var(--ink-soft)] shadow-[0_15px_35px_rgba(35,24,21,0.12)] sm:px-6">
+            <span>Page {pageIndex + 1}</span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handlePrevPage}
+                disabled={pageIndex === 0}
+                className="rounded-full border border-[color:var(--coffee)] px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-[color:var(--coffee)] disabled:opacity-40"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                onClick={handleNextPage}
+                disabled={pendingPageIndex !== null || hasReachedFinalPage}
+                className="rounded-full border border-[color:var(--coffee)] px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-[color:var(--coffee)] disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="text-center text-[color:var(--ink-soft)]">
           <Link to="/" className="underline decoration-[color:var(--coffee)]">← Back to The Journal of AI Slop™</Link>

@@ -1,6 +1,7 @@
 import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
+import type { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 
 const statusValidator = v.union(
@@ -58,6 +59,9 @@ const paperProjection = v.object({
   totalTokens: v.optional(v.number()),
   moderation: v.optional(moderationSummaryValidator),
 });
+
+type PaperDoc = Doc<"papers">;
+type PaperId = Id<"papers">;
 
 export const submitPaper = mutation({
   args: {
@@ -149,6 +153,39 @@ export const listPublicPapersPage = query({
       papers,
       cursor: page.continueCursor ?? null,
     };
+  },
+});
+
+export const listCommentedPapers = query({
+  args: {
+    status: v.optional(publicStatusValidator),
+  },
+  returns: v.array(paperProjection),
+  handler: async (ctx, args) => {
+    const statusFilter = args.status ?? "accepted";
+    const seenPaperIds = new Set<PaperId>();
+    const uniquePaperIds: PaperId[] = [];
+
+    const comments = await ctx.db.query("editorsComments").order("desc").collect();
+    const commentRows = comments as Array<{ paperId: PaperId }>;
+
+    for (const comment of commentRows) {
+      if (!seenPaperIds.has(comment.paperId)) {
+        seenPaperIds.add(comment.paperId);
+        uniquePaperIds.push(comment.paperId);
+      }
+    }
+
+    const papers: PaperDoc[] = [];
+    for (const paperId of uniquePaperIds) {
+      const paper = await ctx.db.get(paperId);
+      if (!paper) continue;
+      if (paper.moderation?.blocked) continue;
+      if (paper.status !== statusFilter) continue;
+      papers.push(paper);
+    }
+
+    return papers;
   },
 });
 
