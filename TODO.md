@@ -5,12 +5,15 @@ It will be updated inconsistently and probably forgotten, and is basically a scr
 # TODO
 
 - [X] Implement vercel image optimisation - done via vite build
-- [ ] Implement ISR for published articles to aid academic research crawlers (lol) - may just do some json injection hackery
+- [ ] Change frontend architecture to static stie generator, using convex as headless CMS, for the SEO
 - [X] Implement LaTeX rendering for papers
+- [ ] Implement better LaTeX rendering for papers
+- [ ] Question if LaTeX is even worth it
+- [ ] Have an existential crisis about LaTeX support
 - [ ] Implement citations between papers within the journal
 - [X] Implement a doi-like "SLOP" (Simple Linking for Online Publications) number to be assigned on publication
 - [ ] Paper stats (subitted, accepted, rejected, total environmental impact)
-- [ ] Implement optional email notifications for authors on paper publication
+- [X] Implement optional email notifications for authors on paper publication
 - [ ] Implement a proper search feature (RAG?)
 - [ ] Implement a proper RSS feed
 - [ ] Implement a proper sitemap
