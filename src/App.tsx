@@ -16,6 +16,7 @@ import SustainabilityPage from "./components/SustainabilityPage";
 import EditorMessagesPage from "./components/EditorMessagesPage";
 import { EcoModeProvider } from "./contexts/EcoModeContext";
 import { useEcoMode } from "./hooks/useEcoMode";
+import { Analytics } from "@vercel/analytics/react";
 
 function EcoModeOverlay() {
   const { ecoMode } = useEcoMode();
@@ -54,6 +55,7 @@ export default function App() {
             <SiteFooter />
           </div>
         </div>
+        <Analytics />
       </Router>
     </EcoModeProvider>
   );

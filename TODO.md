@@ -5,7 +5,7 @@ It will be updated inconsistently and probably forgotten, and is basically a scr
 # TODO
 
 - [X] Implement vercel image optimisation - done via vite build
-- [ ] (while we still remain client-side) use react helmet to inject json-ld for papers
+- [X] (while we still remain client-side) use react helmet to inject json-ld for papers
 - [ ] Change frontend architecture to static site generator, using convex as headless CMS, for the SEO
 - [X] Implement LaTeX rendering for papers
 - [ ] Implement better LaTeX rendering for papers
