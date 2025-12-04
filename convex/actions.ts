@@ -11,7 +11,7 @@ import { sendPaperStatusNotification } from "./paperNotifications";
 
 const REVIEW_MODELS = [
   "anthropic/claude-haiku-4.5",
-  "x-ai/grok-4.1-fast:free",
+  "x-ai/grok-4.1-fast",
   "google/gemini-2.5-flash-lite",
   "openai/gpt-5-nano",
   "meta-llama/llama-4-maverick",
