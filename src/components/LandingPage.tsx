@@ -21,7 +21,7 @@ export default function LandingPage() {
               to="/messages"
               className="text-[color:var(--accent-blue)] underline transition hover:text-[color:var(--ink)]"
             >
-              On LaTeX and rendering
+              Christmas Open Weight Bonanza!
             </Link>
           </p>
         </div>

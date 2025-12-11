@@ -10,16 +10,16 @@ import { AzureKeyCredential } from "@azure/core-auth";
 import { sendPaperStatusNotification } from "./paperNotifications";
 
 const REVIEW_MODELS = [
-  "anthropic/claude-haiku-4.5",
-  "x-ai/grok-4.1-fast",
-  "google/gemini-2.5-flash-lite",
-  "openai/gpt-5-nano",
-  "meta-llama/llama-4-maverick",
+  "minimax/minimax-m2",
+  "openai/gpt-oss-120b",
+  "deepseek/deepseek-v3.2",
+  "moonshotai/kimi-k2-thinking",
+  "qwen/qwen3-235b-a22b-2507",
 ] as const;
 
 const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 const MAX_REVIEW_COST = 0.2;
-const TRUNCATE_LENGTH = 3000;
+const TRUNCATE_LENGTH = 10000;
 const CATEGORY_SEVERITY_THRESHOLD = 4;
 const OVERALL_SEVERITY_THRESHOLD = 6;
 const MODERATION_CATEGORIES = ["Hate", "SelfHarm", "Sexual", "Violence"] as const;
@@ -171,7 +171,7 @@ Respond with ONE of these decisions:
 Respond in valid JSON only:
 {
   "decision": "publish_now" | "publish_after_edits" | "reject",
-  "reasoning": "Two sentences explaining your decision"
+  "reasoning": "Two or three sentences explaining your decision and your thoughts on the paper, based on it's tags"
 }`;
 };
 
@@ -420,7 +420,7 @@ export const reviewPaper = internalAction({
           body: JSON.stringify({
             model,
             temperature: 0.7,
-            max_tokens: 500,
+            max_tokens: 2000,
             messages: [{ role: "user", content: prompt }],
             usage: {
               include: true,
