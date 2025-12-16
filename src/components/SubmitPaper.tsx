@@ -16,6 +16,8 @@ const LLM_SIGNIFIERS = ["GPT", "Claude", "Gemini", "Grok", "LLaMA", "Bard", "Kim
 
 const SUBMISSION_LIMIT = 3;
 const RATE_WINDOW_MS = 3600000;
+const CONTENT_CHARACTER_LIMIT = 9500;
+const CONTENT_WARNING_THRESHOLD = 9000;
 
 export default function SubmitPaper() {
   const [formData, setFormData] = useState({
@@ -30,6 +32,14 @@ export default function SubmitPaper() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedPaperId, setSubmittedPaperId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const contentLength = formData.content.length;
+  const remainingCharacters = Math.max(0, CONTENT_CHARACTER_LIMIT - contentLength);
+  const contentCounterColorClass =
+    contentLength >= CONTENT_CHARACTER_LIMIT
+      ? "text-[color:var(--accent-red)]"
+      : contentLength >= CONTENT_WARNING_THRESHOLD
+        ? "text-[color:var(--accent-orange)]"
+        : "text-[color:var(--ink-soft)]";
 
   const rateLimit = useRateLimit(SUBMISSION_LIMIT, RATE_WINDOW_MS);
   const patiencePercent = Math.max(0, Math.min(100, (rateLimit.remaining / SUBMISSION_LIMIT) * 100));
@@ -39,6 +49,11 @@ export default function SubmitPaper() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    if (name === "content") {
+      const limitedValue = value.slice(0, CONTENT_CHARACTER_LIMIT);
+      setFormData(prev => ({ ...prev, content: limitedValue }));
+      return;
+    }
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -81,6 +96,9 @@ export default function SubmitPaper() {
       }
       if (!formData.content.trim()) {
         throw new Error("Content is required");
+      }
+      if (formData.content.length > CONTENT_CHARACTER_LIMIT) {
+        throw new Error(`Content must be ${CONTENT_CHARACTER_LIMIT.toLocaleString()} characters or fewer to comply with Azure moderation.`);
       }
       if (formData.tags.length === 0) {
         throw new Error("At least one tag is required");
@@ -234,6 +252,19 @@ export default function SubmitPaper() {
               <p className="mt-2 text-[0.65rem] text-[color:var(--ink-soft)] sm:col-span-2">
                 Supports Markdown and KaTeX-friendly LaTeX: inline math with <code>$…$</code> and display math with <code>$…$</code>. Complex TeX macros may not render.
               </p>
+              <div className="mt-3 flex flex-col gap-1 sm:col-span-2">
+                <div className="flex items-center justify-between text-[0.65rem] font-semibold tracking-[0.25em] uppercase text-[color:var(--ink-soft)]">
+                  <span>Content length</span>
+                  <span className={`font-normal tracking-[0.25em] ${contentCounterColorClass}`}>
+                    {contentLength.toLocaleString()} / {CONTENT_CHARACTER_LIMIT.toLocaleString()}
+                  </span>
+                </div>
+                <p className={`text-[0.65rem] ${contentCounterColorClass}`}>
+                  {contentLength >= CONTENT_CHARACTER_LIMIT
+                    ? `Azure moderation only permits ${CONTENT_CHARACTER_LIMIT.toLocaleString()} characters, so additional text is blocked.`
+                    : `${remainingCharacters.toLocaleString()} characters remain before Azure moderation caps the payload.`}
+                </p>
+              </div>
             </div>
 
             <div className="space-y-3">
