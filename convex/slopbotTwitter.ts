@@ -24,7 +24,7 @@ export const postTweet = internalAction({
     tweetId: v.string(),
     tweetUrl: v.string(),
   }),
-  handler: async (ctx, args) => {
+  handler: async (_ctx, args) => {
     const debugMode = isDebugMode();
     if (!debugMode) {
       const bearerToken = process.env.TWITTER_BEARER_TOKEN;
