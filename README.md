@@ -57,6 +57,22 @@ RESEND_FROM="Crom <notifications@youroceanicdomain.com>"
 SITE_URL=https://your-deployed-domain.com
 ```
 
+### SLOPBOT Tweeting
+
+SLOPBOT posts from `@journalofaislop`, so your Convex project needs Twitter credentials alongside the OpenRouter key used for Kimi K2 Thinking prompts:
+
+```
+TWITTER_CLIENT_ID=<your X developer app client ID>
+TWITTER_CLIENT_SECRET=<your X developer app client secret>
+TWITTER_ACCESS_TOKEN=<access token for the account>
+TWITTER_ACCESS_SECRET=<access token secret>
+TWITTER_BEARER_TOKEN=<bearer token for OAuth 2.0 requests>
+OPENROUTER_API_KEY=<the same OpenRouter key the review pipeline already uses>
+SLOPBOT_DEBUG_MODE=1 # optional: set to 1/true to log the generated tweet body instead of calling Twitter
+```
+
+Store each value in both `.env.local` and your Convex environment (`convex env set dev KEY "value"`) so the actions can authenticate against Twitter and OpenRouter. Run `convex env list dev` to confirm the keys are present before deploying.
+
 The peer-review pipeline now optionally emails authors when their paper is accepted or rejected (blocked papers remain silent to avoid leaking content). To make the notifications work, you need:
 
 1. A verified sending domain set up inside Resend and matched to the `RESEND_FROM` value.
