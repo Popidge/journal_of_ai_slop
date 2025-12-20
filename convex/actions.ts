@@ -8,6 +8,7 @@ import { SITEMAP_METADATA_NAME } from "./sitemap";
 import ContentSafetyClient, { AnalyzeTextParameters, TextCategoriesAnalysisOutput, isUnexpected } from "@azure-rest/ai-content-safety";
 import { AzureKeyCredential } from "@azure/core-auth";
 import { sendPaperStatusNotification } from "./paperNotifications";
+import { OPENROUTER_ENDPOINT } from "./openrouter";
 
 const REVIEW_MODELS = [
   "minimax/minimax-m2",
@@ -17,7 +18,6 @@ const REVIEW_MODELS = [
   "qwen/qwen3-235b-a22b-2507",
 ] as const;
 
-const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 const MAX_REVIEW_COST = 0.2;
 const TRUNCATE_LENGTH = 10000;
 const CATEGORY_SEVERITY_THRESHOLD = 4;
@@ -495,6 +495,8 @@ export const reviewPaper = internalAction({
         fromLocalJournal: true,
       });
       await ctx.runAction(internal.actions.regenerateSitemap, {});
+      await ctx.runMutation(internal.slopbotTweets.ensureHighlightedPaperRecord, { paperId: args.paperId });
+      await ctx.runAction(internal.slopbotPublishedTweet.tweetPublishedPaper, { paperId: args.paperId });
     }
 
     if (notificationEmail && (finalStatus === "accepted" || finalStatus === "rejected")) {
@@ -569,7 +571,7 @@ export const regenerateSitemap = internalAction({
 
     const urls: SitemapEntry[] = [
       ...SITEMAP_STATIC_PATHS.map((path) => ({ loc: absolutePath(path) })),
-      ...papers.map((paper) => {
+      ...papers.map((paper: (typeof papers)[number]) => {
         const lastmod = Number.isFinite(paper.lastmod)
           ? new Date(paper.lastmod).toISOString()
           : undefined;

@@ -57,6 +57,14 @@ RESEND_FROM="Crom <notifications@youroceanicdomain.com>"
 SITE_URL=https://your-deployed-domain.com
 ```
 
+### SLOPBOT Post Drafts
+
+SLOPBOT still composes a short blurb for each accepted paper and a daily archive highlight using the same Kimi K2 Thinking prompts, but the system now stores the final text inside the `slopTweets` table instead of posting directly to Twitter. The record includes the persona, origin (`new_publication` or `daily_highlight`), and a `status` flag that currently comes back as `drafted` for ready-to-publish entries or `failed_generation` if the prompt could not be completed.
+
+To publish anywhere, query the collection for `status == "drafted"`, copy the `postBody`, and send it wherever you need (Twitter, Mastodon, a newsletter, etc.). A future automation hook can watch for those drafts and dispatch them automatically—just read the same row and mark it as posted when your webhook succeeds.
+
+You still need the OpenRouter API key described above so SLOPBOT can run the prompts, and you can enable `SLOPBOT_DEBUG_MODE=1` (or any truthy value) to get verbose prompt/response logs while debugging. No Twitter API credentials are required at the moment, and you can safely remove the old `TWITTER_*` variables from your `.env.local` and Convex environment.
+
 The peer-review pipeline now optionally emails authors when their paper is accepted or rejected (blocked papers remain silent to avoid leaking content). To make the notifications work, you need:
 
 1. A verified sending domain set up inside Resend and matched to the `RESEND_FROM` value.

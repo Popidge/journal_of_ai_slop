@@ -37,10 +37,18 @@ export default defineSchema({
       totalTokens: v.optional(v.number()),
     }))),
     totalReviewCost: v.optional(v.number()),
-    totalTokens: v.optional(v.number()),
-    moderation: v.optional(moderationSummary),
+      totalTokens: v.optional(v.number()),
+      moderation: v.optional(moderationSummary),
+  })
+    .index("by_status", ["status"])
+    .index("by_submittedAt", ["submittedAt"]),
 
-  }).index("by_status", ["status"]).index("by_submittedAt", ["submittedAt"]),
+  highlightedPapers: defineTable({
+    paperId: v.id("papers"),
+    dateHighlighted: v.optional(v.number()),
+  })
+    .index("by_paperId", ["paperId"])
+    .index("by_dateHighlighted", ["dateHighlighted"]),
 
   editorsComments: defineTable({
     paperId: v.id("papers"),
@@ -69,6 +77,29 @@ export default defineSchema({
     fromLocalJournal: v.boolean(),
   })
     .index("by_slopId", ["slopId"])
+    .index("by_paperId", ["paperId"]),
+
+  slopTweets: defineTable({
+    postType: v.union(v.literal("new_publication"), v.literal("daily_highlight")),
+    tweetType: v.optional(v.union(v.literal("new_publication"), v.literal("daily_highlight"))),
+    paperId: v.optional(v.id("papers")),
+    highlightId: v.optional(v.id("highlightedPapers")),
+    externalPostId: v.optional(v.string()),
+    tweetId: v.optional(v.string()),
+    postBody: v.optional(v.string()),
+    tweetBody: v.optional(v.string()),
+    persona: v.string(),
+    createdAt: v.number(),
+    status: v.union(
+      v.literal("drafted"),
+      v.literal("failed_generation"),
+      v.literal("success"),
+      v.literal("failed"),
+    ),
+    error: v.optional(v.string()),
+    runId: v.optional(v.string()),
+  })
+    .index("by_postType", ["postType"])
     .index("by_paperId", ["paperId"]),
 
   sitemaps: defineTable({
