@@ -39,7 +39,6 @@ export default defineSchema({
     totalReviewCost: v.optional(v.number()),
       totalTokens: v.optional(v.number()),
       moderation: v.optional(moderationSummary),
-
   })
     .index("by_status", ["status"])
     .index("by_submittedAt", ["submittedAt"]),
