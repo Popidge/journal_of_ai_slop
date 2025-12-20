@@ -83,28 +83,39 @@ export const ensureHighlightedPaperRecord = internalMutation({
   },
 });
 
-export const recordTweetOutcome = internalMutation({
+export const recordPostOutcome = internalMutation({
   args: {
-    tweetType: v.union(v.literal("new_publication"), v.literal("daily_highlight")),
+    postType: v.union(v.literal("new_publication"), v.literal("daily_highlight")),
+    tweetType: v.optional(v.union(v.literal("new_publication"), v.literal("daily_highlight"))),
     paperId: v.optional(v.id("papers")),
     highlightId: v.optional(v.id("highlightedPapers")),
+    externalPostId: v.optional(v.string()),
     tweetId: v.optional(v.string()),
-    tweetBody: v.string(),
+    postBody: v.optional(v.string()),
+    tweetBody: v.optional(v.string()),
     persona: v.string(),
-    status: v.union(v.literal("success"), v.literal("failed")),
+    status: v.union(
+      v.literal("drafted"),
+      v.literal("failed_generation"),
+      v.literal("success"),
+      v.literal("failed"),
+    ),
     error: v.optional(v.string()),
     runId: v.optional(v.string()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
     await ctx.db.insert("slopTweets", {
+      postType: args.postType,
       tweetType: args.tweetType,
       paperId: args.paperId,
       highlightId: args.highlightId,
+      externalPostId: args.externalPostId,
       tweetId: args.tweetId,
+      postBody: args.postBody,
       tweetBody: args.tweetBody,
       persona: args.persona,
-      postedAt: Date.now(),
+      createdAt: Date.now(),
       status: args.status,
       error: args.error,
       runId: args.runId,

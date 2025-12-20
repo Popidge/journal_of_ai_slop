@@ -11,24 +11,16 @@ type HighlightCandidate = {
   paperId: Id<"papers">;
 };
 
-type TweetPostResult = {
-  tweetId: string;
-  tweetUrl: string;
-};
-
-type TweetDailyHighlightResult = null | (TweetPostResult & { paperId: Id<"papers"> });
-
 export const tweetDailyHighlight = internalAction({
   args: {},
   returns: v.union(
     v.null(),
     v.object({
-      tweetId: v.string(),
-      tweetUrl: v.string(),
       paperId: v.id("papers"),
+      postBody: v.string(),
     }),
   ),
-  handler: async (ctx): Promise<TweetDailyHighlightResult> => {
+  handler: async (ctx): Promise<null | { paperId: Id<"papers">; postBody: string }> => {
     const runId = randomUUID();
     const candidate: HighlightCandidate | null = await ctx.runMutation(internal.slopbotTweets.reserveHighlightCandidate, { runId });
     if (!candidate) {
@@ -42,33 +34,55 @@ export const tweetDailyHighlight = internalAction({
     }
 
     const prompt = buildDailyHighlightTweetPrompt(paper);
-    const draft = await generateSlopbotTweet(prompt);
-    const finalTweet = appendLinkToTweet(draft, candidate.paperId);
 
+    let finalTweet: string;
     try {
-      const posted: TweetPostResult = await ctx.runAction(internal.slopbotTwitter.postTweet, { tweetBody: finalTweet });
-      await ctx.runMutation(internal.slopbotTweets.recordTweetOutcome, {
-        tweetType: "daily_highlight",
-        paperId: candidate.paperId,
-        highlightId: candidate.highlightId,
-        tweetBody: finalTweet,
-        persona: SLOPBOT_PERSONA,
-        status: "success",
-        tweetId: posted.tweetId,
-        runId,
-      });
-      return { ...posted, paperId: candidate.paperId };
+      const draft = await generateSlopbotTweet(prompt);
+      finalTweet = appendLinkToTweet(draft, candidate.paperId);
     } catch (error) {
       await ctx.runMutation(internal.slopbotTweets.markHighlightCandidateAsFailed, { highlightId: candidate.highlightId });
-      await ctx.runMutation(internal.slopbotTweets.recordTweetOutcome, {
-        tweetType: "daily_highlight",
+      await ctx.runMutation(internal.slopbotTweets.recordPostOutcome, {
+        postType: "daily_highlight",
         paperId: candidate.paperId,
         highlightId: candidate.highlightId,
-        tweetBody: finalTweet,
         persona: SLOPBOT_PERSONA,
-        status: "failed",
+        status: "failed_generation",
         error: error instanceof Error ? error.message : String(error),
         runId,
+        tweetType: "daily_highlight",
+      });
+      throw error;
+    }
+
+    try {
+      await ctx.runMutation(internal.slopbotTweets.recordPostOutcome, {
+        postType: "daily_highlight",
+        paperId: candidate.paperId,
+        highlightId: candidate.highlightId,
+        persona: SLOPBOT_PERSONA,
+        status: "drafted",
+        runId,
+        postBody: finalTweet,
+        tweetType: "daily_highlight",
+        tweetBody: finalTweet,
+      });
+      return {
+        paperId: candidate.paperId,
+        postBody: finalTweet,
+      };
+    } catch (error) {
+      await ctx.runMutation(internal.slopbotTweets.markHighlightCandidateAsFailed, { highlightId: candidate.highlightId });
+      await ctx.runMutation(internal.slopbotTweets.recordPostOutcome, {
+        postType: "daily_highlight",
+        paperId: candidate.paperId,
+        highlightId: candidate.highlightId,
+        persona: SLOPBOT_PERSONA,
+        status: "failed_generation",
+        error: error instanceof Error ? error.message : String(error),
+        runId,
+        postBody: finalTweet,
+        tweetType: "daily_highlight",
+        tweetBody: finalTweet,
       });
       throw error;
     }

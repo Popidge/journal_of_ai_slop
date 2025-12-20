@@ -81,18 +81,26 @@ export default defineSchema({
     .index("by_paperId", ["paperId"]),
 
   slopTweets: defineTable({
-    tweetType: v.union(v.literal("new_publication"), v.literal("daily_highlight")),
+    postType: v.union(v.literal("new_publication"), v.literal("daily_highlight")),
+    tweetType: v.optional(v.union(v.literal("new_publication"), v.literal("daily_highlight"))),
     paperId: v.optional(v.id("papers")),
     highlightId: v.optional(v.id("highlightedPapers")),
+    externalPostId: v.optional(v.string()),
     tweetId: v.optional(v.string()),
-    tweetBody: v.string(),
+    postBody: v.optional(v.string()),
+    tweetBody: v.optional(v.string()),
     persona: v.string(),
-    postedAt: v.optional(v.number()),
-    status: v.union(v.literal("pending"), v.literal("success"), v.literal("failed")),
+    createdAt: v.number(),
+    status: v.union(
+      v.literal("drafted"),
+      v.literal("failed_generation"),
+      v.literal("success"),
+      v.literal("failed"),
+    ),
     error: v.optional(v.string()),
     runId: v.optional(v.string()),
   })
-    .index("by_tweetType", ["tweetType"])
+    .index("by_postType", ["postType"])
     .index("by_paperId", ["paperId"]),
 
   sitemaps: defineTable({

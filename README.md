@@ -57,21 +57,13 @@ RESEND_FROM="Crom <notifications@youroceanicdomain.com>"
 SITE_URL=https://your-deployed-domain.com
 ```
 
-### SLOPBOT Tweeting
+### SLOPBOT Post Drafts
 
-SLOPBOT posts from `@journalofaislop`, so your Convex project needs Twitter credentials alongside the OpenRouter key used for Kimi K2 Thinking prompts:
+SLOPBOT still composes a short blurb for each accepted paper and a daily archive highlight using the same Kimi K2 Thinking prompts, but the system now stores the final text inside the `slopTweets` table instead of posting directly to Twitter. The record includes the persona, origin (`new_publication` or `daily_highlight`), and a `status` flag that currently comes back as `drafted` for ready-to-publish entries or `failed_generation` if the prompt could not be completed.
 
-```
-TWITTER_CLIENT_ID=<your X developer app client ID>
-TWITTER_CLIENT_SECRET=<your X developer app client secret>
-TWITTER_ACCESS_TOKEN=<access token for the account>
-TWITTER_ACCESS_SECRET=<access token secret>
-TWITTER_BEARER_TOKEN=<bearer token for OAuth 2.0 requests>
-OPENROUTER_API_KEY=<the same OpenRouter key the review pipeline already uses>
-SLOPBOT_DEBUG_MODE=1 # optional: set to 1/true to log the generated tweet body instead of calling Twitter
-```
+To publish anywhere, query the collection for `status == "drafted"`, copy the `postBody`, and send it wherever you need (Twitter, Mastodon, a newsletter, etc.). A future automation hook can watch for those drafts and dispatch them automatically—just read the same row and mark it as posted when your webhook succeeds.
 
-Store each value in both `.env.local` and your Convex environment (`convex env set dev KEY "value"`) so the actions can authenticate against Twitter and OpenRouter. Run `convex env list dev` to confirm the keys are present before deploying.
+You still need the OpenRouter API key described above so SLOPBOT can run the prompts, and you can enable `SLOPBOT_DEBUG_MODE=1` (or any truthy value) to get verbose prompt/response logs while debugging. No Twitter API credentials are required at the moment, and you can safely remove the old `TWITTER_*` variables from your `.env.local` and Convex environment.
 
 The peer-review pipeline now optionally emails authors when their paper is accepted or rejected (blocked papers remain silent to avoid leaking content). To make the notifications work, you need:
 

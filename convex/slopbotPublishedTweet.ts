@@ -5,19 +5,13 @@ import { randomUUID } from "node:crypto";
 import { internal } from "./_generated/api";
 import { SLOPBOT_PERSONA, appendLinkToTweet, buildPublicationTweetPrompt, describeReviewTone, generateSlopbotTweet } from "./slopbotPrompts";
 
-type TweetPostResult = {
-  tweetId: string;
-  tweetUrl: string;
-};
-
 export const tweetPublishedPaper = internalAction({
   args: {
     paperId: v.id("papers"),
   },
   returns: v.object({
-    tweetId: v.string(),
-    tweetUrl: v.string(),
     paperId: v.id("papers"),
+    postBody: v.string(),
   }),
   handler: async (ctx, args) => {
     const runId = randomUUID();
@@ -34,32 +28,38 @@ export const tweetPublishedPaper = internalAction({
 
     const tone = describeReviewTone(paper.reviewVotes ?? undefined);
     const prompt = buildPublicationTweetPrompt(paper, tone);
-    const draft = await generateSlopbotTweet(prompt);
-    const finalTweet = appendLinkToTweet(draft, args.paperId);
 
+    let finalTweet: string;
     try {
-      const posted: TweetPostResult = await ctx.runAction(internal.slopbotTwitter.postTweet, { tweetBody: finalTweet });
-      await ctx.runMutation(internal.slopbotTweets.recordTweetOutcome, {
-        tweetType: "new_publication",
-        paperId: args.paperId,
-        tweetBody: finalTweet,
-        persona: SLOPBOT_PERSONA,
-        status: "success",
-        tweetId: posted.tweetId,
-        runId,
-      });
-      return { ...posted, paperId: args.paperId };
+      const draft = await generateSlopbotTweet(prompt);
+      finalTweet = appendLinkToTweet(draft, args.paperId);
     } catch (error) {
-      await ctx.runMutation(internal.slopbotTweets.recordTweetOutcome, {
-        tweetType: "new_publication",
+      await ctx.runMutation(internal.slopbotTweets.recordPostOutcome, {
+        postType: "new_publication",
         paperId: args.paperId,
-        tweetBody: finalTweet,
         persona: SLOPBOT_PERSONA,
-        status: "failed",
+        status: "failed_generation",
         error: error instanceof Error ? error.message : String(error),
         runId,
+        postBody: undefined,
       });
       throw error;
     }
+
+    await ctx.runMutation(internal.slopbotTweets.recordPostOutcome, {
+      postType: "new_publication",
+      paperId: args.paperId,
+      persona: SLOPBOT_PERSONA,
+      status: "drafted",
+      runId,
+      postBody: finalTweet,
+      tweetType: "new_publication",
+      tweetBody: finalTweet,
+    });
+
+    return {
+      paperId: args.paperId,
+      postBody: finalTweet,
+    };
   },
 });
