@@ -26,6 +26,7 @@ import type * as slopbotDailyHighlight from "../slopbotDailyHighlight.js";
 import type * as slopbotPrompts from "../slopbotPrompts.js";
 import type * as slopbotPublishedTweet from "../slopbotPublishedTweet.js";
 import type * as slopbotTweets from "../slopbotTweets.js";
+import type * as slopbotWebhook from "../slopbotWebhook.js";
 
 import type {
   ApiFromModules,
@@ -52,6 +53,7 @@ declare const fullApi: ApiFromModules<{
   slopbotPrompts: typeof slopbotPrompts;
   slopbotPublishedTweet: typeof slopbotPublishedTweet;
   slopbotTweets: typeof slopbotTweets;
+  slopbotWebhook: typeof slopbotWebhook;
 }>;
 
 /**

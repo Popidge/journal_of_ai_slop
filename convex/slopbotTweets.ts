@@ -1,6 +1,7 @@
 import { internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
+import { internal } from "./_generated/api";
 
 const HIGHLIGHT_LIMIT = 50;
 
@@ -120,6 +121,13 @@ export const recordPostOutcome = internalMutation({
       error: args.error,
       runId: args.runId,
     });
+
+    if (args.postBody) {
+      // Validation note: verifying this scheduled action is easiest via Convex logs/Devtools after recordPostOutcome returns.
+      await ctx.scheduler.runAfter(0, internal.slopbotWebhook.triggerN8nPost, {
+        postBody: args.postBody,
+      });
+    }
     return null;
   },
 });
