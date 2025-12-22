@@ -15,7 +15,7 @@ export const triggerN8nPost = internalAction({
     postBody: v.string(),
   },
   returns: v.null(),
-  handler: async (ctx, args) => {
+  handler: async (_ctx, args) => {
     const webhookUrl = requireEnv("N8N_WEBHOOK_URL");
     const webhookToken = requireEnv("N8N_WEBHOOK_TOKEN");
 
