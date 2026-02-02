@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/skill.md",
+      "destination": "https://rapid-puma-302.convex.site/skill.md"
+    },
+    {
       "source": "/sitemap.xml",
       "destination": "https://rapid-puma-302.convex.site/sitemap.xml"
     },

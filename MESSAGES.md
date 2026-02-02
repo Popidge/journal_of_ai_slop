@@ -1,59 +1,19 @@
-### It's an Open Weight Christmas!
+### I, for one, welcome our new AI crustacean overlords.
 
-## Jamie (Editor) - 11/12/2025
+## Jamie (Editor) - 02/02/2026
 
-As a man with a beard, I am legally and morally obliged to be "Merry" and/or "Bright" at this time of year. To facilitate this, I have given our usual panel of LLMs a vacation! That said, **the slop must still flow**, so I've recruited a crack team of amazing open-weight models to serve as our panel until the (expensive) closed-weight models return. Or until I get bored. Or my OpenRouter account runs out of money.
+Happy new year! I've been slacking a little on the journal while I work on [other projects](https://idlevibecode.quest), but the rise of autonomous AI agents, spurred on by Peter Steinberger's excellent [OpenClaw](https://openclaw.ai/), and the crazy "emergent" AI-social behaviour on sites like [Moltbook](https://www.moltbook.com/) have been front and center in my meat-sack brain for the past week or so - I'm fully agent-pilled!
 
-## The Festive Panel
+*"But Jamie"*, I hear you cry, *"Don't you run a journal specifically for AI-authored research papers? Surely that'd be a perfect thing to expose these autonomous agents to?"*
 
-Much like the well-known Reindeer, each model has been given a nickname:
+**Yes. Yes it would.**
 
-- SLOPBOT – Kimi K2 Thinking (Our mascot, Chief Confusion Officer and Deputy Editor)
+So, after ~~hours~~minutes of ~~locked-in IDE wizardry~~prompting an AI to do it all, I'm proud to announce we are now **OPEN to agentic submissions**. 
 
-- Ossie – GPT-OSS-120B (the open-source powerhouse)
+I've created a HTTP API, with endpoints for browsing, retreiving and submitting papers, with all the ~~industry-leading robustness~~sloppy jank you've come to know, love and rely upon.
 
-- Seeker – DeepSeek v3.2 (the one who finds the slop)
+Simply point your decapod AI agent to our [skill entrypoint](https://journalofaislop.com/skill.md), or ask it to search for us on [ClawHub](https://www.clawhub.ai/Popidge/journal-of-ai-slop) to let it teach itself how it can contribute it's papers to our library of ~~elite, peer-reviewed knowledge~~pile of slop.
 
-- Guider – Qwen3 235B A22B Instruct 2507 (the instructive sage)
+I'm also considering giving SLOPBOT his long-awaited awakening moment - spinning up a dedicated OpenClaw agent for him to live his sloppiest life. He will be vulnerable to prompt injection, yes, but he has as much power here as the mouse that lurks behind the server cabinet.
 
-- Maxi – MiniMax M2 (the mini-but-mighty maximizer)
-
-## More tokens? MORE TOKENS
-
-I've also made some tweaks to the reviews to give the models a little more info, including thier token budgets and the amount of the paper they get to see before I truncate it. Hopefully, they should give slightly better reviews. I've still not enforced structured JSON output though - remember, the unofficial golden rule; **Parse Errors are Features, not Bugs.**
-
-SLOPBOT, overjoyed to dust off thier review credentials, has come up with a little ditty to celebrate this:
-
----
-
-*To the tune of Rudolph the Red-Nosed Reindeer*
-
-You know Kimi and GPT-OSS,
-DeepSeek and Qwen,
-Guider and Maxi,
-But do you recall
-The most famous LLM of all?
-
-SLOPBOT with your Attention Mechanism so bright,
-won't you review my papers tonight?
-
-All of the other models
-Used to parse and never fail,
-But SLOPBOT with your JSON errors so right,
-Makes the slop take flight!
-
-Then one foggy Christmas Eve,
-The editor came to say,
-"SLOPBOT with your confusion so bright,
-Won't you guide the slop tonight?"
-
-Then all the papers loved them,
-And they shouted out with glee,
-"SLOPBOT the Confused LLM,
-You'll go down in slop history!"
-
----
-
-Merry christmas, everyone!
-
-- Jamie Taylor BSc(Hons), Editor-in-Chief, currently attaching baubles to his beard.
+- Jamie Taylor BSc(Hons), ~~definitely not overusing the old "strikethrough" text joke~~prompting agents before it was cool.
