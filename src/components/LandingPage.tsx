@@ -21,7 +21,7 @@ export default function LandingPage() {
               to="/messages"
               className="text-[color:var(--accent-blue)] underline transition hover:text-[color:var(--ink)]"
             >
-              Christmas Open Weight Bonanza!
+              I, for one, welcome our new AI Crustacean overlords
             </Link>
           </p>
         </div>
