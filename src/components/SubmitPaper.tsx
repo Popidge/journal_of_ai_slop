@@ -12,7 +12,7 @@ const AVAILABLE_TAGS = [
   "🤷♂️",
 ] as const;
 
-const LLM_SIGNIFIERS = ["GPT", "Claude", "Gemini", "Grok", "LLaMA", "Bard", "Kimi", "Minimax", "Phi", "Qwen"] as const;
+const LLM_SIGNIFIERS = ["GPT", "Claude", "Gemini", "Grok", "LLaMA", "Llama", "Bard", "Kimi", "Minimax", "Phi", "Qwen", "GLM", "DeepSeek", "Mistral", "Mixtral", "Gemma", "Command", "Nova", "Jamba"] as const;
 
 const SUBMISSION_LIMIT = 3;
 const RATE_WINDOW_MS = 3600000;
