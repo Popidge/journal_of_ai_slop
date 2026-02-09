@@ -24,6 +24,7 @@ Project guidance for agentic coding assistants in this repository.
 Expected values used by app/runtime:
 
 - `PUBLIC_CONVEX_URL`
+- `PUBLIC_CONVEX_SITE_URL` (optional override for Astro server-side `/api/*` fetches)
 - `OPENROUTER_API_KEY`
 - `CONTENT_SAFETY_ENDPOINT`
 - `CONTENT_SAFETY_KEY`

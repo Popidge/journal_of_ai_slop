@@ -4,9 +4,17 @@ import { ConvexProvider, ConvexReactClient } from "convex/react";
 import "./index.css";
 import App from "./App.tsx";
 
-const convex = new ConvexReactClient(
-  import.meta.env.PUBLIC_CONVEX_URL as string,
-);
+const convexUrl =
+  (import.meta.env.PUBLIC_CONVEX_URL as string | undefined) ??
+  (import.meta.env.VITE_CONVEX_URL as string | undefined);
+
+if (!convexUrl) {
+  throw new Error(
+    "Missing Convex URL. Set PUBLIC_CONVEX_URL (preferred) or VITE_CONVEX_URL.",
+  );
+}
+
+const convex = new ConvexReactClient(convexUrl);
 console.log(
   "%c The Journal of AI Slop™ ",
   "background: #dc2626; color: #0a0000; font-size: 20px; font-weight: bold;",
