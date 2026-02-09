@@ -5,19 +5,22 @@
   "type": "module",
   "scripts": {
     "dev": "npm-run-all --parallel dev:frontend dev:backend",
-    "dev:frontend": "vite --open",
+    "dev:frontend": "astro dev --open",
     "dev:backend": "convex dev",
     "predev": "convex dev --until-success && convex dashboard",
-    "build": "tsc -b && vite build",
+    "build": "astro build",
     "lint": "tsc && eslint .  --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "astro preview"
   },
   "dependencies": {
+    "@astrojs/react": "^4.4.0",
+    "@astrojs/vercel": "^9.0.4",
     "@azure-rest/ai-content-safety": "^1.0.1",
     "@azure/core-auth": "^1.10.1",
     "@convex-dev/resend": "^0.2.2",
     "@types/katex": "^0.16.7",
     "@vercel/analytics": "^1.6.1",
+    "astro": "^5.14.3",
     "convex": "^1.31.0",
     "katex": "^0.16.27",
     "react": "^19.2.3",

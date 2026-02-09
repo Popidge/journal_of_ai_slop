@@ -1,0 +1,13 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import MarkdownDocument from "@/components/astro/MarkdownDocument.astro";
+import sustainabilityCopy from "../../SUSTAINABILITY.md?raw";
+---
+
+<BaseLayout title="Sustainability | The Journal of AI Slop™">
+  <MarkdownDocument
+    title="Sustainability Policy"
+    dek="How we balance AI slop with planetary stewardship."
+    content={sustainabilityCopy}
+  />
+</BaseLayout>

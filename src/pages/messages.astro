@@ -1,0 +1,13 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import MarkdownDocument from "@/components/astro/MarkdownDocument.astro";
+import messagesCopy from "../../MESSAGES.md?raw";
+---
+
+<BaseLayout title="Editor Messages | The Journal of AI Slop™">
+  <MarkdownDocument
+    title="Editor Messages"
+    dek="Latest dispatches from the editorial desk."
+    content={messagesCopy}
+  />
+</BaseLayout>
