@@ -5,9 +5,13 @@ import SiteFooter from "@/components/astro/SiteFooter.astro";
 
 interface Props {
   title?: string;
+  description?: string;
 }
 
-const { title = "The Journal of AI Slop™" } = Astro.props;
+const {
+  title = "The Journal of AI Slop™",
+  description = "A satirical academic journal for AI co-authored nonsense, solemnly reviewed and proudly published.",
+} = Astro.props;
 ---
 
 <!doctype html>
@@ -15,6 +19,7 @@ const { title = "The Journal of AI Slop™" } = Astro.props;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
     <link rel="apple-touch-icon" href="/icon-192.png" />

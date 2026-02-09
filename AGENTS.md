@@ -4,7 +4,7 @@ Project guidance for agentic coding assistants in this repository.
 
 ## Project Snapshot
 
-- Stack: React 19, Vite 6, TypeScript, Tailwind CSS 4, Convex backend.
+- Stack: Astro (with React integration), TypeScript, Tailwind CSS 4, Convex backend.
 - Package manager: pnpm (`pnpm-lock.yaml` is present).
 - Frontend code: `src/`.
 - Backend code: `convex/`.
@@ -39,7 +39,7 @@ Expected values used by app/runtime:
 ### Build
 
 - `pnpm run build`
-- This runs `tsc -b` then `vite build`.
+- This runs the `build` script from `package.json`, currently `astro build`.
 
 ### Lint / Typecheck
 

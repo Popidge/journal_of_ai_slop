@@ -9,11 +9,11 @@ const links = [
 ];
 ---
 
-<nav class="mb-6 flex flex-col gap-3 rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/85 px-4 py-3 shadow-[0_10px_25px_rgba(35,24,21,0.15)] backdrop-blur-sm md:flex-row md:items-center md:gap-6">
+<nav aria-label="Main" class="mb-6 flex flex-col gap-3 rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/85 px-4 py-3 shadow-[0_10px_25px_rgba(35,24,21,0.15)] backdrop-blur-sm md:flex-row md:items-center md:gap-6">
   <div class="flex items-center justify-between gap-3">
     <a href="/" class="flex items-center gap-3">
       <span class="relative h-11 w-11 overflow-hidden rounded-full border border-[color:var(--coffee)] bg-[color:var(--coffee-light)]/70 sm:h-12 sm:w-12">
-        <img src={logoCircle.src} alt="AI Slop circular badge" class="h-full w-full object-cover" />
+        <img src={logoCircle} alt="AI Slop circular badge" class="h-full w-full object-cover" />
         <span class="absolute inset-1 rounded-full border border-[color:var(--coffee)] opacity-60" aria-hidden="true" />
       </span>
       <div>

@@ -1,0 +1,17 @@
+---
+interface Props {
+  title: string;
+  message: string;
+}
+
+const { title, message } = Astro.props;
+---
+
+<main class="min-h-screen px-3 py-10 text-[color:var(--ink)] sm:px-4">
+  <div class="mx-auto w-full max-w-[1040px] space-y-6 rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-6 text-center shadow-[0_20px_40px_rgba(35,24,21,0.12)] sm:text-left">
+    <p class="text-[0.65rem] uppercase tracking-[0.3em] text-[color:var(--ink-soft)] sm:text-xs sm:tracking-[0.5em]">Migration in progress</p>
+    <h1 class="wobbly-underline text-[clamp(2rem,5vw,3rem)] font-semibold text-[color:var(--ink)]">{title}</h1>
+    <p class="text-sm text-[color:var(--ink-soft)] sm:text-base">{message}</p>
+    <slot />
+  </div>
+</main>
