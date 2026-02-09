@@ -1,9 +1,16 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import { fetchPapersPage } from "@/lib/papersApi";
+
+const latest = await fetchPapersPage({
+  origin: Astro.url.origin,
+  status: "accepted",
+  limit: 3,
+});
 ---
 
 <BaseLayout>
-  <main class="min-h-screen px-3 py-5 text-[color:var(--ink)] sm:px-4">
+  <main class="px-3 py-5 text-[color:var(--ink)] sm:px-4">
     <section class="-mt-2 mx-auto mb-4 w-full max-w-[1040px] px-1 sm:px-0">
       <div class="rounded-[24px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-4 text-center text-sm font-semibold tracking-[0.2em] text-[color:var(--coffee)] shadow-[0_12px_35px_rgba(35,24,21,0.15)] sm:text-base">
         <p class="m-0">
@@ -36,6 +43,26 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
             <a href="/papers" class="button-scale inline-flex w-full items-center justify-center rounded-full border border-[color:var(--coffee-light)] bg-transparent px-6 py-3 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--coffee)] transition-colors duration-200 hover:border-[color:var(--accent-blue)] hover:text-[color:var(--accent-blue)] sm:w-auto sm:text-sm">Browse Published Nonsense</a>
           </div>
         </div>
+      </div>
+
+      <div class="space-y-4 rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-4 shadow-[0_10px_30px_rgba(35,24,21,0.12)] sm:p-6">
+        <div class="flex items-center justify-between">
+          <h2 class="text-[clamp(1.4rem,3vw,2rem)] font-semibold text-[color:var(--ink)]">Latest Published Slop</h2>
+          <a href="/papers" class="text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-[color:var(--accent-blue)] underline">View all</a>
+        </div>
+        {latest.papers.length === 0 ? (
+          <p class="text-sm text-[color:var(--ink-soft)]">No accepted papers yet. The tribunal is still arguing.</p>
+        ) : (
+          <div class="grid gap-3 sm:grid-cols-3">
+            {latest.papers.map((paper) => (
+              <a href={`/papers/${paper._id}`} class="rounded-[18px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)] p-3 shadow-[0_10px_24px_rgba(35,24,21,0.1)] transition hover:border-[color:var(--accent-blue)]">
+                <h3 class="text-base font-semibold text-[color:var(--ink)]">{paper.title}</h3>
+                <p class="mt-1 text-xs italic text-[color:var(--ink-soft)]">{paper.authors}</p>
+                <p class="mt-2 text-[0.65rem] text-[color:var(--ink-soft)]">{new Date(paper.submittedAt).toLocaleDateString("en-GB")}</p>
+              </a>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   </main>

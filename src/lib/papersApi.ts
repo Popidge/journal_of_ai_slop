@@ -43,13 +43,18 @@ type PapersPageResponse = {
   cursor: string | null;
 };
 
+export type EnvironmentalImpact = {
+  energyPerTokenWh: number;
+  co2PerWh: number;
+};
+
 const parseStatus = (status: string | null | undefined): PublicPaperStatus =>
   status === "rejected" ? "rejected" : "accepted";
 
 export const resolvePublicStatus = (value: string | null | undefined) =>
   parseStatus(value);
 
-const resolveConvexSiteOrigin = (): string | null => {
+export const resolveConvexSiteOrigin = (): string | null => {
   const explicitConvexSiteUrl = import.meta.env.PUBLIC_CONVEX_SITE_URL as
     | string
     | undefined;
@@ -191,4 +196,36 @@ export const fetchPaperById = async (params: {
   }
 
   return null;
+};
+
+export const fetchEnvironmentalImpact = async (params: {
+  origin: string;
+}): Promise<EnvironmentalImpact> => {
+  const origins = buildApiOrigins(params.origin);
+  const errors: string[] = [];
+
+  for (const origin of origins) {
+    const url = new URL("/api/environmental-impact", origin);
+
+    try {
+      return await fetchJson<EnvironmentalImpact>(url);
+    } catch (error) {
+      errors.push(
+        error instanceof Error
+          ? error.message
+          : "Unknown environmental impact API error",
+      );
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new Error(
+      `Unable to load environmental impact values. Tried: ${errors.join(" | ")}`,
+    );
+  }
+
+  return {
+    energyPerTokenWh: 0,
+    co2PerWh: 0,
+  };
 };

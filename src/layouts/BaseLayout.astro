@@ -2,6 +2,8 @@
 import "@/index.css";
 import NavigationBar from "@/components/astro/NavigationBar.astro";
 import SiteFooter from "@/components/astro/SiteFooter.astro";
+import EcoModeBannerIsland from "@/components/islands/EcoModeBannerIsland";
+import EcoModeOverlayIsland from "@/components/islands/EcoModeOverlayIsland";
 
 interface Props {
   title?: string;
@@ -29,9 +31,11 @@ const {
   </head>
   <body>
     <div class="relative min-h-screen bg-transparent px-2 sm:px-0">
+      <EcoModeOverlayIsland client:load />
       <div class="mx-auto w-full max-w-[1200px] px-2 py-6 sm:px-6 lg:px-8">
         <div class="relative z-10 rounded-[24px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)] p-3 shadow-[0_8px_25px_rgba(35,24,21,0.18)] sm:rounded-[32px] sm:p-6 lg:p-8">
           <NavigationBar />
+          <EcoModeBannerIsland client:load />
           <slot />
         </div>
         <SiteFooter />
