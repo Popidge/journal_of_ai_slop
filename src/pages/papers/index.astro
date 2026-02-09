@@ -17,6 +17,7 @@ const page = await fetchPapersPage({
   status,
   cursor,
   limit,
+  query,
 });
 
 let energyPerTokenWh = 0;
@@ -32,16 +33,10 @@ try {
 
 const heading = status === "accepted" ? "Accepted Papers" : "Rejected Papers";
 const statusLabel = status === "accepted" ? "accepted" : "rejected";
-const normalizedQuery = query.toLowerCase();
-
-const filteredPapers = normalizedQuery.length > 0
-  ? page.papers.filter((paper) => {
-    const haystack = [paper.title, paper.authors, paper.tags.join(" "), paper.content]
-      .join(" ")
-      .toLowerCase();
-    return haystack.includes(normalizedQuery);
-  })
-  : page.papers;
+const getTokens = (paper: (typeof page.papers)[number]) =>
+  paper.totalTokens ??
+  paper.reviewVotes?.reduce((sum, review) => sum + (review.totalTokens ?? 0), 0) ??
+  0;
 
 const buildHref = (nextStatus: "accepted" | "rejected", nextCursor?: string | null) => {
   const next = new URLSearchParams();
@@ -101,13 +96,13 @@ const buildHref = (nextStatus: "accepted" | "rejected", nextCursor?: string | nu
         </div>
       </header>
 
-      {filteredPapers.length === 0 ? (
+      {page.papers.length === 0 ? (
         <div class="rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/95 p-6 text-center text-sm text-[color:var(--ink-soft)] shadow-[0_15px_35px_rgba(35,24,21,0.12)]">
           No {statusLabel} papers found{query ? ` for "${query}"` : ""}.
         </div>
       ) : (
         <div class="space-y-4">
-          {filteredPapers.map((paper) => (
+          {page.papers.map((paper) => (
             <a
               href={`/papers/${paper._id}`}
               class="group block rounded-[24px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-4 shadow-[0_15px_35px_rgba(35,24,21,0.12)] transition hover:border-[color:var(--accent-blue)] sm:rounded-[28px] sm:p-6"
@@ -126,9 +121,9 @@ const buildHref = (nextStatus: "accepted" | "rejected", nextCursor?: string | nu
               </div>
               <div class="mt-4 grid grid-cols-1 gap-1 text-[0.7rem] text-[color:var(--ink-soft)] sm:grid-cols-2">
                 <p class="non-eco-only">Review cost: {paper.totalReviewCost != null ? formatCurrency(paper.totalReviewCost, 6) : "Calculating..."}</p>
-                <p class="non-eco-only">Tokens: {paper.totalTokens != null ? formatTokens(paper.totalTokens) : (paper.reviewVotes?.length ? formatTokens(paper.reviewVotes.reduce((sum, review) => sum + (review.totalTokens ?? 0), 0)) : "Calculating...")}</p>
-                <p class="eco-only">Energy: {energyPerTokenWh > 0 && (paper.totalTokens != null || paper.reviewVotes?.length) ? formatEnergy(tokensToEnergyMWh((paper.totalTokens ?? paper.reviewVotes?.reduce((sum, review) => sum + (review.totalTokens ?? 0), 0) ?? 0), energyPerTokenWh)) : "Calculating energy..."}</p>
-                <p class="eco-only">CO2: {energyPerTokenWh > 0 && co2PerWh > 0 && (paper.totalTokens != null || paper.reviewVotes?.length) ? formatCo2(tokensToCo2g((paper.totalTokens ?? paper.reviewVotes?.reduce((sum, review) => sum + (review.totalTokens ?? 0), 0) ?? 0), energyPerTokenWh, co2PerWh)) : "Calculating impact..."}</p>
+                <p class="non-eco-only">Tokens: {paper.totalTokens != null || paper.reviewVotes?.length ? formatTokens(getTokens(paper)) : "Calculating..."}</p>
+                <p class="eco-only">Energy: {energyPerTokenWh > 0 && (paper.totalTokens != null || paper.reviewVotes?.length) ? formatEnergy(tokensToEnergyMWh(getTokens(paper), energyPerTokenWh)) : "Calculating energy..."}</p>
+                <p class="eco-only">CO2: {energyPerTokenWh > 0 && co2PerWh > 0 && (paper.totalTokens != null || paper.reviewVotes?.length) ? formatCo2(tokensToCo2g(getTokens(paper), energyPerTokenWh, co2PerWh)) : "Calculating impact..."}</p>
               </div>
               <p class="mt-4 text-right text-[0.7rem] text-[color:var(--ink-soft)]">
                 Submitted on {new Date(paper.submittedAt).toLocaleDateString("en-GB")}

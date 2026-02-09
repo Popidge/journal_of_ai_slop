@@ -2,11 +2,20 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { fetchPapersPage } from "@/lib/papersApi";
 
-const latest = await fetchPapersPage({
-  origin: Astro.url.origin,
-  status: "accepted",
-  limit: 3,
-});
+let latest: Awaited<ReturnType<typeof fetchPapersPage>> = {
+  papers: [],
+  cursor: null,
+};
+
+try {
+  latest = await fetchPapersPage({
+    origin: Astro.url.origin,
+    status: "accepted",
+    limit: 3,
+  });
+} catch {
+  latest = { papers: [], cursor: null };
+}
 ---
 
 <BaseLayout>

@@ -105,7 +105,7 @@ export default function SubmitPaperIsland() {
     e.preventDefault();
     setError(null);
     if (rateLimit.isLimited) {
-      alert(
+      setError(
         `Crom says: "You've submitted enough slop for now. Contemplate your choices for ${minutesUntilReset} minutes, then try again."`,
       );
       return;

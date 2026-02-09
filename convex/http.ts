@@ -164,24 +164,42 @@ router.route({
   path: "/api/environmental-impact",
   method: "GET",
   handler: httpAction(async (ctx, _req) => {
-    const impact = await ctx.runQuery(api.environmentalImpact.getImpactValues, {
-      label: "default",
-    });
+    const headers = {
+      "Content-Type": "application/json",
+      "Cache-Control":
+        "public, max-age=0, s-maxage=300, stale-while-revalidate=1800",
+    };
 
-    return new Response(
-      JSON.stringify({
-        energyPerTokenWh: impact?.energyPerTokenWh ?? 0,
-        co2PerWh: impact?.co2PerWh ?? 0,
-      }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control":
-            "public, max-age=0, s-maxage=300, stale-while-revalidate=1800",
+    try {
+      const impact = await ctx.runQuery(
+        api.environmentalImpact.getImpactValues,
+        {
+          label: "default",
         },
-      },
-    );
+      );
+
+      return new Response(
+        JSON.stringify({
+          energyPerTokenWh: impact?.energyPerTokenWh ?? 0,
+          co2PerWh: impact?.co2PerWh ?? 0,
+        }),
+        {
+          status: 200,
+          headers,
+        },
+      );
+    } catch (error) {
+      console.error("Failed to read environmental impact values", error);
+      return new Response(
+        JSON.stringify({
+          error: "Unable to load environmental impact values",
+        }),
+        {
+          status: 500,
+          headers,
+        },
+      );
+    }
   }),
 });
 

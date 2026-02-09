@@ -17,6 +17,7 @@ export const GET: APIRoute = async () => {
       headers: {
         Accept: "application/json",
       },
+      signal: AbortSignal.timeout(10_000),
     });
 
     return new Response(response.body, {

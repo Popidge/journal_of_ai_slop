@@ -51,11 +51,13 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     const target = buildConvexUrl(new URL(request.url));
     const payload = await request.text();
+    const contentType =
+      request.headers.get("Content-Type") ?? "application/json";
 
     const response = await fetch(target, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": contentType,
         Accept: "application/json",
       },
       body: payload,

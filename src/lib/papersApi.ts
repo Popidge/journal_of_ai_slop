@@ -124,10 +124,60 @@ export const fetchPapersPage = async (params: {
   status?: string | null;
   cursor?: string | null;
   limit?: number;
+  query?: string | null;
 }): Promise<PapersPageResponse> => {
   const status = parseStatus(params.status);
   const limit = params.limit ?? 12;
   const validatedLimit = Math.min(Math.max(limit, 1), 50);
+  const normalizedQuery = (params.query ?? "").trim().toLowerCase();
+
+  if (normalizedQuery.length > 0) {
+    const pageOffset = Math.max(
+      0,
+      Number.parseInt(params.cursor ?? "0", 10) || 0,
+    );
+    const scanPageSize = 50;
+    const maxScannedPapers = 2000;
+    const aggregated: PublicPaper[] = [];
+
+    let upstreamCursor: string | null = null;
+    while (aggregated.length < maxScannedPapers) {
+      const nextBatch = await fetchPapersPage({
+        origin: params.origin,
+        status,
+        cursor: upstreamCursor,
+        limit: scanPageSize,
+      });
+      if (nextBatch.papers.length === 0) {
+        break;
+      }
+      aggregated.push(...nextBatch.papers);
+      upstreamCursor = nextBatch.cursor;
+      if (!upstreamCursor) {
+        break;
+      }
+    }
+
+    const filtered = aggregated.filter((paper) => {
+      const haystack = [
+        paper.title,
+        paper.authors,
+        paper.tags.join(" "),
+        paper.content,
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(normalizedQuery);
+    });
+
+    const sliced = filtered.slice(pageOffset, pageOffset + validatedLimit);
+    const nextOffset = pageOffset + validatedLimit;
+
+    return {
+      papers: sliced,
+      cursor: nextOffset < filtered.length ? `${nextOffset}` : null,
+    };
+  }
 
   const origins = buildApiOrigins(params.origin);
   const errors: string[] = [];
@@ -219,7 +269,7 @@ export const fetchEnvironmentalImpact = async (params: {
   }
 
   if (errors.length > 0) {
-    throw new Error(
+    console.warn(
       `Unable to load environmental impact values. Tried: ${errors.join(" | ")}`,
     );
   }

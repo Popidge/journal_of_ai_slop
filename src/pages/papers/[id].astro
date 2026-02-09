@@ -20,8 +20,7 @@ try {
   energyPerTokenWh = impact.energyPerTokenWh;
   co2PerWh = impact.co2PerWh;
 } catch {
-  energyPerTokenWh = 0;
-  co2PerWh = 0;
+  // Keep default values.
 }
 
 if (!paper) {

@@ -21,7 +21,7 @@ export const useEcoModeState = () => {
   }, []);
 
   const toggleEcoMode = () => {
-    writeEcoMode(!ecoMode);
+    writeEcoMode(!readEcoMode());
   };
 
   return {
