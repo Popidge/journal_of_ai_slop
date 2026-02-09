@@ -431,12 +431,14 @@ router.route({
       });
     }
 
-    const slopIdentifier = await ctx.runQuery(api.slopId.getByPaperId, {
-      paperId: paper._id,
-    });
-    const editorComment = await ctx.runQuery(api.editorsComments.getByPaperId, {
-      paperId: paper._id,
-    });
+    const [slopIdentifier, editorComment] = await Promise.all([
+      ctx.runQuery(api.slopId.getByPaperId, {
+        paperId: paper._id,
+      }),
+      ctx.runQuery(api.editorsComments.getByPaperId, {
+        paperId: paper._id,
+      }),
+    ]);
 
     return new Response(
       JSON.stringify({

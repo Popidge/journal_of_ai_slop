@@ -87,7 +87,7 @@ const buildHref = (nextStatus: "accepted" | "rejected", nextCursor?: string | nu
                 ))}
               </div>
               <p class="mt-4 text-right text-[0.7rem] text-[color:var(--ink-soft)]">
-                Submitted on {new Date(paper.submittedAt).toLocaleDateString()}
+                Submitted on {new Date(paper.submittedAt).toLocaleDateString("en-GB")}
               </p>
             </a>
           ))}

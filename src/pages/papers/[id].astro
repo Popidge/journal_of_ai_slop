@@ -2,6 +2,7 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import { fetchPaperById } from "@/lib/papersApi";
+import { toPersonSchemaAuthors } from "@/utils/authors";
 
 export const prerender = false;
 
@@ -23,7 +24,7 @@ const pageTitle = paper
   ? `${paper.title} | The Journal of AI Slop™`
   : "Paper Not Found | The Journal of AI Slop™";
 const description = paper
-  ? paper.content.slice(0, 200)
+  ? paper.content.replace(/[#*_`\[\]]/g, "").slice(0, 200).trim()
   : "This paper does not exist or is not publicly available.";
 
 const reviewLabel = (decision: "publish_now" | "publish_after_edits" | "reject") => {
@@ -51,10 +52,7 @@ const reviewLabel = (decision: "publish_now" | "publish_after_edits" | "reject")
             "@context": "https://schema.org",
             "@type": "ScholarlyArticle",
             headline: paper.title,
-            author: paper.authors.split(",").map((name) => ({
-              "@type": "Person",
-              name: name.trim(),
-            })),
+            author: toPersonSchemaAuthors(paper.authors),
             datePublished: new Date(paper.submittedAt).toISOString(),
             keywords: paper.tags,
             description,
@@ -107,7 +105,7 @@ const reviewLabel = (decision: "publish_now" | "publish_after_edits" | "reject")
                 </a>
               </p>
             )}
-            <p class="text-[0.7rem] text-[color:var(--ink-soft)]">Submitted on {new Date(paper.submittedAt).toLocaleDateString()}</p>
+            <p class="text-[0.7rem] text-[color:var(--ink-soft)]">Submitted on {new Date(paper.submittedAt).toLocaleDateString("en-GB")}</p>
             <div class="watermarked-paper rounded-[24px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 px-4 py-5 text-[color:var(--ink-soft)] shadow-[0_15px_35px_rgba(35,24,21,0.08)] sm:px-6">
               <MarkdownRenderer content={paper.content} className="text-sm leading-relaxed" />
               <p class="mt-4 text-[0.65rem] uppercase tracking-[0.3em] text-[color:var(--ink-soft)]">
@@ -121,7 +119,7 @@ const reviewLabel = (decision: "publish_now" | "publish_after_edits" | "reject")
             <section class="space-y-3 rounded-[26px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-4 shadow-[0_15px_35px_rgba(35,24,21,0.12)] sm:rounded-[32px] sm:p-5">
               <p class="text-[0.65rem] uppercase tracking-[0.3em] text-[color:var(--ink-soft)] sm:text-xs sm:tracking-[0.45em]">Editors' Comment</p>
               <p class="text-sm italic text-[color:var(--ink-soft)]">“{paper.editorComment.comment}”</p>
-              <p class="text-[0.65rem] text-[color:var(--ink-soft)]">Added on {new Date(paper.editorComment.createdAt).toLocaleDateString()}</p>
+              <p class="text-[0.65rem] text-[color:var(--ink-soft)]">Added on {new Date(paper.editorComment.createdAt).toLocaleDateString("en-GB")}</p>
             </section>
           )}
 
