@@ -4,7 +4,7 @@ import MigrationPlaceholder from "@/components/astro/MigrationPlaceholder.astro"
 
 export const prerender = false;
 
-const { id } = Astro.params;
+const id = Astro.params.id ?? "unknown";
 ---
 
 <BaseLayout title="Paper Detail | The Journal of AI Slop™">

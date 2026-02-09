@@ -48,7 +48,7 @@ npm install
 Create a `.env.local` with:
 
 ```
-VITE_CONVEX_URL=<your Convex dev URL>
+PUBLIC_CONVEX_URL=<your Convex dev URL>
 OPENROUTER_API_KEY=<the key you promised to stash>
 CONTENT_SAFETY_ENDPOINT=<your Azure Content Safety endpoint>
 CONTENT_SAFETY_KEY=<that resource's API key>

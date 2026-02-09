@@ -23,7 +23,7 @@ Project guidance for agentic coding assistants in this repository.
 
 Expected values used by app/runtime:
 
-- `VITE_CONVEX_URL`
+- `PUBLIC_CONVEX_URL`
 - `OPENROUTER_API_KEY`
 - `CONTENT_SAFETY_ENDPOINT`
 - `CONTENT_SAFETY_KEY`
