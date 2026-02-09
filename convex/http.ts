@@ -196,7 +196,10 @@ router.route({
         }),
         {
           status: 500,
-          headers,
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store, max-age=0",
+          },
         },
       );
     }

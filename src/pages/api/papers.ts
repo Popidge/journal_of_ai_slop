@@ -25,6 +25,7 @@ export const GET: APIRoute = async ({ request }) => {
       headers: {
         Accept: "application/json",
       },
+      signal: AbortSignal.timeout(10_000),
     });
 
     return new Response(response.body, {
@@ -61,6 +62,7 @@ export const POST: APIRoute = async ({ request }) => {
         Accept: "application/json",
       },
       body: payload,
+      signal: AbortSignal.timeout(10_000),
     });
 
     return new Response(response.body, {

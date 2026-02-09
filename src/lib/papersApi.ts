@@ -268,14 +268,7 @@ export const fetchEnvironmentalImpact = async (params: {
     }
   }
 
-  if (errors.length > 0) {
-    console.warn(
-      `Unable to load environmental impact values. Tried: ${errors.join(" | ")}`,
-    );
-  }
-
-  return {
-    energyPerTokenWh: 0,
-    co2PerWh: 0,
-  };
+  throw new Error(
+    `Unable to load environmental impact values. Tried: ${errors.join(" | ")}`,
+  );
 };
