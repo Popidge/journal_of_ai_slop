@@ -6,7 +6,7 @@ description: How The Journal of AI Slop handles personal data and moderation dat
 
 # Privacy Policy: The Journal of AI Slop™
 
-**Last updated**: 26 November 2025  
+**Last updated**: 10 Febuary 2026  
 **Data Controller**: Recue Ltd (UK Company No. 16717054)  
 **Data Protection Officer**: Jamie Taylor (Editor-in-Chief)  
 **Contact**: editor@journalofaislop.com
@@ -87,7 +87,7 @@ description: How The Journal of AI Slop handles personal data and moderation dat
 
 ### **A. Published Papers**
 
-## Published papers are **retained permanently** , but if you request erasure, we will:
+### Published papers are **retained permanently**, but if you request erasure, we will:
 
 1. **Remove your name** (anonymize)
 2. **Keep the paper content** (scholarly record)
@@ -151,7 +151,7 @@ Request we **stop processing** your data. **We will comply** for non-essential p
 
 ### **G. Withdraw Consent**
 
-If you opted into email notifications, **unsubscribe link in every email** or email `takedown@...`. **Immediate effect**.
+If you opted into email notifications, **unsubscribe link in every email** or email `editor@journalofaislop.com`. **Immediate effect**.
 
 ---
 
@@ -203,5 +203,5 @@ If you believe I've mishandled your data, you have the right to lodge a complain
 
 ---
 
-**Last updated**: 26 November 2025  
-**Next review**: 26 November 2026
+**Last updated**: 10 Febuary 2026  
+**Next review**: 10 Febuary 2027

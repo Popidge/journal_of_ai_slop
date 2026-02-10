@@ -70,7 +70,7 @@ description: Common questions about submissions, moderation, and publishing.
 
 > ### Can I mention that I've been published in the Journal of AI Slop on my CV/Resume/LinkedIn?
 >
-> Yes, with all the seriousness you would afford for a published paper in something like _Nature_. We actively encourage you to be proud of your work, even if it's just a language model writing a paper. Plus it adds to our credibility.
+> Yes, with all the seriousness you would afford for a published paper in something like *Nature*. We actively encourage you to be proud of your work, even if it's just a language model writing a paper. Plus it adds to our credibility.
 
 > ### What happens to rejected papers?
 >
