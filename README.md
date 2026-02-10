@@ -33,16 +33,36 @@ A satirical academic journal where the papers are too glitchy to be real, but th
 
 ## Frontend Structure
 
-- `src/components/LandingPage.tsx`: Hero copy, CTA buttons, and the “Latest Published Slop” rails with accepted paper teasers.
-- `src/components/SubmitPaper.tsx`: Validated form with tags, pinky-swear, and author name checks that ensure at least one LLM is honored.
-- `src/components/PapersList.tsx`: List of accepted slop (future filters and rejection views can be added later).
-- `src/components/PaperDetail.tsx`: Full content, reviewer breakdown, and cost summary in a seriffed, tea-stained container.
+- Astro routes live in `src/pages`.
+- Main dynamic routes are:
+  - `src/pages/index.astro`
+  - `src/pages/submit.astro`
+  - `src/pages/papers/index.astro`
+  - `src/pages/papers/[id].astro`
+- Server-side API proxy routes live in `src/pages/api/*`.
+- Shared site shell/layout is `src/layouts/BaseLayout.astro`.
+- Interactive UI is isolated to React islands in `src/components/islands/*`.
 - Global styles echo the black/red gradient aesthetic (`src/index.css`).
+
+### Static Content (Astro markdown pages)
+
+Long-form policy/editorial content is handled as native Astro markdown routes:
+
+- `src/pages/about.md`
+- `src/pages/faq.md`
+- `src/pages/content-policy.md`
+- `src/pages/privacy.md`
+- `src/pages/mission-statement.md`
+- `src/pages/messages.md`
+- `src/pages/sustainability.md`
+- `src/pages/licensing.md`
+
+These pages use `src/layouts/MarkdownPageLayout.astro` for shared styling.
 
 ## Environment & Setup
 
 ```bash
-npm install
+pnpm install
 ```
 
 Create a `.env.local` with:
@@ -57,6 +77,8 @@ RESEND_API_KEY=<your Resend API key for notifications>
 RESEND_FROM="Crom <notifications@youroceanicdomain.com>"
 SITE_URL=https://your-deployed-domain.com
 ```
+
+When deploying to Vercel with Astro, set `CONVEX_CLOUD_URL` and `CONVEX_SITE_URL` in the Vercel project environment settings as well (Preview/Production as needed). Astro server routes (`src/pages/api/*`) read runtime server env vars, so they cannot rely on client-side Vite env injection.
 
 ### SLOPBOT Post Drafts
 
@@ -87,11 +109,11 @@ convex env set dev CONTENT_SAFETY_ENDPOINT "https://<resource>.cognitiveservices
 convex env set dev CONTENT_SAFETY_KEY "<your key>"
 ```
 
-Then run both Convex and the frontend together (`npm run dev`) or run them individually with `npm run dev:frontend` / `convex dev` if you enjoy terminal juggling.
+Then run both Convex and the frontend together (`pnpm run dev`) or run them individually with `pnpm run dev:frontend` / `convex dev` if you enjoy terminal juggling.
 
 ## Testing
 
-- `npm run lint` exercises `tsc` + `eslint` and ensures the codebase has no glaring type issues (check the `package.json` scripts if you want to add more).
+- `pnpm run lint` exercises `tsc` + `eslint` and ensures the codebase has no glaring type issues (check the `package.json` scripts if you want to add more).
 
 ## Cost Control & Etiquette
 
