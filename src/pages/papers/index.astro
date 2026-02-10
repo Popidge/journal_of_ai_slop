@@ -1,29 +1,61 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import { fetchPapersPage, resolvePublicStatus } from "@/lib/papersApi";
+import { fetchEnvironmentalImpact, fetchPapersPage, resolvePublicStatus } from "@/lib/papersApi";
+import { formatCo2, formatCurrency, formatEnergy, formatTokens, tokensToCo2g, tokensToEnergyMWh } from "@/utils/ecoMetrics";
 
 export const prerender = false;
 
 const searchParams = Astro.url.searchParams;
 const status = resolvePublicStatus(searchParams.get("status"));
 const cursor = searchParams.get("cursor");
+const query = (searchParams.get("q") ?? "").trim();
 const requestedLimit = Number.parseInt(searchParams.get("limit") ?? "12", 10);
 const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 50) : 12;
 
-const page = await fetchPapersPage({
-  origin: Astro.url.origin,
-  status,
-  cursor,
-  limit,
-});
+let page: Awaited<ReturnType<typeof fetchPapersPage>> = {
+  papers: [],
+  cursor: null,
+};
+let papersLoadFailed = false;
+
+try {
+  page = await fetchPapersPage({
+    origin: Astro.url.origin,
+    status,
+    cursor,
+    limit,
+    query,
+  });
+} catch (error) {
+  papersLoadFailed = true;
+  console.error("Failed to load papers index", error);
+}
+
+let energyPerTokenWh = 0;
+let co2PerWh = 0;
+try {
+  const impact = await fetchEnvironmentalImpact({ origin: Astro.url.origin });
+  energyPerTokenWh = impact.energyPerTokenWh;
+  co2PerWh = impact.co2PerWh;
+} catch {
+  energyPerTokenWh = 0;
+  co2PerWh = 0;
+}
 
 const heading = status === "accepted" ? "Accepted Papers" : "Rejected Papers";
 const statusLabel = status === "accepted" ? "accepted" : "rejected";
+const getTokens = (paper: (typeof page.papers)[number]) =>
+  paper.totalTokens ??
+  paper.reviewVotes?.reduce((sum, review) => sum + (review.totalTokens ?? 0), 0) ??
+  0;
 
 const buildHref = (nextStatus: "accepted" | "rejected", nextCursor?: string | null) => {
   const next = new URLSearchParams();
   next.set("status", nextStatus);
   next.set("limit", `${limit}`);
+  if (query) {
+    next.set("q", query);
+  }
   if (nextCursor) {
     next.set("cursor", nextCursor);
   }
@@ -41,6 +73,18 @@ const buildHref = (nextStatus: "accepted" | "rejected", nextCursor?: string | nu
         <p class="text-[0.65rem] uppercase tracking-[0.3em] text-[color:var(--ink-soft)] sm:text-xs sm:tracking-[0.5em]">Published Slop</p>
         <h1 class="wobbly-underline mt-2 text-[clamp(2rem,5vw,3rem)] font-semibold text-[color:var(--ink)]">{heading}</h1>
         <p class="mt-2 text-sm text-[color:var(--ink-soft)]">Only accepted and rejected submissions are publicly visible.</p>
+        <form method="GET" action="/papers" class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <input type="hidden" name="status" value={status} />
+          <input type="hidden" name="limit" value={String(limit)} />
+          <input
+            type="search"
+            name="q"
+            value={query}
+            placeholder="Search titles, authors, tags, content"
+            class="w-full rounded-full border border-[color:var(--coffee-light)] bg-[color:var(--paper)] px-4 py-2 text-sm text-[color:var(--ink)] placeholder:text-[color:var(--ink-soft)] focus:border-[color:var(--coffee)] focus:outline-none"
+          />
+          <button type="submit" class="rounded-full border border-[color:var(--coffee)] px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-[color:var(--coffee)]">Search</button>
+        </form>
         <div class="mt-4 flex flex-wrap gap-2">
           <a
             href={buildHref("accepted")}
@@ -65,7 +109,9 @@ const buildHref = (nextStatus: "accepted" | "rejected", nextCursor?: string | nu
 
       {page.papers.length === 0 ? (
         <div class="rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/95 p-6 text-center text-sm text-[color:var(--ink-soft)] shadow-[0_15px_35px_rgba(35,24,21,0.12)]">
-          No {statusLabel} papers found.
+          {papersLoadFailed
+            ? "Unable to load papers right now. Please try again shortly."
+            : `No ${statusLabel} papers found${query ? ` for "${query}"` : ""}.`}
         </div>
       ) : (
         <div class="space-y-4">
@@ -85,6 +131,12 @@ const buildHref = (nextStatus: "accepted" | "rejected", nextCursor?: string | nu
                 {paper.tags.map((tag) => (
                   <span class="rounded-full border border-[color:var(--coffee)] bg-[color:var(--paper)]/80 px-3 py-1">{tag}</span>
                 ))}
+              </div>
+              <div class="mt-4 grid grid-cols-1 gap-1 text-[0.7rem] text-[color:var(--ink-soft)] sm:grid-cols-2">
+                <p class="non-eco-only">Review cost: {paper.totalReviewCost != null ? formatCurrency(paper.totalReviewCost, 6) : "Calculating..."}</p>
+                <p class="non-eco-only">Tokens: {paper.totalTokens != null || paper.reviewVotes?.length ? formatTokens(getTokens(paper)) : "Calculating..."}</p>
+                <p class="eco-only">Energy: {energyPerTokenWh > 0 && (paper.totalTokens != null || paper.reviewVotes?.length) ? formatEnergy(tokensToEnergyMWh(getTokens(paper), energyPerTokenWh)) : "Calculating energy..."}</p>
+                <p class="eco-only">CO2: {energyPerTokenWh > 0 && co2PerWh > 0 && (paper.totalTokens != null || paper.reviewVotes?.length) ? formatCo2(tokensToCo2g(getTokens(paper), energyPerTokenWh, co2PerWh)) : "Calculating impact..."}</p>
               </div>
               <p class="mt-4 text-right text-[0.7rem] text-[color:var(--ink-soft)]">
                 Submitted on {new Date(paper.submittedAt).toLocaleDateString("en-GB")}

@@ -1,11 +1,8 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import MigrationPlaceholder from "@/components/astro/MigrationPlaceholder.astro";
+import SubmitPaperIsland from "@/components/islands/SubmitPaperIsland";
 ---
 
 <BaseLayout title="Submit | The Journal of AI Slop™">
-  <MigrationPlaceholder
-    title="Submit Your Slop"
-    message="The submission form becomes a React island in PR 3. Route ownership is now moved to Astro."
-  />
+  <SubmitPaperIsland client:load />
 </BaseLayout>
