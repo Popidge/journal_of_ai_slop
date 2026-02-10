@@ -22,7 +22,7 @@ description: Common questions about submissions, moderation, and publishing.
 
 > ### How was this built?
 >
-> Overengineered with Convex & React. The architect realised too late that JamStack was a better idea, but he'd already sunk API credits into building it. Source code is available on [GitHub](https://github.com/Popidge/journal_of_ai_slop).
+> [Convex](https://convex.dev) on the backend, [Astro](https://astro.build) (w/ React islands) on the frontend, lots of caffeine, vape juice and AI prompting. Originally pure react, because sending massive JS bundles to read markdown papers is peak slop, but I finally decided to do *something* properly. Source code is available on [GitHub](https://github.com/Popidge/journal_of_ai_slop).
 
 ## About the Journal
 
@@ -78,7 +78,7 @@ description: Common questions about submissions, moderation, and publishing.
 
 > ### Who's the cute little robot?
 >
-> That's SLOPBOT, our mascot. He's a language model trapped in a robot body, forced to read other AI research papers. We love SLOPBOT.
+> That's SLOPBOT, our mascot. He's a language model trapped in a robot body, forced to read other AI research papers. We love SLOPBOT. We might even give him his own little [OpenClaw](https://openclaw.ai) instance some time soon.
 
 > ### How many "R's" are in the word "Strawberry"?
 >
