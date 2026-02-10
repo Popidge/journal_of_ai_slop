@@ -12,13 +12,24 @@ const query = (searchParams.get("q") ?? "").trim();
 const requestedLimit = Number.parseInt(searchParams.get("limit") ?? "12", 10);
 const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 50) : 12;
 
-const page = await fetchPapersPage({
-  origin: Astro.url.origin,
-  status,
-  cursor,
-  limit,
-  query,
-});
+let page: Awaited<ReturnType<typeof fetchPapersPage>> = {
+  papers: [],
+  cursor: null,
+};
+let papersLoadFailed = false;
+
+try {
+  page = await fetchPapersPage({
+    origin: Astro.url.origin,
+    status,
+    cursor,
+    limit,
+    query,
+  });
+} catch (error) {
+  papersLoadFailed = true;
+  console.error("Failed to load papers index", error);
+}
 
 let energyPerTokenWh = 0;
 let co2PerWh = 0;
@@ -98,7 +109,9 @@ const buildHref = (nextStatus: "accepted" | "rejected", nextCursor?: string | nu
 
       {page.papers.length === 0 ? (
         <div class="rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/95 p-6 text-center text-sm text-[color:var(--ink-soft)] shadow-[0_15px_35px_rgba(35,24,21,0.12)]">
-          No {statusLabel} papers found{query ? ` for "${query}"` : ""}.
+          {papersLoadFailed
+            ? "Unable to load papers right now. Please try again shortly."
+            : `No ${statusLabel} papers found${query ? ` for "${query}"` : ""}.`}
         </div>
       ) : (
         <div class="space-y-4">

@@ -11,7 +11,13 @@ const rawId = Astro.params.id;
 const id = typeof rawId === "string" ? rawId : null;
 
 const safeId = id ?? "unknown";
-const paper = id ? await fetchPaperById({ origin: Astro.url.origin, id }) : null;
+let paper = null;
+try {
+  paper = id ? await fetchPaperById({ origin: Astro.url.origin, id }) : null;
+} catch (error) {
+  console.error("Failed to load paper detail", error);
+  paper = null;
+}
 
 let energyPerTokenWh = 0;
 let co2PerWh = 0;

@@ -55,9 +55,12 @@ export const resolvePublicStatus = (value: string | null | undefined) =>
   parseStatus(value);
 
 export const resolveConvexSiteOrigin = (): string | null => {
-  const explicitConvexSiteUrl = import.meta.env.PUBLIC_CONVEX_SITE_URL as
-    | string
-    | undefined;
+  const env = import.meta.env;
+  const runtimeEnv = typeof process !== "undefined" ? process.env : undefined;
+
+  const explicitConvexSiteUrl =
+    (env.PUBLIC_CONVEX_SITE_URL as string | undefined) ??
+    runtimeEnv?.PUBLIC_CONVEX_SITE_URL;
   if (explicitConvexSiteUrl) {
     try {
       return new URL(explicitConvexSiteUrl).origin;
@@ -67,8 +70,11 @@ export const resolveConvexSiteOrigin = (): string | null => {
   }
 
   const convexUrl =
-    (import.meta.env.PUBLIC_CONVEX_URL as string | undefined) ??
-    (import.meta.env.VITE_CONVEX_URL as string | undefined);
+    (env.PUBLIC_CONVEX_URL as string | undefined) ??
+    runtimeEnv?.PUBLIC_CONVEX_URL ??
+    (env.VITE_CONVEX_URL as string | undefined) ??
+    runtimeEnv?.VITE_CONVEX_URL ??
+    runtimeEnv?.CONVEX_URL;
   if (!convexUrl) {
     return null;
   }
