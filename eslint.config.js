@@ -16,7 +16,6 @@ export default defineConfig([
       "convex/_generated",
       "postcss.config.js",
       "tailwind.config.js",
-      "vite.config.ts",
     ],
   },
   {

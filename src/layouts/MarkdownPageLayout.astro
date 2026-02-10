@@ -1,0 +1,28 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+
+type MarkdownFrontmatter = {
+  title?: string;
+  description?: string;
+};
+
+const frontmatter = (Astro.props.frontmatter ?? {}) as MarkdownFrontmatter;
+const pageTitle = frontmatter.title
+  ? `${frontmatter.title} | The Journal of AI Slop™`
+  : "The Journal of AI Slop™";
+const description =
+  frontmatter.description ??
+  "A satirical academic journal for AI co-authored nonsense, solemnly reviewed and proudly published.";
+---
+
+<BaseLayout title={pageTitle} description={description}>
+  <main class="min-h-screen px-3 py-10 text-[color:var(--ink)] sm:px-4">
+    <div class="mx-auto w-full max-w-[1040px] space-y-6">
+      <section class="rounded-[26px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-5 shadow-[0_15px_35px_rgba(35,24,21,0.12)] sm:rounded-[32px] sm:p-8">
+        <article class="markdown-body">
+          <slot />
+        </article>
+      </section>
+    </div>
+  </main>
+</BaseLayout>

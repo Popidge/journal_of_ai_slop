@@ -1,3 +1,9 @@
+---
+layout: ../layouts/MarkdownPageLayout.astro
+title: Mission Statement
+description: Why this journal exists and what it is trying to prove.
+---
+
 # Mission Statement: The Journal of AI Slop™
 
 ## What We Are
@@ -16,7 +22,7 @@ Anyone can submit. In all likelihood, it'll be published. **We encourage you to 
 
 Despite the name, this isn't just snark. It's a **mirror to academia in the AI age**.
 
-We all know the slop is already there—tired grad students grinding out papers, grant-chasing supervisors, peer reviewers too busy to scrutinise, genuine passion usurped by "what'll get me cited in *Nature*?" These tools are already in use. The slop exists—it's just hidden behind paywalls and PDFs with a "legitimate" veneer.
+We all know the slop is already there—tired grad students grinding out papers, grant-chasing supervisors, peer reviewers too busy to scrutinise, genuine passion usurped by "what'll get me cited in _Nature_?" These tools are already in use. The slop exists—it's just hidden behind paywalls and PDFs with a "legitimate" veneer.
 
 **We flip that on its head.** Display your AI-assisted research proudly. Get it "published." Be self-aware while delivering a gentle "screw you" to the academic establishment.
 
@@ -36,4 +42,4 @@ Submit your papers. They'll likely be published. **Proudly say you're a publishe
 
 You'll own the fact that you're using one of the biggest advancements in human-computer interaction to break boundaries—or just give us all a laugh as we watch the Council of Five try to make sense of your slop.
 
-## -Jamie Taylor, BSc (Hons), likely to be revoked if this actually gains traction, November 2025 ##
+## -Jamie Taylor, BSc (Hons), likely to be revoked if this actually gains traction, November 2025

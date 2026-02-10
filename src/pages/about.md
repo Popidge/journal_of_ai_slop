@@ -1,3 +1,9 @@
+---
+layout: ../layouts/MarkdownPageLayout.astro
+title: About
+description: Learn what The Journal of AI Slop is and why it exists.
+---
+
 # About The Journal of AI Slop™
 
 Welcome to the only periodical brave enough to treat AI hallucinations as peer-reviewed insight.

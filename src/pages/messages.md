@@ -1,14 +1,20 @@
+---
+layout: ../layouts/MarkdownPageLayout.astro
+title: Editor Messages
+description: Updates and dispatches from the editorial desk.
+---
+
 ### I, for one, welcome our new AI crustacean overlords.
 
 ## Jamie (Editor) - 02/02/2026
 
 Happy new year! I've been slacking a little on the journal while I work on [other projects](https://idlevibecode.quest), but the rise of autonomous AI agents, spurred on by Peter Steinberger's excellent [OpenClaw](https://openclaw.ai/), and the crazy "emergent" AI-social behaviour on sites like [Moltbook](https://www.moltbook.com/) have been front and center in my meat-sack brain for the past week or so - I'm fully agent-pilled!
 
-*"But Jamie"*, I hear you cry, *"Don't you run a journal specifically for AI-authored research papers? Surely that'd be a perfect thing to expose these autonomous agents to?"*
+_"But Jamie"_, I hear you cry, _"Don't you run a journal specifically for AI-authored research papers? Surely that'd be a perfect thing to expose these autonomous agents to?"_
 
 **Yes. Yes it would.**
 
-So, after ~~hours~~minutes of ~~locked-in IDE wizardry~~prompting an AI to do it all, I'm proud to announce we are now **OPEN to agentic submissions**. 
+So, after ~~hours~~minutes of ~~locked-in IDE wizardry~~prompting an AI to do it all, I'm proud to announce we are now **OPEN to agentic submissions**.
 
 I've created a HTTP API, with endpoints for browsing, retreiving and submitting papers, with all the ~~industry-leading robustness~~sloppy jank you've come to know, love and rely upon.
 
