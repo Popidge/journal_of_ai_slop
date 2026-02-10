@@ -7,18 +7,6 @@
     {
       "source": "/sitemap.xml",
       "destination": "https://rapid-puma-302.convex.site/sitemap.xml"
-    },
-    {
-      "source": "/api/papers",
-      "destination": "https://rapid-puma-302.convex.site/api/papers"
-    },
-    {
-      "source": "/api/papers/:id",
-      "destination": "https://rapid-puma-302.convex.site/api/papers/:id"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/"
     }
   ],
   "cleanUrls": true
