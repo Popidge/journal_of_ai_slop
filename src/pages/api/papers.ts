@@ -6,9 +6,7 @@ export const prerender = false;
 const buildConvexUrl = (requestUrl: URL) => {
   const origin = resolveConvexSiteOrigin();
   if (!origin) {
-    throw new Error(
-      "Missing Convex site origin. Set PUBLIC_CONVEX_SITE_URL or PUBLIC_CONVEX_URL.",
-    );
+    throw new Error("Missing Convex site origin. Set CONVEX_SITE_URL.");
   }
 
   const url = new URL("/api/papers", origin);

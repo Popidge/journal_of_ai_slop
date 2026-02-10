@@ -5,13 +5,10 @@ import "./index.css";
 import App from "./App.tsx";
 
 const convexUrl =
-  (import.meta.env.PUBLIC_CONVEX_URL as string | undefined) ??
-  (import.meta.env.VITE_CONVEX_URL as string | undefined);
+  typeof process !== "undefined" ? process.env.CONVEX_CLOUD_URL : undefined;
 
 if (!convexUrl) {
-  throw new Error(
-    "Missing Convex URL. Set PUBLIC_CONVEX_URL (preferred) or VITE_CONVEX_URL.",
-  );
+  throw new Error("Missing Convex URL. Set CONVEX_CLOUD_URL.");
 }
 
 const convex = new ConvexReactClient(convexUrl);
