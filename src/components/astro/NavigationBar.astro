@@ -1,5 +1,6 @@
 ---
-import logoCircle from "@/assets/media/ai_slop_logo_circle.png";
+import logoCircle from "@/assets/media/ai_slop_logo_circle.png?url";
+import EcoModeToggleButton from "@/components/islands/EcoModeToggleButton";
 
 const links = [
   { label: "Papers", href: "/papers" },
@@ -23,11 +24,14 @@ const links = [
     </a>
   </div>
 
-  <div class="flex flex-wrap gap-4 border-t border-[color:var(--coffee-light)] pt-3 text-[0.55rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-soft)] md:ml-auto md:border-t-0 md:pt-0 md:text-[0.65rem] md:tracking-[0.35em]">
+  <div class="flex flex-wrap items-center gap-3 border-t border-[color:var(--coffee-light)] pt-3 md:ml-auto md:border-t-0 md:pt-0">
+    <EcoModeToggleButton client:load />
+    <div class="flex flex-wrap gap-4 text-[0.55rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-soft)] md:text-[0.65rem] md:tracking-[0.35em]">
     {links.map((item) => (
       <a href={item.href} class="relative before:absolute before:-bottom-1 before:left-0 before:h-[2px] before:w-0 before:bg-[color:var(--accent-blue)] before:transition-all before:duration-200 hover:text-[color:var(--ink)] hover:before:w-full">
         {item.label}
       </a>
     ))}
+    </div>
   </div>
 </nav>

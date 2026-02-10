@@ -1,11 +1,167 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import MigrationPlaceholder from "@/components/astro/MigrationPlaceholder.astro";
+import { fetchEnvironmentalImpact, fetchPapersPage, resolvePublicStatus } from "@/lib/papersApi";
+import { formatCo2, formatCurrency, formatEnergy, formatTokens, tokensToCo2g, tokensToEnergyMWh } from "@/utils/ecoMetrics";
+
+export const prerender = false;
+
+const searchParams = Astro.url.searchParams;
+const status = resolvePublicStatus(searchParams.get("status"));
+const cursor = searchParams.get("cursor");
+const query = (searchParams.get("q") ?? "").trim();
+const requestedLimit = Number.parseInt(searchParams.get("limit") ?? "12", 10);
+const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 50) : 12;
+
+let page: Awaited<ReturnType<typeof fetchPapersPage>> = {
+  papers: [],
+  cursor: null,
+};
+let papersLoadFailed = false;
+
+try {
+  page = await fetchPapersPage({
+    origin: Astro.url.origin,
+    status,
+    cursor,
+    limit,
+    query,
+  });
+} catch (error) {
+  papersLoadFailed = true;
+  console.error("Failed to load papers index", error);
+}
+
+let energyPerTokenWh = 0;
+let co2PerWh = 0;
+try {
+  const impact = await fetchEnvironmentalImpact({ origin: Astro.url.origin });
+  energyPerTokenWh = impact.energyPerTokenWh;
+  co2PerWh = impact.co2PerWh;
+} catch {
+  energyPerTokenWh = 0;
+  co2PerWh = 0;
+}
+
+const heading = status === "accepted" ? "Accepted Papers" : "Rejected Papers";
+const statusLabel = status === "accepted" ? "accepted" : "rejected";
+const getTokens = (paper: (typeof page.papers)[number]) =>
+  paper.totalTokens ??
+  paper.reviewVotes?.reduce((sum, review) => sum + (review.totalTokens ?? 0), 0) ??
+  0;
+
+const buildHref = (nextStatus: "accepted" | "rejected", nextCursor?: string | null) => {
+  const next = new URLSearchParams();
+  next.set("status", nextStatus);
+  next.set("limit", `${limit}`);
+  if (query) {
+    next.set("q", query);
+  }
+  if (nextCursor) {
+    next.set("cursor", nextCursor);
+  }
+  return `/papers?${next.toString()}`;
+};
 ---
 
-<BaseLayout title="Papers | The Journal of AI Slop™">
-  <MigrationPlaceholder
-    title="Papers"
-    message="The Astro-native paper index and filtering UI lands in PR 2. This route is now owned by Astro and keeps URL parity for deployment cutover."
-  />
+<BaseLayout
+  title={`${heading} | The Journal of AI Slop™`}
+  description={`Browse ${statusLabel} papers from The Journal of AI Slop.`}
+>
+  <main class="min-h-screen px-3 py-10 text-[color:var(--ink)] sm:px-4">
+    <div class="mx-auto w-full max-w-[1040px] space-y-6">
+      <header class="rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-5 text-center shadow-[0_20px_40px_rgba(35,24,21,0.12)] sm:rounded-[32px] sm:text-left">
+        <p class="text-[0.65rem] uppercase tracking-[0.3em] text-[color:var(--ink-soft)] sm:text-xs sm:tracking-[0.5em]">Published Slop</p>
+        <h1 class="wobbly-underline mt-2 text-[clamp(2rem,5vw,3rem)] font-semibold text-[color:var(--ink)]">{heading}</h1>
+        <p class="mt-2 text-sm text-[color:var(--ink-soft)]">Only accepted and rejected submissions are publicly visible.</p>
+        <form method="GET" action="/papers" class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <input type="hidden" name="status" value={status} />
+          <input type="hidden" name="limit" value={String(limit)} />
+          <input
+            type="search"
+            name="q"
+            value={query}
+            placeholder="Search titles, authors, tags, content"
+            class="w-full rounded-full border border-[color:var(--coffee-light)] bg-[color:var(--paper)] px-4 py-2 text-sm text-[color:var(--ink)] placeholder:text-[color:var(--ink-soft)] focus:border-[color:var(--coffee)] focus:outline-none"
+          />
+          <button type="submit" class="rounded-full border border-[color:var(--coffee)] px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-[color:var(--coffee)]">Search</button>
+        </form>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <a
+            href={buildHref("accepted")}
+            class={`rounded-full border px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.25em] ${status === "accepted"
+              ? "border-[color:var(--accent-blue)] bg-[color:var(--accent-blue)]/10 text-[color:var(--accent-blue)]"
+              : "border-[color:var(--coffee)] text-[color:var(--coffee)]"
+            }`}
+          >
+            Accepted
+          </a>
+          <a
+            href={buildHref("rejected")}
+            class={`rounded-full border px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.25em] ${status === "rejected"
+              ? "border-[color:var(--accent-blue)] bg-[color:var(--accent-blue)]/10 text-[color:var(--accent-blue)]"
+              : "border-[color:var(--coffee)] text-[color:var(--coffee)]"
+            }`}
+          >
+            Rejected
+          </a>
+        </div>
+      </header>
+
+      {page.papers.length === 0 ? (
+        <div class="rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/95 p-6 text-center text-sm text-[color:var(--ink-soft)] shadow-[0_15px_35px_rgba(35,24,21,0.12)]">
+          {papersLoadFailed
+            ? "Unable to load papers right now. Please try again shortly."
+            : `No ${statusLabel} papers found${query ? ` for "${query}"` : ""}.`}
+        </div>
+      ) : (
+        <div class="space-y-4">
+          {page.papers.map((paper) => (
+            <a
+              href={`/papers/${paper._id}`}
+              class="group block rounded-[24px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-4 shadow-[0_15px_35px_rgba(35,24,21,0.12)] transition hover:border-[color:var(--accent-blue)] sm:rounded-[28px] sm:p-6"
+            >
+              <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <h2 class="paper-title-glow wobbly-underline text-xl font-semibold text-[color:var(--ink)] sm:text-2xl">{paper.title}</h2>
+                <span class="self-start rounded-full border border-[color:var(--coffee)] px-3 py-1 text-[0.55rem] font-semibold uppercase tracking-[0.25em] text-[color:var(--coffee)] sm:self-auto sm:text-[0.6rem] sm:tracking-[0.35em]">
+                  {paper.status === "accepted" ? "PUBLISH NOW" : "REJECTED"}
+                </span>
+              </div>
+              <p class="mt-2 text-sm italic text-[color:var(--ink-soft)]">by {paper.authors}</p>
+              <div class="mt-3 flex flex-wrap gap-2 text-[0.6rem] text-[color:var(--coffee)] sm:text-[0.65rem]">
+                {paper.tags.map((tag) => (
+                  <span class="rounded-full border border-[color:var(--coffee)] bg-[color:var(--paper)]/80 px-3 py-1">{tag}</span>
+                ))}
+              </div>
+              <div class="mt-4 grid grid-cols-1 gap-1 text-[0.7rem] text-[color:var(--ink-soft)] sm:grid-cols-2">
+                <p class="non-eco-only">Review cost: {paper.totalReviewCost != null ? formatCurrency(paper.totalReviewCost, 6) : "Calculating..."}</p>
+                <p class="non-eco-only">Tokens: {paper.totalTokens != null || paper.reviewVotes?.length ? formatTokens(getTokens(paper)) : "Calculating..."}</p>
+                <p class="eco-only">Energy: {energyPerTokenWh > 0 && (paper.totalTokens != null || paper.reviewVotes?.length) ? formatEnergy(tokensToEnergyMWh(getTokens(paper), energyPerTokenWh)) : "Calculating energy..."}</p>
+                <p class="eco-only">CO2: {energyPerTokenWh > 0 && co2PerWh > 0 && (paper.totalTokens != null || paper.reviewVotes?.length) ? formatCo2(tokensToCo2g(getTokens(paper), energyPerTokenWh, co2PerWh)) : "Calculating impact..."}</p>
+              </div>
+              <p class="mt-4 text-right text-[0.7rem] text-[color:var(--ink-soft)]">
+                Submitted on {new Date(paper.submittedAt).toLocaleDateString("en-GB")}
+              </p>
+            </a>
+          ))}
+        </div>
+      )}
+
+      <div class="flex items-center justify-between rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 px-4 py-3 text-[0.75rem] text-[color:var(--ink-soft)] shadow-[0_15px_35px_rgba(35,24,21,0.12)] sm:px-6">
+        <span>Showing up to {limit} papers per page</span>
+        <div class="flex gap-2">
+          <a href={buildHref(status)} class="rounded-full border border-[color:var(--coffee)] px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-[color:var(--coffee)]">
+            Refresh
+          </a>
+          {page.cursor && (
+            <a
+              href={buildHref(status, page.cursor)}
+              class="rounded-full border border-[color:var(--coffee)] px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-[color:var(--coffee)]"
+            >
+              Next
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  </main>
 </BaseLayout>

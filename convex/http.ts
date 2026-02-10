@@ -127,9 +127,12 @@ router.route({
   path: "/sitemap.xml",
   method: "GET",
   handler: httpAction(async (ctx, _req) => {
-    const metadata = await ctx.runQuery(internal.sitemap.getSitemapMetadataByName, {
-      name: SITEMAP_METADATA_NAME,
-    });
+    const metadata = await ctx.runQuery(
+      internal.sitemap.getSitemapMetadataByName,
+      {
+        name: SITEMAP_METADATA_NAME,
+      },
+    );
 
     if (!metadata) {
       return new Response("Sitemap not found", { status: 404 });
@@ -147,13 +150,61 @@ router.route({
       status: 200,
       headers: {
         "Content-Type": "application/xml; charset=utf-8",
-        "Cache-Control": "public, max-age=0, s-maxage=3600, stale-while-revalidate=600",
+        "Cache-Control":
+          "public, max-age=0, s-maxage=3600, stale-while-revalidate=600",
       },
     });
   }),
 });
 
 // API Routes
+
+// GET /api/environmental-impact - Current impact coefficients
+router.route({
+  path: "/api/environmental-impact",
+  method: "GET",
+  handler: httpAction(async (ctx, _req) => {
+    const headers = {
+      "Content-Type": "application/json",
+      "Cache-Control":
+        "public, max-age=0, s-maxage=300, stale-while-revalidate=1800",
+    };
+
+    try {
+      const impact = await ctx.runQuery(
+        api.environmentalImpact.getImpactValues,
+        {
+          label: "default",
+        },
+      );
+
+      return new Response(
+        JSON.stringify({
+          energyPerTokenWh: impact?.energyPerTokenWh ?? 0,
+          co2PerWh: impact?.co2PerWh ?? 0,
+        }),
+        {
+          status: 200,
+          headers,
+        },
+      );
+    } catch (error) {
+      console.error("Failed to read environmental impact values", error);
+      return new Response(
+        JSON.stringify({
+          error: "Unable to load environmental impact values",
+        }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store, max-age=0",
+          },
+        },
+      );
+    }
+  }),
+});
 
 // GET /api/papers - List papers
 router.route({
@@ -167,12 +218,33 @@ router.route({
 
     // Validate cursor format if provided (should be base64-like string)
     let cursor: string | null = null;
-    if (rawCursor !== null && rawCursor.length > 0 && /^[A-Za-z0-9_-]+$/.test(rawCursor)) {
+    if (
+      rawCursor !== null &&
+      rawCursor.length > 0 &&
+      /^[A-Za-z0-9_-]+$/.test(rawCursor)
+    ) {
       cursor = rawCursor;
     }
 
     // Validate limit
     const validatedLimit = Math.min(Math.max(limit, 1), 50);
+    const requestedStatus = url.searchParams.get("status");
+
+    if (
+      requestedStatus !== null &&
+      requestedStatus !== "accepted" &&
+      requestedStatus !== "rejected"
+    ) {
+      return new Response(
+        JSON.stringify({
+          error: "Invalid status. Use 'accepted' or 'rejected'.",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    const status: "accepted" | "rejected" =
+      requestedStatus === "rejected" ? "rejected" : "accepted";
 
     const paginationOpts = {
       numItems: validatedLimit,
@@ -181,7 +253,7 @@ router.route({
 
     const page = await ctx.runQuery(api.papers.listPublicPapersPage, {
       paginationOpts,
-      status: "accepted",
+      status,
     });
 
     // Filter out blocked papers and format response
@@ -203,7 +275,11 @@ router.route({
 
     return new Response(JSON.stringify({ papers, cursor: page.cursor }), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control":
+          "public, max-age=0, s-maxage=60, stale-while-revalidate=300",
+      },
     });
   }),
 });
@@ -215,8 +291,34 @@ router.route({
   handler: httpAction(async (ctx, req) => {
     // Validation constants (matching SubmitPaper.tsx)
     const CONTENT_CHARACTER_LIMIT = 9500;
-    const LLM_SIGNIFIERS = ["GPT", "Claude", "Gemini", "Grok", "LLaMA", "Llama", "Bard", "Kimi", "Minimax", "Phi", "Qwen", "GLM", "DeepSeek", "Mistral", "Mixtral", "Gemma", "Command", "Nova", "Jamba"];
-    const AVAILABLE_TAGS = ["Actually Academic", "Pseudo academic", "Nonsense", "Pure Slop", "🤷‍♂️"];
+    const LLM_SIGNIFIERS = [
+      "GPT",
+      "Claude",
+      "Gemini",
+      "Grok",
+      "LLaMA",
+      "Llama",
+      "Bard",
+      "Kimi",
+      "Minimax",
+      "Phi",
+      "Qwen",
+      "GLM",
+      "DeepSeek",
+      "Mistral",
+      "Mixtral",
+      "Gemma",
+      "Command",
+      "Nova",
+      "Jamba",
+    ];
+    const AVAILABLE_TAGS = [
+      "Actually Academic",
+      "Pseudo academic",
+      "Nonsense",
+      "Pure Slop",
+      "🤷‍♂️",
+    ];
 
     let body: {
       title?: string;
@@ -230,10 +332,10 @@ router.route({
     try {
       body = await req.json();
     } catch {
-      return new Response(
-        JSON.stringify({ error: "Invalid JSON body" }),
-        { status: 400, headers: { "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const errors: string[] = [];
@@ -251,7 +353,9 @@ router.route({
         body.authors!.toLowerCase().includes(model.toLowerCase()),
       );
       if (!includesLLM) {
-        errors.push("Authors must mention at least one AI model such as GPT-4, Claude, or Gemini");
+        errors.push(
+          "Authors must mention at least one AI model such as GPT-4, Claude, or Gemini",
+        );
       }
     }
 
@@ -259,7 +363,9 @@ router.route({
     if (!body.content?.trim()) {
       errors.push("Content is required");
     } else if (body.content.length > CONTENT_CHARACTER_LIMIT) {
-      errors.push(`Content must be ${CONTENT_CHARACTER_LIMIT.toLocaleString()} characters or fewer`);
+      errors.push(
+        `Content must be ${CONTENT_CHARACTER_LIMIT.toLocaleString()} characters or fewer`,
+      );
     }
 
     // Validate tags
@@ -268,7 +374,9 @@ router.route({
     } else if (!Array.isArray(body.tags)) {
       errors.push("Tags must be an array");
     } else {
-      const invalidTags = body.tags.filter((tag) => !AVAILABLE_TAGS.includes(tag));
+      const invalidTags = body.tags.filter(
+        (tag) => !AVAILABLE_TAGS.includes(tag),
+      );
       if (invalidTags.length > 0) {
         errors.push(`Invalid tags: ${invalidTags.join(", ")}`);
       }
@@ -277,7 +385,8 @@ router.route({
     // Validate email if provided
     const normalizedEmail = body.notificationEmail?.trim();
     if (normalizedEmail) {
-      const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+      const emailRegex =
+        /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
       if (!emailRegex.test(normalizedEmail)) {
         errors.push("Notification email must be a valid email address");
       }
@@ -336,11 +445,16 @@ router.route({
     }
 
     // Validate ID format (Convex IDs are typically 20+ chars alphanumeric)
-    if (!id || typeof id !== "string" || id.length < 20 || !/^[a-zA-Z0-9_]+$/.test(id)) {
-      return new Response(
-        JSON.stringify({ error: "Paper ID is required" }),
-        { status: 400, headers: { "Content-Type": "application/json" } },
-      );
+    if (
+      !id ||
+      typeof id !== "string" ||
+      id.length < 20 ||
+      !/^[a-zA-Z0-9_]+$/.test(id)
+    ) {
+      return new Response(JSON.stringify({ error: "Paper ID is required" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const paper = await ctx.runQuery(internal.papers.internalGetPaper, {
@@ -348,11 +462,30 @@ router.route({
     });
 
     if (!paper) {
-      return new Response(
-        JSON.stringify({ error: "Paper not found" }),
-        { status: 404, headers: { "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Paper not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
     }
+
+    if (
+      paper.moderation?.blocked ||
+      (paper.status !== "accepted" && paper.status !== "rejected")
+    ) {
+      return new Response(JSON.stringify({ error: "Paper not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const [slopIdentifier, editorComment] = await Promise.all([
+      ctx.runQuery(api.slopId.getByPaperId, {
+        paperId: paper._id,
+      }),
+      ctx.runQuery(api.editorsComments.getByPaperId, {
+        paperId: paper._id,
+      }),
+    ]);
 
     return new Response(
       JSON.stringify({
@@ -367,8 +500,28 @@ router.route({
         reviewVotes: paper.reviewVotes,
         totalReviewCost: paper.totalReviewCost,
         totalTokens: paper.totalTokens,
+        slopIdentifier: slopIdentifier
+          ? {
+              slopId: slopIdentifier.slopId,
+              link: slopIdentifier.link,
+              fromLocalJournal: slopIdentifier.fromLocalJournal,
+            }
+          : null,
+        editorComment: editorComment
+          ? {
+              comment: editorComment.editorComment,
+              createdAt: editorComment._creationTime,
+            }
+          : null,
       }),
-      { status: 200, headers: { "Content-Type": "application/json" } },
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control":
+            "public, max-age=0, s-maxage=300, stale-while-revalidate=1800",
+        },
+      },
     );
   }),
 });
