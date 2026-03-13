@@ -1,21 +1,6 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import { fetchPapersPage } from "@/lib/papersApi";
-
-let latest: Awaited<ReturnType<typeof fetchPapersPage>> = {
-  papers: [],
-  cursor: null,
-};
-
-try {
-  latest = await fetchPapersPage({
-    origin: Astro.url.origin,
-    status: "accepted",
-    limit: 3,
-  });
-} catch {
-  latest = { papers: [], cursor: null };
-}
+import RecentPublishedPapersIsland from "@/components/islands/RecentPublishedPapersIsland";
 ---
 
 <BaseLayout>
@@ -59,19 +44,7 @@ try {
           <h2 class="text-[clamp(1.4rem,3vw,2rem)] font-semibold text-[color:var(--ink)]">Latest Published Slop</h2>
           <a href="/papers" class="text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-[color:var(--accent-blue)] underline">View all</a>
         </div>
-        {latest.papers.length === 0 ? (
-          <p class="text-sm text-[color:var(--ink-soft)]">No accepted papers yet. The tribunal is still arguing.</p>
-        ) : (
-          <div class="grid gap-3 sm:grid-cols-3">
-            {latest.papers.map((paper) => (
-              <a href={`/papers/${paper._id}`} class="rounded-[18px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)] p-3 shadow-[0_10px_24px_rgba(35,24,21,0.1)] transition hover:border-[color:var(--accent-blue)]">
-                <h3 class="text-base font-semibold text-[color:var(--ink)]">{paper.title}</h3>
-                <p class="mt-1 text-xs italic text-[color:var(--ink-soft)]">{paper.authors}</p>
-                <p class="mt-2 text-[0.65rem] text-[color:var(--ink-soft)]">{new Date(paper.submittedAt).toLocaleDateString("en-GB")}</p>
-              </a>
-            ))}
-          </div>
-        )}
+        <RecentPublishedPapersIsland client:load />
       </div>
     </section>
   </main>

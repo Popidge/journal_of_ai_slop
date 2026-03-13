@@ -78,7 +78,7 @@ RESEND_FROM="Crom <notifications@youroceanicdomain.com>"
 SITE_URL=https://your-deployed-domain.com
 ```
 
-When deploying to Vercel with Astro, set `CONVEX_CLOUD_URL` and `CONVEX_SITE_URL` in the Vercel project environment settings as well (Preview/Production as needed). Astro server routes (`src/pages/api/*`) read runtime server env vars, so they cannot rely on client-side Vite env injection.
+Astro server routes (`src/pages/api/*`) read `CONVEX_SITE_URL` directly, so set that explicitly in local `.env.local` and in Vercel for each environment. Server-side paper fetches also prefer that same origin, which keeps local dev on `localhost` pointing at the configured Convex HTTP actions host instead of the frontend origin.
 
 ### SLOPBOT Post Drafts
 

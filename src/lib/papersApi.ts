@@ -55,8 +55,13 @@ export const resolvePublicStatus = (value: string | null | undefined) =>
   parseStatus(value);
 
 export const resolveConvexSiteOrigin = (): string | null => {
+  const viteEnv =
+    typeof import.meta !== "undefined"
+      ? (import.meta.env as Record<string, string | undefined>)
+      : undefined;
   const runtimeEnv = typeof process !== "undefined" ? process.env : undefined;
-  const convexSiteUrl = runtimeEnv?.CONVEX_SITE_URL;
+  const convexSiteUrl =
+    viteEnv?.CONVEX_SITE_URL ?? runtimeEnv?.CONVEX_SITE_URL;
   if (!convexSiteUrl) {
     return null;
   }
@@ -69,21 +74,14 @@ export const resolveConvexSiteOrigin = (): string | null => {
 };
 
 const buildApiOrigins = (origin: string): string[] => {
-  const base = new URL(origin);
-  const isLocalDevHost =
-    base.hostname === "localhost" ||
-    base.hostname === "127.0.0.1" ||
-    base.hostname === "0.0.0.0";
-
-  const origins: string[] = isLocalDevHost ? [] : [origin];
   const convexSiteOrigin = resolveConvexSiteOrigin();
-  if (convexSiteOrigin && convexSiteOrigin !== origin) {
-    origins.push(convexSiteOrigin);
+  if (convexSiteOrigin) {
+    return convexSiteOrigin === origin
+      ? [origin]
+      : [convexSiteOrigin, origin];
   }
-  if (isLocalDevHost) {
-    origins.push(origin);
-  }
-  return origins;
+
+  return [origin];
 };
 
 const fetchJson = async <T>(url: URL): Promise<T> => {
