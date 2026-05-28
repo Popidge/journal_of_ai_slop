@@ -39,11 +39,11 @@ export const onEcoModeChange = (listener: (enabled: boolean) => void) => {
     }
   };
 
-  window.addEventListener(ECO_MODE_EVENT, customListener as EventListener);
+  window.addEventListener(ECO_MODE_EVENT, customListener);
   window.addEventListener("storage", storageListener);
 
   return () => {
-    window.removeEventListener(ECO_MODE_EVENT, customListener as EventListener);
+    window.removeEventListener(ECO_MODE_EVENT, customListener);
     window.removeEventListener("storage", storageListener);
   };
 };

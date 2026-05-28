@@ -40,7 +40,7 @@ export const internalUpsertImpactValues = internalMutation({
       .take(1);
 
     if (existing.length > 0) {
-      await ctx.db.patch(existing[0]._id, {
+      await ctx.db.patch("environmentalImpactValues", existing[0]._id, {
         energyPerTokenWh: args.energyPerTokenWh,
         co2PerWh: args.co2PerWh,
       });
