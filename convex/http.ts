@@ -206,6 +206,41 @@ router.route({
   }),
 });
 
+// GET /api/carbon-ledger - Public carbon ledger totals and offset receipts
+router.route({
+  path: "/api/carbon-ledger",
+  method: "GET",
+  handler: httpAction(async (ctx, _req) => {
+    const headers = {
+      "Content-Type": "application/json",
+      "Cache-Control":
+        "public, max-age=0, s-maxage=300, stale-while-revalidate=1800",
+    };
+
+    try {
+      const ledger = await ctx.runQuery(api.carbonLedger.getLedger, {});
+      return new Response(JSON.stringify(ledger), {
+        status: 200,
+        headers,
+      });
+    } catch (error) {
+      console.error("Failed to read carbon ledger", error);
+      return new Response(
+        JSON.stringify({
+          error: "Unable to load carbon ledger",
+        }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store, max-age=0",
+          },
+        },
+      );
+    }
+  }),
+});
+
 // GET /api/papers - List papers
 router.route({
   path: "/api/papers",

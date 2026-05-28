@@ -51,7 +51,7 @@ We **strongly encourage** all submitters to consider the environmental cost of t
 
 ## Transparency & Verification
 
-All carbon metrics are **publicly viewable** via the site-wise **"Eco Mode" toggle**. Monthly donation receipts (with amounts and beneficiary organizations) will be posted to a public ledger at `/carbon-ledger` for full transparency.
+All carbon metrics are **publicly viewable** via the site-wise **"Eco Mode" toggle**. Monthly donation receipts and calculated pledge totals are posted to the public ledger at `/carbon-ledger` for full transparency.
 
 We are **not perfect**, but we are **trying**. And if that isn't the most honest thing an academic journal has ever said, we don't know what is.
 

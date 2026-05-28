@@ -9,6 +9,15 @@ export const tokensToCo2g = (tokens: number, energyPerTokenWh: number, co2PerWh:
   tokens * energyPerTokenWh * co2PerWh;
 
 export const formatEnergy = (mWh: number) => `${formatNumber(mWh)} mWh`;
+export const formatEnergyKWh = (kWh: number) => `${formatNumber(kWh, 4)} kWh`;
 export const formatCo2 = (grams: number) => `${formatNumber(grams)} g CO₂`;
+export const formatCo2Kg = (kg: number) => `${formatNumber(kg, 4)} kg CO₂`;
 export const formatTokens = (tokens: number) => tokens.toLocaleString("en-GB");
 export const formatCurrency = (amount: number, digits = 4) => `$${amount.toFixed(digits)}`;
+export const formatGbp = (amount: number) =>
+  amount.toLocaleString("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });

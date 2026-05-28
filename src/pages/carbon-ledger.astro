@@ -1,0 +1,174 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { fetchCarbonLedger } from "@/lib/papersApi";
+import { formatCo2Kg, formatEnergyKWh, formatGbp, formatTokens } from "@/utils/ecoMetrics";
+
+export const prerender = false;
+
+let ledger: Awaited<ReturnType<typeof fetchCarbonLedger>> | null = null;
+let ledgerLoadFailed = false;
+
+try {
+  ledger = await fetchCarbonLedger({ origin: Astro.url.origin });
+} catch (error) {
+  ledgerLoadFailed = true;
+  console.error("Failed to load carbon ledger", error);
+}
+
+const snapshot = ledger?.snapshot ?? null;
+const offsets = ledger?.offsets ?? [];
+
+const formatDate = (value: number) =>
+  new Date(value).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+const formatDateTime = (value: number) =>
+  new Date(value).toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+const formatOffsetType = (value: string) => {
+  if (value === "carbon_removal") return "Carbon removal";
+  if (value === "renewable_energy") return "Renewable energy";
+  return "Other";
+};
+---
+
+<BaseLayout
+  title="Carbon Ledger | The Journal of AI Slop™"
+  description="Public carbon accounting and offset receipts for The Journal of AI Slop."
+>
+  <main class="min-h-screen px-3 py-10 text-[color:var(--ink)] sm:px-4">
+    <div class="mx-auto w-full max-w-[1040px] space-y-6">
+      <header class="rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-5 text-center shadow-[0_20px_40px_rgba(35,24,21,0.12)] sm:rounded-[32px] sm:p-7 sm:text-left">
+        <p class="text-[0.65rem] uppercase tracking-[0.3em] text-[color:var(--ink-soft)] sm:text-xs sm:tracking-[0.5em]">Public Receipts</p>
+        <h1 class="wobbly-underline mt-2 text-[clamp(2rem,5vw,3rem)] font-semibold text-[color:var(--ink)]">Carbon Ledger</h1>
+        <p class="mt-3 max-w-3xl text-sm leading-relaxed text-[color:var(--ink-soft)]">
+          The journal totals review tokens, converts them through the Eco Mode impact constants, and records offset purchases against the resulting pledge.
+        </p>
+      </header>
+
+      {ledgerLoadFailed ? (
+        <section class="rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/95 p-6 text-center text-sm text-[color:var(--accent-red)] shadow-[0_15px_35px_rgba(35,24,21,0.12)]">
+          The carbon ledger is unavailable right now. Please try again shortly.
+        </section>
+      ) : !snapshot ? (
+        <section class="rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/95 p-6 text-center text-sm text-[color:var(--ink-soft)] shadow-[0_15px_35px_rgba(35,24,21,0.12)]">
+          Ledger calculation pending.
+        </section>
+      ) : (
+        <>
+          <section class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div class="rounded-[24px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-5 shadow-[0_15px_35px_rgba(35,24,21,0.12)]">
+              <p class="text-[0.65rem] uppercase tracking-[0.3em] text-[color:var(--ink-soft)]">Reviewed Papers</p>
+              <p class="mt-2 text-3xl font-semibold text-[color:var(--ink)]">{formatTokens(snapshot.paperCount)}</p>
+              <p class="mt-1 text-xs text-[color:var(--ink-soft)]">Last calculated {formatDateTime(snapshot.calculatedAt)}</p>
+            </div>
+            <div class="rounded-[24px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-5 shadow-[0_15px_35px_rgba(35,24,21,0.12)]">
+              <p class="text-[0.65rem] uppercase tracking-[0.3em] text-[color:var(--ink-soft)]">Review Tokens</p>
+              <p class="mt-2 text-3xl font-semibold text-[color:var(--ink)]">{formatTokens(snapshot.totalTokens)}</p>
+              <p class="mt-1 text-xs text-[color:var(--ink-soft)]">Accepted and rejected, excluding blocked submissions</p>
+            </div>
+            <div class="rounded-[24px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-5 shadow-[0_15px_35px_rgba(35,24,21,0.12)]">
+              <p class="text-[0.65rem] uppercase tracking-[0.3em] text-[color:var(--ink-soft)]">Estimated Energy</p>
+              <p class="mt-2 text-3xl font-semibold text-[color:var(--ink)]">{formatEnergyKWh(snapshot.totalEnergyKWh)}</p>
+              <p class="mt-1 text-xs text-[color:var(--ink-soft)]">{snapshot.energyPerTokenWh} Wh per token</p>
+            </div>
+            <div class="rounded-[24px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-5 shadow-[0_15px_35px_rgba(35,24,21,0.12)]">
+              <p class="text-[0.65rem] uppercase tracking-[0.3em] text-[color:var(--ink-soft)]">Estimated Carbon</p>
+              <p class="mt-2 text-3xl font-semibold text-[color:var(--ink)]">{formatCo2Kg(snapshot.totalCo2kg)}</p>
+              <p class="mt-1 text-xs text-[color:var(--ink-soft)]">{snapshot.co2PerWh} g CO2 per Wh</p>
+            </div>
+          </section>
+
+          <section class="rounded-[26px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-5 shadow-[0_15px_35px_rgba(35,24,21,0.12)] sm:rounded-[32px] sm:p-6">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p class="text-[0.65rem] uppercase tracking-[0.3em] text-[color:var(--ink-soft)] sm:text-xs sm:tracking-[0.45em]">Pledge Balance</p>
+                <h2 class="mt-1 text-2xl font-semibold text-[color:var(--ink)]">Offsets Due</h2>
+              </div>
+              <p class="text-sm text-[color:var(--ink-soft)]">Posted offsets: {formatGbp(ledger?.totalOffsetGbp ?? 0)}</p>
+            </div>
+            <div class="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div class="rounded-[18px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 p-4">
+                <p class="text-xs uppercase tracking-[0.25em] text-[color:var(--ink-soft)]">Stripe Climate</p>
+                <p class="mt-2 text-xl font-semibold">{formatGbp(snapshot.stripeClimateDueGbp)}</p>
+                <p class="mt-1 text-xs text-[color:var(--ink-soft)]">Remaining {formatGbp(ledger?.remainingStripeClimateGbp ?? 0)}</p>
+              </div>
+              <div class="rounded-[18px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 p-4">
+                <p class="text-xs uppercase tracking-[0.25em] text-[color:var(--ink-soft)]">Solar Aid</p>
+                <p class="mt-2 text-xl font-semibold">{formatGbp(snapshot.solarAidDueGbp)}</p>
+                <p class="mt-1 text-xs text-[color:var(--ink-soft)]">Remaining {formatGbp(ledger?.remainingSolarAidGbp ?? 0)}</p>
+              </div>
+              <div class="rounded-[18px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 p-4">
+                <p class="text-xs uppercase tracking-[0.25em] text-[color:var(--ink-soft)]">Total Remaining</p>
+                <p class="mt-2 text-xl font-semibold">{formatGbp(ledger?.remainingTotalGbp ?? 0)}</p>
+                <p class="mt-1 text-xs text-[color:var(--ink-soft)]">Against posted receipts</p>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
+
+      <section class="rounded-[26px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-5 shadow-[0_15px_35px_rgba(35,24,21,0.12)] sm:rounded-[32px] sm:p-6">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p class="text-[0.65rem] uppercase tracking-[0.3em] text-[color:var(--ink-soft)] sm:text-xs sm:tracking-[0.45em]">Offset Receipts</p>
+            <h2 class="mt-1 text-2xl font-semibold text-[color:var(--ink)]">Posted Purchases</h2>
+          </div>
+          {ledger && (
+            <p class="text-sm text-[color:var(--ink-soft)]">
+              Claimed: {formatCo2Kg(ledger.totalCo2KgClaimed)} / {formatEnergyKWh(ledger.totalEnergyKWhClaimed)}
+            </p>
+          )}
+        </div>
+
+        {offsets.length === 0 ? (
+          <p class="mt-5 rounded-[18px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 p-4 text-sm text-[color:var(--ink-soft)]">
+            No offset receipts posted yet.
+          </p>
+        ) : (
+          <div class="mt-5 overflow-x-auto">
+            <table class="w-full min-w-[720px] border-collapse text-left text-sm">
+              <thead class="text-[0.65rem] uppercase tracking-[0.25em] text-[color:var(--ink-soft)]">
+                <tr class="border-b border-[color:var(--coffee-light)]">
+                  <th class="py-3 pr-4 font-semibold">Date</th>
+                  <th class="py-3 pr-4 font-semibold">Organization</th>
+                  <th class="py-3 pr-4 font-semibold">Type</th>
+                  <th class="py-3 pr-4 font-semibold">Amount</th>
+                  <th class="py-3 pr-4 font-semibold">Receipt</th>
+                </tr>
+              </thead>
+              <tbody>
+                {offsets.map((offset) => (
+                  <tr class="border-b border-[color:var(--coffee-light)]/70 text-[color:var(--ink-soft)]">
+                    <td class="py-3 pr-4">{formatDate(offset.purchasedAt)}</td>
+                    <td class="py-3 pr-4 text-[color:var(--ink)]">{offset.organization}</td>
+                    <td class="py-3 pr-4">{formatOffsetType(offset.offsetType)}</td>
+                    <td class="py-3 pr-4">{formatGbp(offset.amountGbp)}</td>
+                    <td class="py-3 pr-4">
+                      {offset.receiptUrl ? (
+                        <a href={offset.receiptUrl} class="text-[color:var(--accent-blue)] underline">
+                          {offset.receiptLabel ?? "Receipt"}
+                        </a>
+                      ) : (
+                        <span>{offset.receiptLabel ?? "Logged manually"}</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </div>
+  </main>
+</BaseLayout>

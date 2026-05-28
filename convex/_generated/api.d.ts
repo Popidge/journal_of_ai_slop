@@ -9,10 +9,12 @@
  */
 
 import type * as actions from "../actions.js";
+import type * as carbonLedger from "../carbonLedger.js";
 import type * as crons from "../crons.js";
 import type * as editorsComments from "../editorsComments.js";
 import type * as environmentalImpact from "../environmentalImpact.js";
 import type * as http from "../http.js";
+import type * as migrations_carbon_ledger_migration from "../migrations/carbon_ledger_migration.js";
 import type * as migrations_eco_mode_migration from "../migrations/eco_mode_migration.js";
 import type * as migrations_highlighted_papers_migration from "../migrations/highlighted_papers_migration.js";
 import type * as openrouter from "../openrouter.js";
@@ -36,10 +38,12 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   actions: typeof actions;
+  carbonLedger: typeof carbonLedger;
   crons: typeof crons;
   editorsComments: typeof editorsComments;
   environmentalImpact: typeof environmentalImpact;
   http: typeof http;
+  "migrations/carbon_ledger_migration": typeof migrations_carbon_ledger_migration;
   "migrations/eco_mode_migration": typeof migrations_eco_mode_migration;
   "migrations/highlighted_papers_migration": typeof migrations_highlighted_papers_migration;
   openrouter: typeof openrouter;

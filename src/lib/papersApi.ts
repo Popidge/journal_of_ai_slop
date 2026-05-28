@@ -48,6 +48,54 @@ export type EnvironmentalImpact = {
   co2PerWh: number;
 };
 
+export type CarbonOffsetType = "carbon_removal" | "renewable_energy" | "other";
+
+export type CarbonOffset = {
+  _id: string;
+  _creationTime: number;
+  organization: string;
+  offsetType: CarbonOffsetType;
+  amountGbp: number;
+  purchasedAt: number;
+  receiptUrl?: string;
+  receiptLabel?: string;
+  notes?: string;
+  co2KgClaimed?: number;
+  energyKWhClaimed?: number;
+  createdAt: number;
+};
+
+export type CarbonLedgerSnapshot = {
+  _id: string;
+  _creationTime: number;
+  label: string;
+  calculatedAt: number;
+  lastIncludedReviewedAt?: number;
+  paperCount: number;
+  totalTokens: number;
+  energyPerTokenWh: number;
+  co2PerWh: number;
+  totalEnergyWh: number;
+  totalEnergyKWh: number;
+  totalCo2g: number;
+  totalCo2kg: number;
+  stripeClimateDueGbp: number;
+  solarAidDueGbp: number;
+};
+
+export type CarbonLedger = {
+  snapshot: CarbonLedgerSnapshot | null;
+  offsets: CarbonOffset[];
+  totalOffsetGbp: number;
+  totalCarbonRemovalGbp: number;
+  totalRenewableEnergyGbp: number;
+  totalCo2KgClaimed: number;
+  totalEnergyKWhClaimed: number;
+  remainingStripeClimateGbp: number;
+  remainingSolarAidGbp: number;
+  remainingTotalGbp: number;
+};
+
 const parseStatus = (status: string | null | undefined): PublicPaperStatus =>
   status === "rejected" ? "rejected" : "accepted";
 
@@ -267,5 +315,30 @@ export const fetchEnvironmentalImpact = async (params: {
 
   throw new Error(
     `Unable to load environmental impact values. Tried: ${errors.join(" | ")}`,
+  );
+};
+
+export const fetchCarbonLedger = async (params: {
+  origin: string;
+}): Promise<CarbonLedger> => {
+  const origins = buildApiOrigins(params.origin);
+  const errors: string[] = [];
+
+  for (const origin of origins) {
+    const url = new URL("/api/carbon-ledger", origin);
+
+    try {
+      return await fetchJson<CarbonLedger>(url);
+    } catch (error) {
+      errors.push(
+        error instanceof Error
+          ? error.message
+          : "Unknown carbon ledger API error",
+      );
+    }
+  }
+
+  throw new Error(
+    `Unable to load carbon ledger. Tried: ${errors.join(" | ")}`,
   );
 };

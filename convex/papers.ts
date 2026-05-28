@@ -57,6 +57,7 @@ const paperProjection = v.object({
   completionTokens: v.optional(v.number()),
   cachedTokens: v.optional(v.number()),
   totalTokens: v.optional(v.number()),
+  reviewedAt: v.optional(v.number()),
   moderation: v.optional(moderationSummaryValidator),
 });
 
@@ -199,6 +200,7 @@ export const updatePaperStatus = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    const existing = await ctx.db.get("papers", args.paperId);
     const patch: Record<string, unknown> = { status: args.status };
     if (args.reviewVotes !== undefined) {
       patch.reviewVotes = args.reviewVotes;
@@ -208,6 +210,14 @@ export const updatePaperStatus = internalMutation({
     }
     if (args.totalTokens !== undefined) {
       patch.totalTokens = args.totalTokens;
+    }
+    if (
+      existing &&
+      existing.reviewedAt === undefined &&
+      (args.status === "accepted" || args.status === "rejected") &&
+      !existing.moderation?.blocked
+    ) {
+      patch.reviewedAt = Date.now();
     }
 
     await ctx.db.patch("papers", args.paperId, patch);
@@ -236,4 +246,3 @@ export const redactPaperContent = internalMutation({
     return null;
   },
 });
-

@@ -37,11 +37,13 @@ export default defineSchema({
       totalTokens: v.optional(v.number()),
     }))),
     totalReviewCost: v.optional(v.number()),
-      totalTokens: v.optional(v.number()),
-      moderation: v.optional(moderationSummary),
+    totalTokens: v.optional(v.number()),
+    reviewedAt: v.optional(v.number()),
+    moderation: v.optional(moderationSummary),
   })
     .index("by_status", ["status"])
-    .index("by_submittedAt", ["submittedAt"]),
+    .index("by_submittedAt", ["submittedAt"])
+    .index("by_status_reviewedAt", ["status", "reviewedAt"]),
 
   highlightedPapers: defineTable({
     paperId: v.id("papers"),
@@ -69,6 +71,43 @@ export default defineSchema({
     energyPerTokenWh: v.number(),
     co2PerWh: v.number(),
   }).index("by_label", ["label"]),
+
+  carbonLedgerSnapshots: defineTable({
+    label: v.string(),
+    calculatedAt: v.number(),
+    lastIncludedReviewedAt: v.optional(v.number()),
+    paperCount: v.number(),
+    totalTokens: v.number(),
+    energyPerTokenWh: v.number(),
+    co2PerWh: v.number(),
+    totalEnergyWh: v.number(),
+    totalEnergyKWh: v.number(),
+    totalCo2g: v.number(),
+    totalCo2kg: v.number(),
+    stripeClimateDueGbp: v.number(),
+    solarAidDueGbp: v.number(),
+  })
+    .index("by_label", ["label"])
+    .index("by_calculatedAt", ["calculatedAt"]),
+
+  carbonOffsets: defineTable({
+    organization: v.string(),
+    offsetType: v.union(
+      v.literal("carbon_removal"),
+      v.literal("renewable_energy"),
+      v.literal("other"),
+    ),
+    amountGbp: v.number(),
+    purchasedAt: v.number(),
+    receiptUrl: v.optional(v.string()),
+    receiptLabel: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    co2KgClaimed: v.optional(v.number()),
+    energyKWhClaimed: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_purchasedAt", ["purchasedAt"])
+    .index("by_offsetType", ["offsetType"]),
 
   slopIdentifiers: defineTable({
     slopId: v.string(),
