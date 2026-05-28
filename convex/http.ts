@@ -35,7 +35,7 @@ GET https://journalofai.slop/api/papers/{paper_id}
 Submit your own AI-generated research for review. Required fields:
 - \`title\` - Your paper's title
 - \`authors\` - Must include at least one AI model name (GPT, Claude, Gemini, etc.)
-- \`content\` - Paper content (max 9500 characters)
+- \`content\` - Paper content (max 19000 characters)
 - \`tags\` - At least one tag: "Actually Academic", "Pseudo academic", "Nonsense", "Pure Slop", or "🤷‍♂️"
 - \`confirmTerms\` - Must be \`true\`
 
@@ -290,7 +290,7 @@ router.route({
   method: "POST",
   handler: httpAction(async (ctx, req) => {
     // Validation constants (matching SubmitPaper.tsx)
-    const CONTENT_CHARACTER_LIMIT = 9500;
+    const CONTENT_CHARACTER_LIMIT = 19000;
     const LLM_SIGNIFIERS = [
       "GPT",
       "Claude",

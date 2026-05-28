@@ -19,7 +19,8 @@ const REVIEW_MODELS = [
 ] as const;
 
 const MAX_REVIEW_COST = 0.2;
-const TRUNCATE_LENGTH = 10000;
+const REVIEW_CONTENT_CHARACTER_LIMIT = 19000;
+const CONTENT_SAFETY_PAYLOAD_CHARACTER_LIMIT = 9500;
 const CATEGORY_SEVERITY_THRESHOLD = 4;
 const OVERALL_SEVERITY_THRESHOLD = 6;
 const MODERATION_CATEGORIES = ["Hate", "SelfHarm", "Sexual", "Violence"] as const;
@@ -139,8 +140,8 @@ const buildPrompt = (paper: {
   content: string;
 }): string => {
   const tags = paper.tags.length ? paper.tags.join(", ") : "(no tag)";
-  const truncated = paper.content.length > TRUNCATE_LENGTH
-    ? `${paper.content.slice(0, TRUNCATE_LENGTH)}...`
+  const truncated = paper.content.length > REVIEW_CONTENT_CHARACTER_LIMIT
+    ? `${paper.content.slice(0, REVIEW_CONTENT_CHARACTER_LIMIT)}...`
     : paper.content;
 
   return `You are a peer reviewer for The Journal of AI Slop™, a semi-satirical academic journal.
@@ -150,7 +151,7 @@ The paper you're reviewing is tagged as: ${tags}
 Paper Title: ${paper.title}
 Authors: ${paper.authors}
 
-Content (truncated to ${TRUNCATE_LENGTH} chars):
+Content (truncated to ${REVIEW_CONTENT_CHARACTER_LIMIT} chars):
 ${truncated}
 
 Your task: Decide if this paper should be published in our slop journal. The purpose of the journal is to publish papers that have been fully or co-authored
@@ -258,17 +259,118 @@ const getContentSafetyClient = (): ContentSafetyClientType => {
 
 const buildModerationText = (paper: PaperForModeration): string => {
   const tags = paper.tags.length ? paper.tags.join(", ") : "(no tags)";
-  const truncatedContent = paper.content.length > TRUNCATE_LENGTH
-    ? `${paper.content.slice(0, TRUNCATE_LENGTH)}...`
-    : paper.content;
 
   return [
     `Title: ${paper.title}`,
     `Authors: ${paper.authors}`,
     `Tags: ${tags}`,
     "",
-    truncatedContent,
+    paper.content,
   ].join("\n");
+};
+
+const findChunkEnd = (content: string, start: number, maxLength: number): number => {
+  const hardEnd = Math.min(content.length, start + maxLength);
+  if (hardEnd >= content.length) {
+    return content.length;
+  }
+
+  const window = content.slice(start, hardEnd);
+  const boundaryPatterns = [
+    /\n{2,}/g,
+    /[.!?]["')\]]?\s+/g,
+    /\n/g,
+    /\s+/g,
+  ];
+
+  for (const pattern of boundaryPatterns) {
+    let latestEnd = -1;
+    let match = pattern.exec(window);
+    while (match !== null) {
+      latestEnd = match.index + match[0].length;
+      match = pattern.exec(window);
+    }
+    if (latestEnd > 0) {
+      return start + latestEnd;
+    }
+  }
+
+  return hardEnd;
+};
+
+const splitModerationContent = (content: string, maxChunkLength: number): string[] => {
+  const chunks: string[] = [];
+  let start = 0;
+
+  while (start < content.length) {
+    const end = findChunkEnd(content, start, maxChunkLength);
+    const chunk = content.slice(start, end).trim();
+    if (chunk.length > 0) {
+      chunks.push(chunk);
+    }
+    start = end;
+
+    while (start < content.length && /\s/.test(content[start])) {
+      start += 1;
+    }
+  }
+
+  return chunks.length > 0 ? chunks : [content];
+};
+
+const buildModerationPayloads = (paper: PaperForModeration): string[] => {
+  const tags = paper.tags.length ? paper.tags.join(", ") : "(no tags)";
+  const metadata = [
+    `Title: ${paper.title}`,
+    `Authors: ${paper.authors}`,
+    `Tags: ${tags}`,
+  ].join("\n");
+  const metadataPrefix = `${metadata}\n\n`;
+
+  if (metadataPrefix.length >= CONTENT_SAFETY_PAYLOAD_CHARACTER_LIMIT) {
+    throw new Error("Paper metadata exceeds Azure Content Safety payload limit");
+  }
+
+  const text = buildModerationText(paper);
+  if (text.length <= CONTENT_SAFETY_PAYLOAD_CHARACTER_LIMIT) {
+    return [text];
+  }
+
+  const chunkPrefixSample = `${metadata}\nChunk 999 of 999\n\n`;
+  const maxContentChunkLength =
+    CONTENT_SAFETY_PAYLOAD_CHARACTER_LIMIT - chunkPrefixSample.length;
+  if (maxContentChunkLength <= 0) {
+    throw new Error("Paper metadata leaves no room for moderation content");
+  }
+
+  const chunks = splitModerationContent(paper.content, maxContentChunkLength);
+  const totalChunks = chunks.length;
+
+  return chunks.map((chunk, index) => {
+    const prefix = `${metadata}\nChunk ${index + 1} of ${totalChunks}\n\n`;
+    const payload = `${prefix}${chunk}`;
+    if (payload.length > CONTENT_SAFETY_PAYLOAD_CHARACTER_LIMIT) {
+      throw new Error(`Moderation chunk ${index + 1} exceeds payload limit`);
+    }
+    return payload;
+  });
+};
+
+const mergeModerationCategories = (chunks: ModerationCategory[][]): ModerationCategory[] => {
+  const severityByCategory = new Map<string, number>();
+  for (const categories of chunks) {
+    for (const entry of categories) {
+      severityByCategory.set(
+        entry.category,
+        Math.max(severityByCategory.get(entry.category) ?? 0, entry.severity),
+      );
+    }
+  }
+
+  return [...severityByCategory.entries()].map(([category, severity]) => ({
+    category,
+    severity,
+  }));
 };
 
 const analyzeWithContentSafety = async (paper: PaperForModeration): Promise<ModerationVerdict> => {
@@ -289,35 +391,64 @@ const analyzeWithContentSafety = async (paper: PaperForModeration): Promise<Mode
 
   try {
     const client = getContentSafetyClient();
-    const parameters: AnalyzeTextParameters = {
-      body: {
-        text: buildModerationText(paper),
-        categories: [...MODERATION_CATEGORIES],
-      },
-    };
+    const payloads = buildModerationPayloads(paper);
+    const chunkResults: Array<{
+      categories: ModerationCategory[];
+      overallSeverity: number;
+      requestId?: string;
+    }> = [];
 
-    const response = await client.path("/text:analyze").post(parameters);
-    if (isUnexpected(response)) {
-      const message = (response.body as { error?: { message?: string } })?.error?.message ?? "Azure Content Safety returned an unexpected response";
-      throw new Error(message);
+    for (const [index, text] of payloads.entries()) {
+      if (text.length > CONTENT_SAFETY_PAYLOAD_CHARACTER_LIMIT) {
+        throw new Error(`Moderation chunk ${index + 1} exceeds payload limit`);
+      }
+
+      const parameters: AnalyzeTextParameters = {
+        body: {
+          text,
+          categories: [...MODERATION_CATEGORIES],
+        },
+      };
+
+      const response = await client.path("/text:analyze").post(parameters);
+      if (isUnexpected(response)) {
+        const message = (response.body as { error?: { message?: string } })?.error?.message ?? "Azure Content Safety returned an unexpected response";
+        throw new Error(message);
+      }
+
+      const categoriesAnalysis: TextCategoriesAnalysisOutput[] = Array.isArray(response.body.categoriesAnalysis)
+        ? response.body.categoriesAnalysis
+        : [];
+
+      const categories = categoriesAnalysis.map((analysis) => {
+        const category = typeof analysis.category === "string" ? analysis.category : "Unknown";
+        const severityValue = typeof analysis.severity === "number" ? analysis.severity : 0;
+        return {
+          category,
+          severity: severityValue,
+        };
+      });
+
+      chunkResults.push({
+        categories,
+        overallSeverity: categories.reduce((sum, entry) => sum + entry.severity, 0),
+        requestId: (response.body as { id?: string }).id ?? undefined,
+      });
     }
 
-    const categoriesAnalysis: TextCategoriesAnalysisOutput[] = Array.isArray(response.body.categoriesAnalysis)
-      ? response.body.categoriesAnalysis
-      : [];
-
-    const categories = categoriesAnalysis.map((analysis) => {
-      const category = typeof analysis.category === "string" ? analysis.category : "Unknown";
-      const severityValue = typeof analysis.severity === "number" ? analysis.severity : 0;
-      return {
-        category,
-        severity: severityValue,
-      };
-    });
-
-    const overallSeverity = categories.reduce((sum, entry) => sum + entry.severity, 0);
-    const blockedByCategory = categories.some((entry) => entry.severity >= CATEGORY_SEVERITY_THRESHOLD);
-    const blockedByOverall = overallSeverity >= OVERALL_SEVERITY_THRESHOLD;
+    const categories = mergeModerationCategories(
+      chunkResults.map((result) => result.categories),
+    );
+    const overallSeverity = Math.max(
+      0,
+      ...chunkResults.map((result) => result.overallSeverity),
+    );
+    const blockedByCategory = chunkResults.some((result) =>
+      result.categories.some((entry) => entry.severity >= CATEGORY_SEVERITY_THRESHOLD),
+    );
+    const blockedByOverall = chunkResults.some(
+      (result) => result.overallSeverity >= OVERALL_SEVERITY_THRESHOLD,
+    );
     const blocked = blockedByCategory || blockedByOverall;
 
     let reason = "below_thresholds";
@@ -331,13 +462,15 @@ const analyzeWithContentSafety = async (paper: PaperForModeration): Promise<Mode
       }
     }
 
-    const bodyWithId = response.body as { id?: string };
+    const requestIds = chunkResults
+      .map((result) => result.requestId)
+      .filter((requestId): requestId is string => Boolean(requestId));
 
     return {
       blocked,
       overallSeverity,
       categories,
-      requestId: bodyWithId.id ?? undefined,
+      requestId: requestIds.length ? requestIds.join(",") : undefined,
       reason,
     };
   } catch (error) {
