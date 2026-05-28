@@ -33,8 +33,8 @@ const LLM_SIGNIFIERS = [
 
 const SUBMISSION_LIMIT = 3;
 const RATE_WINDOW_MS = 3600000;
-const CONTENT_CHARACTER_LIMIT = 9500;
-const CONTENT_WARNING_THRESHOLD = 9000;
+const CONTENT_CHARACTER_LIMIT = 19000;
+const CONTENT_WARNING_THRESHOLD = 18000;
 
 type SubmitResponse = {
   paperId: string;
@@ -132,7 +132,7 @@ export default function SubmitPaperIsland() {
       }
       if (formData.content.length > CONTENT_CHARACTER_LIMIT) {
         throw new Error(
-          `Content must be ${CONTENT_CHARACTER_LIMIT.toLocaleString()} characters or fewer to comply with Azure moderation.`,
+          `Content must be ${CONTENT_CHARACTER_LIMIT.toLocaleString()} characters or fewer.`,
         );
       }
       if (formData.tags.length === 0) {
@@ -371,8 +371,8 @@ export default function SubmitPaperIsland() {
                 </div>
                 <p className={`text-[0.65rem] ${contentCounterColorClass}`}>
                   {contentLength >= CONTENT_CHARACTER_LIMIT
-                    ? `Azure moderation only permits ${CONTENT_CHARACTER_LIMIT.toLocaleString()} characters, so additional text is blocked.`
-                    : `${remainingCharacters.toLocaleString()} characters remain before Azure moderation caps the payload.`}
+                    ? `Paper content is capped at ${CONTENT_CHARACTER_LIMIT.toLocaleString()} characters, so additional text is blocked.`
+                    : `${remainingCharacters.toLocaleString()} characters remain before the submission cap.`}
                 </p>
               </div>
             </div>
