@@ -77,11 +77,11 @@ export default function RecentPublishedPapersIsland() {
 
   if (isLoading) {
     return (
-      <div className="grid gap-3 sm:grid-cols-3" aria-live="polite">
+      <div className="grid gap-4 md:grid-cols-3" aria-live="polite">
         {Array.from({ length: RECENT_PAPERS_LIMIT }).map((_, index) => (
           <div
             key={index}
-            className="min-h-[138px] animate-pulse rounded-[18px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)] p-3 shadow-[0_10px_24px_rgba(35,24,21,0.1)]"
+            className="min-h-[210px] animate-pulse rounded-[8px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)] p-5 shadow-[0_10px_24px_rgba(35,24,21,0.08)]"
           >
             <div className="h-5 w-4/5 rounded bg-[color:var(--coffee-light)]/50" />
             <div className="mt-3 h-3 w-3/5 rounded bg-[color:var(--coffee-light)]/35" />
@@ -109,22 +109,26 @@ export default function RecentPublishedPapersIsland() {
   }
 
   return (
-    <div className="grid gap-3 sm:grid-cols-3" aria-live="polite">
+    <div className="grid gap-4 md:grid-cols-3" aria-live="polite">
       {papers.map((paper) => (
         <a
           key={paper._id}
           href={`/papers/${paper._id}`}
-          className="rounded-[18px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)] p-3 shadow-[0_10px_24px_rgba(35,24,21,0.1)] transition hover:border-[color:var(--accent-blue)]"
+          className="group flex min-h-[230px] flex-col rounded-[8px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 p-5 shadow-[0_10px_24px_rgba(35,24,21,0.08)] transition hover:-translate-y-0.5 hover:border-[color:var(--accent-blue)] hover:shadow-[0_16px_30px_rgba(35,24,21,0.12)]"
         >
-          <h3 className="text-base font-semibold text-[color:var(--ink)]">
+          <p className="mb-4 text-[0.62rem] font-semibold uppercase tracking-[0.24em] text-[color:var(--accent-blue)]">
+            Paper
+          </p>
+          <h3 className="text-lg font-semibold leading-snug text-[color:var(--ink)]">
             {paper.title}
           </h3>
-          <p className="mt-1 text-xs italic text-[color:var(--ink-soft)]">
+          <p className="mt-3 text-xs italic leading-relaxed text-[color:var(--ink-soft)]">
             {paper.authors}
           </p>
-          <p className="mt-2 text-[0.65rem] text-[color:var(--ink-soft)]">
-            {new Date(paper.submittedAt).toLocaleDateString("en-GB")}
-          </p>
+          <div className="mt-auto flex items-center justify-between gap-3 pt-5 text-[0.68rem] text-[color:var(--ink-soft)]">
+            <span>{new Date(paper.submittedAt).toLocaleDateString("en-GB")}</span>
+            <span className="font-semibold uppercase tracking-[0.18em] text-[color:var(--accent-blue)]">Read abstract -&gt;</span>
+          </div>
         </a>
       ))}
     </div>
