@@ -123,7 +123,7 @@ export const upsertSitemapMetadata = internalMutation({
     if (docs.length === 0) {
       await ctx.db.insert("sitemaps", args);
     } else {
-      await ctx.db.replace(docs[0]._id, {
+      await ctx.db.replace("sitemaps", docs[0]._id, {
         name: args.name,
         fileId: args.fileId,
         generatedAt: args.generatedAt,

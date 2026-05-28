@@ -15,7 +15,7 @@ export const ecoModeMigration = internalMutation({
     for await (const paper of paperQuery) {
       const reviewVotes = paper.reviewVotes ?? [];
       const totalTokens = reviewVotes.reduce((sum, vote) => sum + (vote?.totalTokens ?? 0), 0);
-      await ctx.db.patch(paper._id, { totalTokens });
+      await ctx.db.patch("papers", paper._id, { totalTokens });
       migratedCount += 1;
     }
 

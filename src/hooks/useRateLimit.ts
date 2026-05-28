@@ -3,42 +3,62 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 const STORAGE_COUNT_KEY = "slop_submission_count";
 const STORAGE_RESET_KEY = "slop_reset_time";
 
+const parseStoredCount = (value: string | null) => {
+  const count = Number(value ?? 0);
+  return Number.isFinite(count) && count >= 0 ? count : 0;
+};
+
+const parseStoredReset = (value: string | null) => {
+  const reset = Number(value ?? 0);
+  return Number.isFinite(reset) && reset > 0 ? reset : 0;
+};
+
+const getInitialRateLimitState = (limit: number, windowMs: number) => {
+  const now = Date.now();
+
+  if (typeof window === "undefined") {
+    return {
+      count: 0,
+      lastReset: now,
+      isLimited: false,
+      timeUntilReset: windowMs,
+    };
+  }
+
+  const storedCount = parseStoredCount(localStorage.getItem(STORAGE_COUNT_KEY));
+  const storedReset = parseStoredReset(localStorage.getItem(STORAGE_RESET_KEY));
+
+  if (storedReset && now - storedReset > windowMs) {
+    localStorage.setItem(STORAGE_COUNT_KEY, "0");
+    localStorage.setItem(STORAGE_RESET_KEY, now.toString());
+    return {
+      count: 0,
+      lastReset: now,
+      isLimited: false,
+      timeUntilReset: windowMs,
+    };
+  }
+
+  const resetTime = storedReset || now;
+  return {
+    count: storedCount,
+    lastReset: resetTime,
+    isLimited: storedCount >= limit,
+    timeUntilReset: Math.max(0, resetTime + windowMs - now),
+  };
+};
+
 export function useRateLimit(limit = 3, windowMs = 3600000) {
-  const [count, setCount] = useState(0);
-  const [lastReset, setLastReset] = useState(() => Date.now());
-  const [isLimited, setIsLimited] = useState(false);
-  const [timeUntilReset, setTimeUntilReset] = useState(windowMs);
+  const [initialState] = useState(() => getInitialRateLimitState(limit, windowMs));
+  const [count, setCount] = useState(initialState.count);
+  const [lastReset, setLastReset] = useState(initialState.lastReset);
+  const [isLimited, setIsLimited] = useState(initialState.isLimited);
+  const [timeUntilReset, setTimeUntilReset] = useState(initialState.timeUntilReset);
 
   const computeTimeUntilReset = useCallback(
     (referenceTime: number) => Math.max(0, referenceTime + windowMs - Date.now()),
     [windowMs],
   );
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const storedCount = Number(localStorage.getItem(STORAGE_COUNT_KEY) ?? 0);
-    const storedReset = Number(localStorage.getItem(STORAGE_RESET_KEY) ?? 0);
-    const now = Date.now();
-
-    if (storedReset && now - storedReset > windowMs) {
-      localStorage.setItem(STORAGE_COUNT_KEY, "0");
-      localStorage.setItem(STORAGE_RESET_KEY, now.toString());
-      setCount(0);
-      setLastReset(now);
-      setIsLimited(false);
-      setTimeUntilReset(windowMs);
-      return;
-    }
-
-    const resetTime = storedReset || now;
-    setCount(storedCount);
-    setLastReset(resetTime);
-    setIsLimited(storedCount >= limit);
-    setTimeUntilReset(computeTimeUntilReset(resetTime));
-  }, [computeTimeUntilReset, limit, windowMs]);
 
   useEffect(() => {
     const tick = () => {

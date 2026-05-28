@@ -25,7 +25,7 @@ export const enqueuePaper = internalMutation({
     if (existing.length > 0) {
       const existingEmail = existing[0].notificationEmail;
       if (normalizedEmail?.length && normalizedEmail !== existingEmail) {
-        await ctx.db.patch(existing[0]._id, { notificationEmail: normalizedEmail });
+        await ctx.db.patch("papersQueue", existing[0]._id, { notificationEmail: normalizedEmail });
       }
       return existing[0]._id;
     }
@@ -54,7 +54,7 @@ export const acquireNextPaperForReview = internalMutation({
     }
 
     const candidate = candidates[0];
-    await ctx.db.patch(candidate._id, { status: "processing" });
+    await ctx.db.patch("papersQueue", candidate._id, { status: "processing" });
 
     return {
       queueId: candidate._id,
@@ -70,7 +70,7 @@ export const completeQueueItem = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await ctx.db.delete(args.queueId);
+    await ctx.db.delete("papersQueue", args.queueId);
     return null;
   },
 });
@@ -97,7 +97,7 @@ export const rejectAndDropQueueItem = internalMutation({
       totalReviewCost: 0,
     });
 
-    await ctx.db.delete(args.queueId);
+    await ctx.db.delete("papersQueue", args.queueId);
     return null;
   },
 });

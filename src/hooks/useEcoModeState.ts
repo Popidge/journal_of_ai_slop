@@ -7,13 +7,13 @@ import {
 } from "@/lib/ecoModeState";
 
 export const useEcoModeState = () => {
-  const [ecoMode, setEcoMode] = useState(false);
+  const [ecoMode, setEcoMode] = useState(() => readEcoMode());
 
   useEffect(() => {
-    const initial = readEcoMode();
-    setEcoMode(initial);
-    syncEcoModeClass(initial);
+    syncEcoModeClass(ecoMode);
+  }, [ecoMode]);
 
+  useEffect(() => {
     return onEcoModeChange((enabled) => {
       setEcoMode(enabled);
       syncEcoModeClass(enabled);
