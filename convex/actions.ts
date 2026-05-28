@@ -11,11 +11,11 @@ import { sendPaperStatusNotification } from "./paperNotifications";
 import { OPENROUTER_ENDPOINT } from "./openrouter";
 
 const REVIEW_MODELS = [
-  "minimax/minimax-m2",
-  "openai/gpt-oss-120b",
-  "deepseek/deepseek-v3.2",
-  "moonshotai/kimi-k2-thinking",
-  "qwen/qwen3-235b-a22b-2507",
+  "deepseek/deepseek-v4-flash",
+  "xiaomi/mimo-v2.5",
+  "moonshotai/kimi-k2.6",
+  "openai/gpt-5.4-mini",
+  "qwen/qwen3.6-flash",
 ] as const;
 
 const MAX_REVIEW_COST = 0.2;
