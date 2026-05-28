@@ -47,14 +47,15 @@ const description = paper
   : "This paper does not exist or is not publicly available.";
 
 const reviewLabel = (decision: "publish_now" | "publish_after_edits" | "reject") => {
-  if (decision === "publish_now") return "PUBLISH NOW";
+  if (decision === "publish_now") return "PUBLISH";
   if (decision === "publish_after_edits") return "PUBLISH AFTER EDITS";
-  return "REJECTED";
+  return "REJECT";
 };
 
 const totalTokensForDisplay = paper
   ? (paper.totalTokens ?? paper.reviewVotes?.reduce((sum, review) => sum + (review.totalTokens ?? 0), 0) ?? null)
   : null;
+const formattedDate = paper ? new Date(paper.submittedAt).toLocaleDateString("en-GB") : "";
 ---
 
 <BaseLayout title={pageTitle} description={description}>
@@ -86,107 +87,122 @@ const totalTokensForDisplay = paper
     )}
   </Fragment>
 
-  <main class="min-h-screen px-3 py-10 text-[color:var(--ink)] sm:px-4">
-    <div class="mx-auto w-full max-w-[1040px] space-y-8">
-      <a
-        href="/papers"
-        class="text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-[color:var(--ink-soft)] transition hover:text-[color:var(--accent-blue)] sm:text-xs sm:tracking-[0.35em]"
-      >
-        ← Back to Papers
-      </a>
+  <main class="text-[color:var(--ink)]">
+    <div class="mx-auto w-full max-w-[1360px] px-4 py-5 sm:px-6 lg:px-8">
+      <div class="mb-5 flex flex-col gap-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-soft)] sm:flex-row sm:items-center sm:justify-between sm:tracking-[0.24em]">
+        <a href="/papers" class="transition hover:text-[color:var(--accent-blue)]">&lt;- Back to papers</a>
+        {paper && <span>Issue XXXVII · {formattedDate}</span>}
+      </div>
 
       {!paper ? (
-        <section class="rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/95 p-6 text-center text-sm text-[color:var(--accent-red)] shadow-[0_15px_35px_rgba(35,24,21,0.12)]">
+        <section class="rounded-[8px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/95 p-6 text-center text-sm text-[color:var(--accent-red)] shadow-[0_15px_35px_rgba(35,24,21,0.12)]">
           Paper not found.
         </section>
       ) : (
-        <>
-          <article class="space-y-6 rounded-[26px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-5 shadow-[0_20px_40px_rgba(35,24,21,0.12)] sm:rounded-[32px] sm:p-8">
-            <div class="flex flex-col gap-2 text-center sm:text-left">
-              <p class="text-[0.65rem] uppercase tracking-[0.3em] text-[color:var(--ink-soft)] sm:text-xs sm:tracking-[0.4em]">Research Note</p>
-              <h1 class="paper-title-glow wobbly-underline text-[clamp(2rem,5vw,3rem)] font-semibold leading-tight text-[color:var(--ink)]">{paper.title}</h1>
+        <div class="grid gap-5 lg:grid-cols-[180px_minmax(0,1fr)_250px] xl:grid-cols-[210px_minmax(0,1fr)_270px]">
+          <aside class="order-2 space-y-4 lg:order-1">
+            <div class="rounded-[8px] border border-dashed border-[color:var(--coffee-light)] bg-[color:var(--paper)]/65 p-4 lg:sticky lg:top-5">
+              <p class="mb-3 text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-[color:var(--coffee)]">On this page</p>
+              <ol class="space-y-2 text-[0.72rem] font-semibold text-[color:var(--ink-soft)]">
+                <li class="text-[color:var(--accent-blue)]">Abstract</li>
+                <li>Paper text</li>
+                {paper.editorComment && <li>Editors' comment</li>}
+                <li>Verdicts</li>
+              </ol>
             </div>
-            <div class="flex flex-wrap items-baseline gap-3 text-center text-sm text-[color:var(--ink-soft)] sm:flex-row sm:text-left">
-              <p class="italic">by {paper.authors}</p>
-              <span class="mx-auto rounded-full border border-[color:var(--coffee)] px-3 py-1 text-[0.55rem] font-semibold uppercase tracking-[0.3em] text-[color:var(--coffee)] sm:mx-0 sm:text-[0.6rem] sm:tracking-[0.4em]">
-                {paper.status === "accepted" ? "PUBLISHED" : "REJECTED"}
-              </span>
+
+            <div class="rounded-[8px] border border-dashed border-[color:var(--coffee-light)] bg-[color:var(--paper)]/65 p-4">
+              <p class="mb-3 text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-[color:var(--coffee)]">Quick stats</p>
+              <dl class="space-y-2 text-[0.72rem] text-[color:var(--ink-soft)]">
+                <div><dt class="font-semibold">Cost</dt><dd class="non-eco-only">{paper.totalReviewCost != null ? formatCurrency(paper.totalReviewCost, 6) : "Calculating..."}</dd></div>
+                <div><dt class="font-semibold">Tokens</dt><dd class="non-eco-only">{totalTokensForDisplay != null ? formatTokens(totalTokensForDisplay) : "Calculating..."}</dd></div>
+                <div><dt class="font-semibold">Energy</dt><dd class="eco-only">{impactLoadFailed ? "Unavailable" : (totalTokensForDisplay != null && energyPerTokenWh > 0 ? formatEnergy(tokensToEnergyMWh(totalTokensForDisplay, energyPerTokenWh)) : "Calculating energy...")}</dd></div>
+                <div><dt class="font-semibold">CO2</dt><dd class="eco-only">{impactLoadFailed ? "Unavailable" : (totalTokensForDisplay != null && energyPerTokenWh > 0 && co2PerWh > 0 ? formatCo2(tokensToCo2g(totalTokensForDisplay, energyPerTokenWh, co2PerWh)) : "Calculating impact...")}</dd></div>
+              </dl>
             </div>
-            <div class="flex flex-wrap gap-2 text-[0.6rem] text-[color:var(--coffee)] sm:text-[0.65rem]">
-              {paper.tags.map((tag) => (
-                <span class="rounded-full border border-[color:var(--coffee)] bg-[color:var(--paper)]/80 px-3 py-1">{tag}</span>
-              ))}
-            </div>
+          </aside>
+
+          <article class="order-1 min-w-0 space-y-6 lg:order-2">
+            <header class="border-b border-[color:var(--coffee-light)] pb-5">
+              <p class="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-[color:var(--accent-blue)]">Paper 01</p>
+              <h1 class="wobbly-underline mt-3 text-[clamp(2rem,7vw,3.9rem)] font-semibold leading-[1.04] text-[color:var(--ink)]">{paper.title}</h1>
+              <div class="mt-5 flex flex-col gap-3 text-sm text-[color:var(--ink-soft)] sm:flex-row sm:items-center sm:justify-between">
+                <p class="font-serif italic">by {paper.authors}</p>
+                <span class="w-fit rounded-full border border-[color:var(--coffee-light)] px-4 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-[color:var(--coffee)]">
+                  {paper.status === "accepted" ? "Peer reviewed by bots" : "Rejected by bots"}
+                </span>
+              </div>
+            </header>
+
+            <section class="rounded-[8px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/70 p-4 sm:p-6">
+              <h2 class="mb-3 text-lg font-semibold uppercase tracking-[0.22em] text-[color:var(--accent-blue)]">Abstract</h2>
+              <p class="font-serif text-base leading-8 text-[color:var(--ink-soft)]">{description}</p>
+            </section>
+
             {paper.slopIdentifier && (
-              <p class="text-[0.7rem] text-[color:var(--coffee)]">
+              <p class="text-[0.72rem] text-[color:var(--coffee)]">
                 Slop ID:
                 <a
                   href={paper.slopIdentifier.fromLocalJournal ? `/${paper.slopIdentifier.link}` : paper.slopIdentifier.link}
-                  class="ml-1 font-mono underline decoration-[color:var(--coffee)] text-[color:var(--accent-blue)]"
+                  class="ml-1 font-mono text-[color:var(--accent-blue)] underline decoration-[color:var(--coffee)] underline-offset-4"
                 >
                   {paper.slopIdentifier.slopId}
                 </a>
               </p>
             )}
-            <div class="grid grid-cols-1 gap-1 text-[0.7rem] text-[color:var(--ink-soft)] sm:grid-cols-2">
-              <p class="non-eco-only">Review cost: {paper.totalReviewCost != null ? formatCurrency(paper.totalReviewCost, 6) : "Calculating..."}</p>
-              <p class="non-eco-only">Tokens: {totalTokensForDisplay != null ? formatTokens(totalTokensForDisplay) : "Calculating..."}</p>
-              <p class="eco-only">Energy: {impactLoadFailed ? "Unavailable" : (totalTokensForDisplay != null && energyPerTokenWh > 0 ? formatEnergy(tokensToEnergyMWh(totalTokensForDisplay, energyPerTokenWh)) : "Calculating energy...")}</p>
-              <p class="eco-only">CO2: {impactLoadFailed ? "Unavailable" : (totalTokensForDisplay != null && energyPerTokenWh > 0 && co2PerWh > 0 ? formatCo2(tokensToCo2g(totalTokensForDisplay, energyPerTokenWh, co2PerWh)) : "Calculating impact...")}</p>
+
+            <div class="flex flex-wrap gap-2 text-[0.62rem] text-[color:var(--coffee)]">
+              {paper.tags.map((tag) => (
+                <span class="rounded-full border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 px-3 py-1">{tag}</span>
+              ))}
             </div>
-            <p class="text-[0.7rem] text-[color:var(--ink-soft)]">Submitted on {new Date(paper.submittedAt).toLocaleDateString("en-GB")}</p>
-            <div class="watermarked-paper rounded-[24px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 px-4 py-5 text-[color:var(--ink-soft)] shadow-[0_15px_35px_rgba(35,24,21,0.08)] sm:px-6">
-              <MarkdownRenderer content={paper.content} className="text-sm leading-relaxed" />
-              <p class="mt-4 text-[0.65rem] uppercase tracking-[0.3em] text-[color:var(--ink-soft)]">
+
+            <div class="watermarked-paper rounded-[8px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 px-4 py-5 text-[color:var(--ink-soft)] shadow-[0_12px_30px_rgba(35,24,21,0.08)] sm:px-7 sm:py-7">
+              <MarkdownRenderer content={paper.content} className="text-sm leading-relaxed sm:text-[0.97rem]" />
+              <p class="mt-5 text-[0.65rem] uppercase tracking-[0.24em] text-[color:var(--ink-soft)]">
                 Licensed under
                 <a href="/licensing#paper" class="ml-1 text-[color:var(--accent-blue)] underline">CC BY-NC-SA 4.0</a>
               </p>
             </div>
+
+            {paper.editorComment && (
+              <section class="rounded-[8px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/75 p-5">
+                <p class="text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-[color:var(--coffee)]">Editors' comment</p>
+                <p class="mt-3 text-sm italic leading-7 text-[color:var(--ink-soft)]">"{paper.editorComment.comment}"</p>
+                <p class="mt-3 text-[0.65rem] text-[color:var(--ink-soft)]">Added on {new Date(paper.editorComment.createdAt).toLocaleDateString("en-GB")}</p>
+              </section>
+            )}
           </article>
 
-          {paper.editorComment && (
-            <section class="space-y-3 rounded-[26px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-4 shadow-[0_15px_35px_rgba(35,24,21,0.12)] sm:rounded-[32px] sm:p-5">
-              <p class="text-[0.65rem] uppercase tracking-[0.3em] text-[color:var(--ink-soft)] sm:text-xs sm:tracking-[0.45em]">Editors' Comment</p>
-              <p class="text-sm italic text-[color:var(--ink-soft)]">“{paper.editorComment.comment}”</p>
-              <p class="text-[0.65rem] text-[color:var(--ink-soft)]">Added on {new Date(paper.editorComment.createdAt).toLocaleDateString("en-GB")}</p>
-            </section>
-          )}
-
-          <section class="space-y-6 rounded-[26px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-4 shadow-[0_15px_35px_rgba(35,24,21,0.12)] sm:rounded-[32px] sm:p-5">
-            <div class="flex flex-col gap-2 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
-              <div>
-                <p class="text-[0.65rem] uppercase tracking-[0.3em] text-[color:var(--ink-soft)] sm:text-xs sm:tracking-[0.45em]">Peer Reviews (By Bots)</p>
-                <h2 class="text-[clamp(1.5rem,4vw,2.25rem)] font-semibold text-[color:var(--ink)]">Verdicts</h2>
+          <aside class="order-3 space-y-4">
+            <div class="rounded-[8px] border border-dashed border-[color:var(--coffee-light)] bg-[color:var(--paper)]/65 p-4 lg:sticky lg:top-5">
+              <div class="mb-4 flex items-center justify-between gap-3">
+                <p class="text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-[color:var(--coffee)]">Verdicts</p>
+                <span class="text-[0.62rem] uppercase tracking-[0.16em] text-[color:var(--ink-soft)]">{paper.reviewVotes?.length ?? 0} bots</span>
               </div>
-              <p class="text-[0.6rem] uppercase tracking-[0.3em] text-[color:var(--coffee)] sm:text-[0.65rem] sm:tracking-[0.4em]">Certified Unrigor</p>
+              {paper.reviewVotes && paper.reviewVotes.length > 0 ? (
+                <div class="space-y-3">
+                  {paper.reviewVotes.map((review, idx) => (
+                    <section class="rounded-[8px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 p-4">
+                      <p class="text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-[color:var(--ink-soft)]">Reviewer {idx + 1}</p>
+                      <p class="mt-3 text-xs leading-6 text-[color:var(--ink-soft)]">{review.reasoning}</p>
+                      <p class="mt-3 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--accent-blue)]">Verdict: {reviewLabel(review.decision)}</p>
+                      <div class="mt-3 space-y-1 text-[0.62rem] font-mono text-[color:var(--ink-soft)]">
+                        <p>Model: {review.agentId}</p>
+                        <p class="non-eco-only">Cost: {formatCurrency(review.cost, 6)}</p>
+                        <p class="non-eco-only">Tokens: {formatTokens(review.totalTokens ?? 0)}</p>
+                        <p class="eco-only">Energy: {impactLoadFailed ? "Unavailable" : (energyPerTokenWh > 0 ? formatEnergy(tokensToEnergyMWh(review.totalTokens ?? 0, energyPerTokenWh)) : "Calculating energy...")}</p>
+                        <p class="eco-only">CO2: {impactLoadFailed ? "Unavailable" : (energyPerTokenWh > 0 && co2PerWh > 0 ? formatCo2(tokensToCo2g(review.totalTokens ?? 0, energyPerTokenWh, co2PerWh)) : "Calculating impact...")}</p>
+                      </div>
+                    </section>
+                  ))}
+                </div>
+              ) : (
+                <p class="text-sm italic text-[color:var(--ink-soft)]">No review details are available for this paper.</p>
+              )}
             </div>
-
-            {paper.reviewVotes && paper.reviewVotes.length > 0 ? (
-              <div class="space-y-4">
-                {paper.reviewVotes.map((review, idx) => (
-                  <div class="rounded-[24px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-4 shadow-[0_10px_25px_rgba(35,24,21,0.08)] sm:rounded-[28px] sm:p-5">
-                    <div class="flex flex-col gap-1 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
-                      <p class="text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-[color:var(--ink-soft)] sm:text-xs sm:tracking-[0.45em]">Reviewer {idx + 1}</p>
-                      <span class="text-[0.6rem] font-semibold uppercase tracking-[0.3em] text-[color:var(--ink)] sm:text-[0.65rem] sm:tracking-[0.4em]">
-                        {reviewLabel(review.decision)}
-                      </span>
-                    </div>
-                    <p class="mt-2 text-sm italic text-[color:var(--ink-soft)]">“{review.reasoning}”</p>
-                    <div class="mt-3 flex flex-wrap justify-between gap-3 text-[0.6rem] font-mono text-[color:var(--ink-soft)] sm:text-[0.65rem]">
-                      <span>Model: {review.agentId}</span>
-                      <span class="non-eco-only">Cost: {formatCurrency(review.cost, 6)}</span>
-                      <span class="non-eco-only">Tokens: {formatTokens(review.totalTokens ?? 0)}</span>
-                      <span class="eco-only">Energy: {impactLoadFailed ? "Unavailable" : (energyPerTokenWh > 0 ? formatEnergy(tokensToEnergyMWh(review.totalTokens ?? 0, energyPerTokenWh)) : "Calculating energy...")}</span>
-                      <span class="eco-only">CO2: {impactLoadFailed ? "Unavailable" : (energyPerTokenWh > 0 && co2PerWh > 0 ? formatCo2(tokensToCo2g(review.totalTokens ?? 0, energyPerTokenWh, co2PerWh)) : "Calculating impact...")}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p class="text-sm italic text-[color:var(--ink-soft)]">No review details are available for this paper.</p>
-            )}
-          </section>
-        </>
+          </aside>
+        </div>
       )}
     </div>
   </main>

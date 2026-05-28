@@ -4,45 +4,55 @@ import RecentPublishedPapersIsland from "@/components/islands/RecentPublishedPap
 ---
 
 <BaseLayout>
-  <main class="px-3 py-5 text-[color:var(--ink)] sm:px-4">
-    <section class="-mt-2 mx-auto mb-4 w-full max-w-[1040px] px-1 sm:px-0">
-      <div class="rounded-[24px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-4 text-center text-sm font-semibold tracking-[0.2em] text-[color:var(--coffee)] shadow-[0_12px_35px_rgba(35,24,21,0.15)] sm:text-base">
-        <p class="m-0">
-          A message from our editor:
-          <a href="/messages" class="text-[color:var(--accent-blue)] underline transition hover:text-[color:var(--ink)]">
-            Guest Editorial from GPT-5.5
-          </a>
+  <main class="text-[color:var(--ink)]">
+    <section class="mx-auto w-full max-w-[1360px] px-4 py-5 sm:px-6 lg:px-8">
+      <a
+        href="/messages"
+        class="group flex items-center gap-3 rounded-[12px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/80 px-4 py-3 text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--ink)] shadow-[0_8px_22px_rgba(35,24,21,0.08)] transition hover:border-[color:var(--accent-blue)] sm:text-xs"
+      >
+        <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[color:var(--coffee-light)] text-lg leading-none">!</span>
+        <span class="min-w-0 flex-1">
+          <span class="text-[color:var(--coffee)]">A message from our editor:</span>
+          <span class="ml-1 text-[color:var(--accent-blue)] underline decoration-[color:var(--accent-blue)]/50 underline-offset-4">Guest Editorial from GPT-5.5</span>
+        </span>
+        <span aria-hidden="true" class="text-base text-[color:var(--accent-blue)] transition group-hover:translate-x-1">-&gt;</span>
+      </a>
+    </section>
+
+    <section class="mx-auto grid w-full max-w-[1360px] gap-6 px-4 pb-8 sm:px-6 lg:grid-cols-[minmax(260px,0.72fr)_minmax(0,1fr)] lg:items-center lg:px-8 lg:pb-12">
+      <div class="relative mx-auto flex w-full max-w-[390px] items-center justify-center lg:max-w-none">
+        <img
+          src="/splash.png"
+          alt="SLOPBOT mascot holding a peer review"
+          class="relative z-10 h-auto w-full max-w-[340px] drop-shadow-[0_18px_20px_rgba(35,24,21,0.18)] sm:max-w-[390px] lg:max-w-[460px]"
+        />
+      </div>
+
+      <div class="mx-auto w-full max-w-[720px] text-center lg:mx-0 lg:text-left">
+        <p class="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-[color:var(--accent-blue)]">Peer reviewed by bots</p>
+        <h1 class="wobbly-underline mt-3 text-[clamp(2.45rem,9vw,5.4rem)] font-semibold leading-[0.94] text-[color:var(--ink)]">
+          The Journal<br class="hidden sm:block" /> of AI Slop™
+        </h1>
+        <p class="mt-5 font-serif text-xl italic leading-snug text-[color:var(--ink-soft)] sm:text-2xl">All Sarcasm, No Rigour.</p>
+        <p class="mx-auto mt-4 max-w-[560px] text-sm leading-7 text-[color:var(--ink-soft)] sm:text-base lg:mx-0">
+          A very serious journal for very (un)serious AI co-authored research. We dress like a faculty lounge newsletter and behave like a staff room memo with tenure.
         </p>
+        <div class="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start">
+          <a href="/submit" class="button-scale inline-flex items-center justify-center rounded-full border border-[color:var(--accent-blue)] bg-[color:var(--accent-blue)] px-6 py-3 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--paper)] shadow-[0_12px_24px_rgba(41,102,115,0.25)] transition hover:-translate-y-0.5 sm:px-7">
+            Submit to the Slop Pipeline
+          </a>
+          <a href="/papers" class="button-scale inline-flex items-center justify-center rounded-full border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/70 px-6 py-3 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--coffee)] transition hover:border-[color:var(--accent-blue)] hover:text-[color:var(--accent-blue)] sm:px-7">
+            Browse Published Nonsense
+          </a>
+        </div>
       </div>
     </section>
 
-    <section class="mx-auto w-full max-w-[1040px] space-y-5">
-      <div class="grid gap-5 lg:grid-cols-[minmax(0,260px)_minmax(0,1fr)] lg:items-center">
-        <div class="relative mx-auto flex w-full max-w-[260px] items-center justify-center lg:mx-0">
-          <div class="absolute inset-2 rounded-[16px] border border-[color:var(--coffee-light)] bg-[color:var(--coffee)] opacity-30" />
-          <div class="relative w-full overflow-hidden rounded-[14px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)] p-4 shadow-[0_20px_45px_rgba(35,24,21,0.2)]">
-            <img src="/splash.png" alt="SLOPBOT mascot" class="h-auto w-full" />
-          </div>
-        </div>
-
-        <div class="space-y-3 rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-4 text-center shadow-[0_10px_30px_rgba(35,24,21,0.12)] sm:p-5 lg:rounded-[32px] lg:text-left">
-          <p class="text-[0.65rem] uppercase tracking-[0.35em] text-[color:var(--accent-blue)] sm:text-xs">Paper 01 · Issue XXXVII</p>
-          <h1 class="wobbly-underline text-[clamp(2.1rem,6vw,3rem)] font-semibold leading-snug text-[color:var(--ink)]">The Journal of AI Slop™</h1>
-          <p class="text-base font-serif italic text-[color:var(--ink-soft)] sm:text-lg">All Sarcasm, No Rigour.</p>
-          <p class="text-sm text-[color:var(--ink-soft)] sm:text-base">
-            A very serious journal for very (un)serious AI co-authored research. We dress like a faculty lounge newsletter and behave like a gremlin scribble on a staff room memo.
-          </p>
-          <div class="flex flex-col gap-3 pt-3 sm:flex-row sm:flex-wrap sm:gap-4">
-            <a href="/submit" class="button-scale inline-flex w-full items-center justify-center rounded-full border border-[color:var(--coffee)] bg-[color:var(--coffee)] px-6 py-3 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--paper)] transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_25px_rgba(35,24,21,0.3)] sm:w-auto sm:text-sm">Submit to the Slop Pipeline</a>
-            <a href="/papers" class="button-scale inline-flex w-full items-center justify-center rounded-full border border-[color:var(--coffee-light)] bg-transparent px-6 py-3 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--coffee)] transition-colors duration-200 hover:border-[color:var(--accent-blue)] hover:text-[color:var(--accent-blue)] sm:w-auto sm:text-sm">Browse Published Nonsense</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="space-y-4 rounded-[28px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/90 p-4 shadow-[0_10px_30px_rgba(35,24,21,0.12)] sm:p-6">
-        <div class="flex items-center justify-between">
-          <h2 class="text-[clamp(1.4rem,3vw,2rem)] font-semibold text-[color:var(--ink)]">Latest Published Slop</h2>
-          <a href="/papers" class="text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-[color:var(--accent-blue)] underline">View all</a>
+    <section class="border-t border-[color:var(--coffee-light)] px-4 py-7 sm:px-6 lg:px-8">
+      <div class="mx-auto w-full max-w-[1360px]">
+        <div class="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <h2 class="wobbly-underline text-2xl font-semibold leading-tight text-[color:var(--ink)] sm:text-3xl">Latest Published Slop</h2>
+          <a href="/papers" class="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-[color:var(--accent-blue)] underline underline-offset-4">View all issues -&gt;</a>
         </div>
         <RecentPublishedPapersIsland client:load />
       </div>
