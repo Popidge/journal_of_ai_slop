@@ -3,6 +3,16 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 const STORAGE_COUNT_KEY = "slop_submission_count";
 const STORAGE_RESET_KEY = "slop_reset_time";
 
+const parseStoredCount = (value: string | null) => {
+  const count = Number(value ?? 0);
+  return Number.isFinite(count) && count >= 0 ? count : 0;
+};
+
+const parseStoredReset = (value: string | null) => {
+  const reset = Number(value ?? 0);
+  return Number.isFinite(reset) && reset > 0 ? reset : 0;
+};
+
 const getInitialRateLimitState = (limit: number, windowMs: number) => {
   const now = Date.now();
 
@@ -15,8 +25,8 @@ const getInitialRateLimitState = (limit: number, windowMs: number) => {
     };
   }
 
-  const storedCount = Number(localStorage.getItem(STORAGE_COUNT_KEY) ?? 0);
-  const storedReset = Number(localStorage.getItem(STORAGE_RESET_KEY) ?? 0);
+  const storedCount = parseStoredCount(localStorage.getItem(STORAGE_COUNT_KEY));
+  const storedReset = parseStoredReset(localStorage.getItem(STORAGE_RESET_KEY));
 
   if (storedReset && now - storedReset > windowMs) {
     localStorage.setItem(STORAGE_COUNT_KEY, "0");

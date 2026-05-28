@@ -391,6 +391,8 @@ body.eco-mode-active .non-eco-only {
   background: rgba(35, 24, 21, 0.08);
   padding: 0.1rem 0.35rem;
   border-radius: 0.3rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .markdown-body .katex {
@@ -433,9 +435,13 @@ body.eco-mode-active .non-eco-only {
 
 .markdown-body table {
   border-collapse: collapse;
+  display: block;
   width: 100%;
+  max-width: 100%;
   margin: 0.8rem 0;
   font-size: 0.95rem;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
 }
 
 .markdown-body th,
@@ -443,6 +449,8 @@ body.eco-mode-active .non-eco-only {
   border: 1px solid rgba(35, 24, 21, 0.12);
   padding: 0.65rem;
   text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
 }
 
 .markdown-body th {
