@@ -40,6 +40,9 @@ importers:
       convex-helpers:
         specifier: ^0.1.118
         version: 0.1.118(convex@1.39.1(react@19.2.6))(react@19.2.6)(typescript@6.0.3)(zod@4.4.3)
+      devlop:
+        specifier: 1.1.0
+        version: 1.1.0
       katex:
         specifier: ^0.17.0
         version: 0.17.0
