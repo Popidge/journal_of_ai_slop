@@ -61,9 +61,25 @@ export const resolveConvexSiteOrigin = (): string | null => {
       : undefined;
   const runtimeEnv = typeof process !== "undefined" ? process.env : undefined;
   const convexSiteUrl =
-    viteEnv?.CONVEX_SITE_URL ?? runtimeEnv?.CONVEX_SITE_URL;
+    viteEnv?.PUBLIC_CONVEX_SITE_URL ??
+    runtimeEnv?.PUBLIC_CONVEX_SITE_URL ??
+    viteEnv?.CONVEX_SITE_URL ??
+    runtimeEnv?.CONVEX_SITE_URL;
+
   if (!convexSiteUrl) {
-    return null;
+    const convexUrl =
+      viteEnv?.PUBLIC_CONVEX_URL ?? runtimeEnv?.PUBLIC_CONVEX_URL;
+    if (!convexUrl) {
+      return null;
+    }
+
+    try {
+      const url = new URL(convexUrl);
+      url.hostname = url.hostname.replace(/\.convex\.cloud$/, ".convex.site");
+      return url.origin;
+    } catch {
+      return null;
+    }
   }
 
   try {
