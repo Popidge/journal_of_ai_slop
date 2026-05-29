@@ -42,12 +42,43 @@ const moderationSummaryValidator = v.object({
   requestId: v.optional(v.string()),
 });
 
+const renderSectionValidator = v.object({
+  title: v.string(),
+  anchor: v.string(),
+  level: v.number(),
+  source: v.union(v.literal("explicit"), v.literal("inferred")),
+});
+
+const renderMetadataValidator = v.object({
+  abstract: v.optional(v.string()),
+  sections: v.array(renderSectionValidator),
+});
+
+const publishingEditorValidator = v.object({
+  status: v.union(
+    v.literal("completed"),
+    v.literal("failed_fallback_original"),
+  ),
+  model: v.string(),
+  editedAt: v.number(),
+  attempts: v.number(),
+  reason: v.optional(v.string()),
+  cost: v.number(),
+  promptTokens: v.optional(v.number()),
+  completionTokens: v.optional(v.number()),
+  cachedTokens: v.optional(v.number()),
+  totalTokens: v.optional(v.number()),
+});
+
 const paperProjection = v.object({
   _id: v.id("papers"),
   _creationTime: v.number(),
   title: v.string(),
   authors: v.string(),
   content: v.string(),
+  renderContent: v.optional(v.string()),
+  renderMetadata: v.optional(renderMetadataValidator),
+  publishingEditor: v.optional(publishingEditorValidator),
   tags: v.array(v.string()),
   submittedAt: v.number(),
   status: statusValidator,
@@ -197,6 +228,9 @@ export const updatePaperStatus = internalMutation({
     reviewVotes: v.optional(v.array(reviewVoteValidator)),
     totalReviewCost: v.optional(v.number()),
     totalTokens: v.optional(v.number()),
+    renderContent: v.optional(v.string()),
+    renderMetadata: v.optional(renderMetadataValidator),
+    publishingEditor: v.optional(publishingEditorValidator),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -210,6 +244,15 @@ export const updatePaperStatus = internalMutation({
     }
     if (args.totalTokens !== undefined) {
       patch.totalTokens = args.totalTokens;
+    }
+    if (args.renderContent !== undefined) {
+      patch.renderContent = args.renderContent;
+    }
+    if (args.renderMetadata !== undefined) {
+      patch.renderMetadata = args.renderMetadata;
+    }
+    if (args.publishingEditor !== undefined) {
+      patch.publishingEditor = args.publishingEditor;
     }
     if (
       existing &&

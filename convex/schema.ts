@@ -15,6 +15,34 @@ const moderationSummary = v.object({
   requestId: v.optional(v.string()),
 });
 
+const renderSection = v.object({
+  title: v.string(),
+  anchor: v.string(),
+  level: v.number(),
+  source: v.union(v.literal("explicit"), v.literal("inferred")),
+});
+
+const renderMetadata = v.object({
+  abstract: v.optional(v.string()),
+  sections: v.array(renderSection),
+});
+
+const publishingEditor = v.object({
+  status: v.union(
+    v.literal("completed"),
+    v.literal("failed_fallback_original"),
+  ),
+  model: v.string(),
+  editedAt: v.number(),
+  attempts: v.number(),
+  reason: v.optional(v.string()),
+  cost: v.number(),
+  promptTokens: v.optional(v.number()),
+  completionTokens: v.optional(v.number()),
+  cachedTokens: v.optional(v.number()),
+  totalTokens: v.optional(v.number()),
+});
+
 const queueStatus = v.union(v.literal("pending"), v.literal("processing"));
 
 export default defineSchema({
@@ -23,6 +51,9 @@ export default defineSchema({
     title: v.string(),
     authors: v.string(),
     content: v.string(),
+    renderContent: v.optional(v.string()),
+    renderMetadata: v.optional(renderMetadata),
+    publishingEditor: v.optional(publishingEditor),
     tags: v.array(v.string()),
     submittedAt: v.number(),
     status: v.union(v.literal("pending"), v.literal("under_review"), v.literal("accepted"), v.literal("rejected")),

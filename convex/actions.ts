@@ -20,6 +20,9 @@ const REVIEW_MODELS = [
 
 const MAX_REVIEW_COST = 0.2;
 const REVIEW_CONTENT_CHARACTER_LIMIT = 19000;
+const PUBLISHING_EDITOR_MODEL = "deepseek/deepseek-v4-pro";
+const PUBLISHING_EDITOR_MAX_ATTEMPTS = 2;
+const PUBLISHING_EDITOR_TEMPERATURE = 0.2;
 const CONTENT_SAFETY_PAYLOAD_CHARACTER_LIMIT = 9500;
 const CATEGORY_SEVERITY_THRESHOLD = 4;
 const OVERALL_SEVERITY_THRESHOLD = 6;
@@ -79,6 +82,58 @@ type ReviewVote = {
   completionTokens: number;
   cachedTokens: number;
   totalTokens: number;
+};
+
+type UsageData = {
+  cost: number;
+  promptTokens: number;
+  completionTokens: number;
+  cachedTokens: number;
+  totalTokens: number;
+};
+
+type PublishingEditorSection = {
+  title: string;
+  anchor: string;
+  level: number;
+  source: "explicit" | "inferred";
+};
+
+type PublishingEditorSuccess = {
+  ok: true;
+  renderContent: string;
+  renderMetadata: {
+    abstract?: string;
+    sections: PublishingEditorSection[];
+  };
+  reason?: string;
+};
+
+type PublishingEditorFailure = {
+  ok: false;
+  reason: string;
+};
+
+type PublishingEditorAttemptDebug = {
+  attempt: number;
+  status: number;
+  ok: boolean;
+  finishReason?: string;
+  rawLength: number;
+  payloadLength: number;
+  rawPreview: string;
+  parseResult: string;
+  usage: UsageData;
+};
+
+const DEBUG_OUTPUT_PREVIEW_CHARS = 4000;
+
+const isSlopbotDebugMode = (): boolean => {
+  const flag = process.env.SLOPBOT_DEBUG_MODE;
+  if (!flag) {
+    return false;
+  }
+  return ["1", "true", "yes", "on"].includes(flag.toLowerCase());
 };
 
 const normalizeDecision = (value: unknown): ReviewDecision => {
@@ -176,6 +231,49 @@ Respond in valid JSON only:
 }`;
 };
 
+const buildPublishingEditorPrompt = (paper: {
+  title: string;
+  authors: string;
+  tags: string[];
+  content: string;
+}): string => {
+  const tags = paper.tags.length ? paper.tags.join(", ") : "(no tags)";
+
+  return `You are the publishing editor for The Journal of AI Slop.
+
+Paper title: ${paper.title}
+Authors: ${paper.authors}
+Tags: ${tags}
+
+Original submission:
+${paper.content}
+
+Edit only for render quality. Preserve meaning, claims, jokes, authorial voice, and order. Do not add new facts, citations, results, authors, equations, or conclusions.
+
+Allowed improvements:
+- Normalize Markdown structure.
+- Infer section headings when the paper clearly has sections.
+- Preserve or repair TeX/KaTeX where likely.
+- Convert obvious BBCode into Markdown, including [b], [i], simple [url=...]text[/url], quote-like blocks, and code-like blocks.
+- Fix small spacing, list, heading, and code fence issues.
+- Remove formatting that is out of scope for this renderer.
+
+If unsure, preserve the original text. Output valid JSON only with this exact shape:
+{
+  "renderContent": "Markdown to render on the website",
+  "abstract": "Short abstract/summary if one is present or can be safely extracted, otherwise empty string",
+  "sections": [
+    {
+      "title": "Introduction",
+      "anchor": "introduction",
+      "level": 2,
+      "source": "explicit"
+    }
+  ],
+  "editorNotes": "Short internal note about what changed"
+}`;
+};
+
 /* Dev note: This is the only guardrail we put up to get the review parseable. It's a simple 
 fix to guarantee it, but the fact that some LLMs don't follow the prompt's requested 
 output led to an incredibly funny bug in early testing
@@ -206,6 +304,262 @@ const deriveUsage = (payload: any): { cost: number; promptTokens: number; comple
     completionTokens: Number.isFinite(completionTokens) ? completionTokens : 0,
     cachedTokens: Number.isFinite(cachedTokens) ? cachedTokens : 0,
     totalTokens: Number.isFinite(totalTokens) ? totalTokens : 0,
+  };
+};
+
+const slugifyAnchor = (value: string): string => {
+  const slug = value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  return slug || "section";
+};
+
+const hasSchemaWrapperText = (value: string): boolean => {
+  const normalized = value.trim().toLowerCase();
+  return (
+    normalized.startsWith("{") ||
+    normalized.startsWith("```json") ||
+    normalized.includes('"rendercontent"')
+  );
+};
+
+const parsePublishingEditorOutput = (
+  rawText: string,
+  originalContent: string,
+): PublishingEditorSuccess | PublishingEditorFailure => {
+  const payload = extractJsonPayload(rawText);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(payload);
+  } catch (error) {
+    console.warn("Unable to parse publishing editor JSON", error, payload);
+    return { ok: false, reason: "editor_output_invalid_json" };
+  }
+
+  if (!parsed || typeof parsed !== "object") {
+    return { ok: false, reason: "editor_output_not_object" };
+  }
+
+  const record = parsed as Record<string, unknown>;
+  if (typeof record.renderContent !== "string") {
+    return { ok: false, reason: "editor_render_content_missing" };
+  }
+
+  const renderContent = record.renderContent.trim();
+  if (renderContent.length === 0) {
+    return { ok: false, reason: "editor_render_content_empty" };
+  }
+  if (renderContent.length > originalContent.length * 1.35 + 1000) {
+    return { ok: false, reason: "editor_render_content_too_long" };
+  }
+  if (hasSchemaWrapperText(renderContent)) {
+    return { ok: false, reason: "editor_render_content_contains_schema" };
+  }
+  if (!Array.isArray(record.sections)) {
+    return { ok: false, reason: "editor_sections_not_array" };
+  }
+
+  const seenAnchors = new Map<string, number>();
+  const sections: PublishingEditorSection[] = [];
+  for (const section of record.sections) {
+    if (!section || typeof section !== "object") {
+      continue;
+    }
+    const sectionRecord = section as Record<string, unknown>;
+    if (typeof sectionRecord.title !== "string") {
+      continue;
+    }
+
+    const title = sectionRecord.title.trim().slice(0, 120);
+    if (!title) {
+      continue;
+    }
+
+    const rawAnchor = typeof sectionRecord.anchor === "string" ? sectionRecord.anchor : "";
+    const baseAnchor = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(rawAnchor)
+      ? rawAnchor
+      : slugifyAnchor(title);
+    const seenCount = seenAnchors.get(baseAnchor) ?? 0;
+    seenAnchors.set(baseAnchor, seenCount + 1);
+
+    sections.push({
+      title,
+      anchor: seenCount === 0 ? baseAnchor : `${baseAnchor}-${seenCount + 1}`,
+      level: sectionRecord.level === 3 ? 3 : 2,
+      source: sectionRecord.source === "explicit" ? "explicit" : "inferred",
+    });
+  }
+
+  const abstract =
+    typeof record.abstract === "string" && record.abstract.trim().length > 0
+      ? record.abstract.trim()
+      : undefined;
+  const editorNotes =
+    typeof record.editorNotes === "string" && record.editorNotes.trim().length > 0
+      ? record.editorNotes.trim()
+      : undefined;
+
+  const renderMetadata: {
+    abstract?: string;
+    sections: PublishingEditorSection[];
+  } = { sections };
+  if (abstract !== undefined) {
+    renderMetadata.abstract = abstract;
+  }
+
+  return {
+    ok: true,
+    renderContent,
+    renderMetadata,
+    reason: editorNotes,
+  };
+};
+
+const runPublishingEditor = async (paper: {
+  title: string;
+  authors: string;
+  tags: string[];
+  content: string;
+}, options?: {
+  collectDebug?: boolean;
+}): Promise<{
+  result: PublishingEditorSuccess | PublishingEditorFailure;
+  usage: UsageData;
+  attempts: number;
+  debugAttempts?: PublishingEditorAttemptDebug[];
+}> => {
+  let totalUsage: UsageData = {
+    cost: 0,
+    promptTokens: 0,
+    completionTokens: 0,
+    cachedTokens: 0,
+    totalTokens: 0,
+  };
+  let lastFailure: PublishingEditorFailure = {
+    ok: false,
+    reason: "editor_not_attempted",
+  };
+  const debugAttempts: PublishingEditorAttemptDebug[] = [];
+  const shouldLogDebug = options?.collectDebug === true || isSlopbotDebugMode();
+
+  for (let attempt = 1; attempt <= PUBLISHING_EDITOR_MAX_ATTEMPTS; attempt += 1) {
+    let usageData: UsageData = {
+      cost: 0,
+      promptTokens: 0,
+      completionTokens: 0,
+      cachedTokens: 0,
+      totalTokens: 0,
+    };
+
+    try {
+      const response = await fetch(OPENROUTER_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: PUBLISHING_EDITOR_MODEL,
+          temperature: PUBLISHING_EDITOR_TEMPERATURE,
+          messages: [{ role: "user", content: buildPublishingEditorPrompt(paper) }],
+          response_format: {
+            type: "json_object",
+          },
+          usage: {
+            include: true,
+          },
+        }),
+      });
+
+      const responseData = await response.json();
+      usageData = deriveUsage(responseData);
+      totalUsage = {
+        cost: totalUsage.cost + usageData.cost,
+        promptTokens: totalUsage.promptTokens + usageData.promptTokens,
+        completionTokens: totalUsage.completionTokens + usageData.completionTokens,
+        cachedTokens: totalUsage.cachedTokens + usageData.cachedTokens,
+        totalTokens: totalUsage.totalTokens + usageData.totalTokens,
+      };
+
+      const content = responseData?.choices?.[0]?.message?.content ?? "";
+      const rawText = typeof content === "string" ? content : "";
+      const payload = extractJsonPayload(rawText);
+      const finishReason =
+        typeof responseData?.choices?.[0]?.finish_reason === "string"
+          ? responseData.choices[0].finish_reason
+          : undefined;
+
+      if (!response.ok) {
+        lastFailure = {
+          ok: false,
+          reason: `editor_api_error:${response.status}`,
+        };
+        if (shouldLogDebug) {
+          debugAttempts.push({
+            attempt,
+            status: response.status,
+            ok: false,
+            finishReason,
+            rawLength: rawText.length,
+            payloadLength: payload.length,
+            rawPreview: rawText.slice(0, DEBUG_OUTPUT_PREVIEW_CHARS),
+            parseResult: lastFailure.reason,
+            usage: usageData,
+          });
+          console.info("[publishing-editor] attempt", debugAttempts[debugAttempts.length - 1]);
+        }
+        continue;
+      }
+
+      const parsed = parsePublishingEditorOutput(rawText, paper.content);
+      if (shouldLogDebug) {
+        debugAttempts.push({
+          attempt,
+          status: response.status,
+          ok: parsed.ok,
+          finishReason,
+          rawLength: rawText.length,
+          payloadLength: payload.length,
+          rawPreview: rawText.slice(0, DEBUG_OUTPUT_PREVIEW_CHARS),
+          parseResult: parsed.ok ? "ok" : parsed.reason,
+          usage: usageData,
+        });
+        console.info("[publishing-editor] attempt", debugAttempts[debugAttempts.length - 1]);
+      }
+      if (parsed.ok) {
+        return {
+          result: parsed,
+          usage: totalUsage,
+          attempts: attempt,
+          debugAttempts: options?.collectDebug ? debugAttempts : undefined,
+        };
+      }
+      lastFailure = parsed;
+    } catch (error) {
+      console.error("Publishing editor failed", error);
+      lastFailure = {
+        ok: false,
+        reason: `editor_failed:${error instanceof Error ? error.message : "unknown_error"}`,
+      };
+      totalUsage = {
+        cost: totalUsage.cost + usageData.cost,
+        promptTokens: totalUsage.promptTokens + usageData.promptTokens,
+        completionTokens: totalUsage.completionTokens + usageData.completionTokens,
+        cachedTokens: totalUsage.cachedTokens + usageData.cachedTokens,
+        totalTokens: totalUsage.totalTokens + usageData.totalTokens,
+      };
+    }
+  }
+
+  return {
+    result: lastFailure,
+    usage: totalUsage,
+    attempts: PUBLISHING_EDITOR_MAX_ATTEMPTS,
+    debugAttempts: options?.collectDebug ? debugAttempts : undefined,
   };
 };
 
@@ -597,8 +951,8 @@ export const reviewPaper = internalAction({
     });
 
     const reviewVotes: ReviewVote[] = await Promise.all(reviewPromises);
-    const totalReviewCost = reviewVotes.reduce((sum, vote) => sum + vote.cost, 0);
-    const totalTokens = reviewVotes.reduce((sum, vote) => sum + vote.totalTokens, 0);
+    let totalReviewCost = reviewVotes.reduce((sum, vote) => sum + vote.cost, 0);
+    let totalTokens = reviewVotes.reduce((sum, vote) => sum + vote.totalTokens, 0);
 
 
     if (totalReviewCost > MAX_REVIEW_COST) {
@@ -611,13 +965,79 @@ export const reviewPaper = internalAction({
 
     const finalStatus = publishNowVotes >= Math.ceil(REVIEW_MODELS.length * 0.6) ? "accepted" : "rejected";
 
-    await ctx.runMutation(internal.papers.updatePaperStatus, {
+    const statusPatch: {
+      paperId: Id<"papers">;
+      status: "accepted" | "rejected";
+      reviewVotes: ReviewVote[];
+      totalReviewCost: number;
+      totalTokens: number;
+      renderContent?: string;
+      renderMetadata?: {
+        abstract?: string;
+        sections: PublishingEditorSection[];
+      };
+      publishingEditor?: {
+        status: "completed" | "failed_fallback_original";
+        model: string;
+        editedAt: number;
+        attempts: number;
+        reason?: string;
+        cost: number;
+        promptTokens?: number;
+        completionTokens?: number;
+        cachedTokens?: number;
+        totalTokens?: number;
+      };
+    } = {
       paperId: args.paperId,
       status: finalStatus,
       reviewVotes,
       totalReviewCost,
       totalTokens,
-    });
+    };
+
+    if (finalStatus === "accepted") {
+      const editorRun = await runPublishingEditor(paper);
+      totalReviewCost += editorRun.usage.cost;
+      totalTokens += editorRun.usage.totalTokens;
+      statusPatch.totalReviewCost = totalReviewCost;
+      statusPatch.totalTokens = totalTokens;
+
+      if (editorRun.result.ok) {
+        statusPatch.renderContent = editorRun.result.renderContent;
+        statusPatch.renderMetadata = editorRun.result.renderMetadata;
+        const publishingEditor: NonNullable<typeof statusPatch.publishingEditor> = {
+          status: "completed",
+          model: PUBLISHING_EDITOR_MODEL,
+          editedAt: Date.now(),
+          attempts: editorRun.attempts,
+          cost: editorRun.usage.cost,
+          promptTokens: editorRun.usage.promptTokens,
+          completionTokens: editorRun.usage.completionTokens,
+          cachedTokens: editorRun.usage.cachedTokens,
+          totalTokens: editorRun.usage.totalTokens,
+        };
+        if (editorRun.result.reason !== undefined) {
+          publishingEditor.reason = editorRun.result.reason;
+        }
+        statusPatch.publishingEditor = publishingEditor;
+      } else {
+        statusPatch.publishingEditor = {
+          status: "failed_fallback_original",
+          model: PUBLISHING_EDITOR_MODEL,
+          editedAt: Date.now(),
+          attempts: editorRun.attempts,
+          reason: editorRun.result.reason,
+          cost: editorRun.usage.cost,
+          promptTokens: editorRun.usage.promptTokens,
+          completionTokens: editorRun.usage.completionTokens,
+          cachedTokens: editorRun.usage.cachedTokens,
+          totalTokens: editorRun.usage.totalTokens,
+        };
+      }
+    }
+
+    await ctx.runMutation(internal.papers.updatePaperStatus, statusPatch);
 
     if (finalStatus === "accepted") {
       const slopId = deriveSlopId(paper._id);
@@ -648,6 +1068,97 @@ export const reviewPaper = internalAction({
     }
 
     return null;
+  },
+});
+
+// TEMP DEBUG: remove before deploying the publishing editor pipeline.
+export const debugPublishingEditorForPaper = internalAction({
+  args: {
+    paperId: v.id("papers"),
+  },
+  returns: v.object({
+    ok: v.boolean(),
+    reason: v.optional(v.string()),
+    attempts: v.number(),
+    usage: v.object({
+      cost: v.number(),
+      promptTokens: v.number(),
+      completionTokens: v.number(),
+      cachedTokens: v.number(),
+      totalTokens: v.number(),
+    }),
+    renderContentLength: v.optional(v.number()),
+    abstract: v.optional(v.string()),
+    sections: v.array(
+      v.object({
+        title: v.string(),
+        anchor: v.string(),
+        level: v.number(),
+        source: v.union(v.literal("explicit"), v.literal("inferred")),
+      }),
+    ),
+    debugAttempts: v.array(
+      v.object({
+        attempt: v.number(),
+        status: v.number(),
+        ok: v.boolean(),
+        finishReason: v.optional(v.string()),
+        rawLength: v.number(),
+        payloadLength: v.number(),
+        rawPreview: v.string(),
+        parseResult: v.string(),
+        usage: v.object({
+          cost: v.number(),
+          promptTokens: v.number(),
+          completionTokens: v.number(),
+          cachedTokens: v.number(),
+          totalTokens: v.number(),
+        }),
+      }),
+    ),
+  }),
+  handler: async (ctx, args) => {
+    if (!process.env.OPENROUTER_API_KEY) {
+      throw new Error("OPENROUTER_API_KEY must be set to run the publishing editor debug action");
+    }
+
+    const paper = await ctx.runQuery(internal.papers.internalGetPaper, { id: args.paperId });
+    if (!paper) {
+      throw new Error("Paper not found");
+    }
+
+    const editorRun = await runPublishingEditor(paper, { collectDebug: true });
+    const result = editorRun.result;
+    const response: {
+      ok: boolean;
+      reason?: string;
+      attempts: number;
+      usage: UsageData;
+      renderContentLength?: number;
+      abstract?: string;
+      sections: PublishingEditorSection[];
+      debugAttempts: PublishingEditorAttemptDebug[];
+    } = {
+      ok: result.ok,
+      attempts: editorRun.attempts,
+      usage: editorRun.usage,
+      sections: result.ok ? result.renderMetadata.sections : [],
+      debugAttempts: editorRun.debugAttempts ?? [],
+    };
+
+    if (result.ok) {
+      response.renderContentLength = result.renderContent.length;
+      if (result.renderMetadata.abstract !== undefined) {
+        response.abstract = result.renderMetadata.abstract;
+      }
+      if (result.reason !== undefined) {
+        response.reason = result.reason;
+      }
+    } else {
+      response.reason = result.reason;
+    }
+
+    return response;
   },
 });
 

@@ -45,6 +45,21 @@ const pageTitle = paper
 const description = paper
   ? paper.content.replace(/[#*_`\[\]]/g, "").slice(0, 200).trim()
   : "This paper does not exist or is not publicly available.";
+const abstractText =
+  paper?.renderMetadata?.abstract && paper.renderMetadata.abstract.trim().length > 0
+    ? paper.renderMetadata.abstract.trim()
+    : description;
+const metadataSections = paper?.renderMetadata?.sections ?? [];
+const onThisPageItems = paper
+  ? [
+      "Abstract",
+      ...(metadataSections.length > 0
+        ? metadataSections.map((section) => section.title)
+        : ["Paper text"]),
+      ...(paper.editorComment ? ["Editors' comment"] : []),
+      "Verdicts",
+    ]
+  : [];
 
 const reviewLabel = (decision: "publish_now" | "publish_after_edits" | "reject") => {
   if (decision === "publish_now") return "PUBLISH";
@@ -104,10 +119,9 @@ const formattedDate = paper ? new Date(paper.submittedAt).toLocaleDateString("en
             <div class="rounded-[8px] border border-dashed border-[color:var(--coffee-light)] bg-[color:var(--paper)]/65 p-4 lg:sticky lg:top-5">
               <p class="mb-3 text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-[color:var(--coffee)]">On this page</p>
               <ol class="space-y-2 text-[0.72rem] font-semibold text-[color:var(--ink-soft)]">
-                <li class="text-[color:var(--accent-blue)]">Abstract</li>
-                <li>Paper text</li>
-                {paper.editorComment && <li>Editors' comment</li>}
-                <li>Verdicts</li>
+                {onThisPageItems.map((item, index) => (
+                  <li class={index === 0 ? "text-[color:var(--accent-blue)]" : undefined}>{item}</li>
+                ))}
               </ol>
             </div>
 
@@ -136,7 +150,7 @@ const formattedDate = paper ? new Date(paper.submittedAt).toLocaleDateString("en
 
             <section class="rounded-[8px] border border-[color:var(--coffee-light)] bg-[color:var(--paper)]/70 p-4 sm:p-6">
               <h2 class="mb-3 text-lg font-semibold uppercase tracking-[0.22em] text-[color:var(--accent-blue)]">Abstract</h2>
-              <p class="font-serif text-base leading-8 text-[color:var(--ink-soft)]">{description}</p>
+              <p class="font-serif text-base leading-8 text-[color:var(--ink-soft)]">{abstractText}</p>
             </section>
 
             {paper.slopIdentifier && (

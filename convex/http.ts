@@ -299,13 +299,16 @@ router.route({
         _creationTime: paper._creationTime,
         title: paper.title,
         authors: paper.authors,
-        content: paper.content,
+        content: paper.renderContent ?? paper.content,
         tags: paper.tags,
         submittedAt: paper.submittedAt,
         status: paper.status,
         reviewVotes: paper.reviewVotes,
         totalReviewCost: paper.totalReviewCost,
         totalTokens: paper.totalTokens,
+        originalContentAvailable: true,
+        publishingEditor: paper.publishingEditor ?? null,
+        renderMetadata: paper.renderMetadata ?? null,
       }));
 
     return new Response(JSON.stringify({ papers, cursor: page.cursor }), {
@@ -528,13 +531,16 @@ router.route({
         _creationTime: paper._creationTime,
         title: paper.title,
         authors: paper.authors,
-        content: paper.content,
+        content: paper.renderContent ?? paper.content,
         tags: paper.tags,
         submittedAt: paper.submittedAt,
         status: paper.status,
         reviewVotes: paper.reviewVotes,
         totalReviewCost: paper.totalReviewCost,
         totalTokens: paper.totalTokens,
+        originalContentAvailable: true,
+        publishingEditor: paper.publishingEditor ?? null,
+        renderMetadata: paper.renderMetadata ?? null,
         slopIdentifier: slopIdentifier
           ? {
               slopId: slopIdentifier.slopId,
