@@ -22,6 +22,7 @@ import type * as paperNotifications from "../paperNotifications.js";
 import type * as papers from "../papers.js";
 import type * as papersQueue from "../papersQueue.js";
 import type * as resend from "../resend.js";
+import type * as reviewConfig from "../reviewConfig.js";
 import type * as sitemap from "../sitemap.js";
 import type * as slopId from "../slopId.js";
 import type * as slopbotDailyHighlight from "../slopbotDailyHighlight.js";
@@ -51,6 +52,7 @@ declare const fullApi: ApiFromModules<{
   papers: typeof papers;
   papersQueue: typeof papersQueue;
   resend: typeof resend;
+  reviewConfig: typeof reviewConfig;
   sitemap: typeof sitemap;
   slopId: typeof slopId;
   slopbotDailyHighlight: typeof slopbotDailyHighlight;

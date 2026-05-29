@@ -22,6 +22,29 @@ export type EditorComment = {
   createdAt: number;
 };
 
+export type RenderMetadata = {
+  abstract?: string;
+  sections: Array<{
+    title: string;
+    anchor: string;
+    level: number;
+    source: "explicit" | "inferred";
+  }>;
+};
+
+export type PublishingEditor = {
+  status: "completed" | "failed_fallback_original";
+  model: string;
+  editedAt: number;
+  attempts: number;
+  reason?: string;
+  cost: number;
+  promptTokens?: number;
+  completionTokens?: number;
+  cachedTokens?: number;
+  totalTokens?: number;
+};
+
 export type PublicPaper = {
   _id: string;
   _creationTime: number;
@@ -34,6 +57,9 @@ export type PublicPaper = {
   reviewVotes?: ReviewVote[];
   totalReviewCost?: number;
   totalTokens?: number;
+  originalContentAvailable?: true;
+  publishingEditor?: PublishingEditor | null;
+  renderMetadata?: RenderMetadata | null;
   slopIdentifier?: SlopIdentifier | null;
   editorComment?: EditorComment | null;
 };

@@ -14,6 +14,20 @@ export const listAcceptedPapersForSitemap = internalQuery({
       tags: v.array(v.string()),
       submittedAt: v.number(),
       content: v.string(),
+      renderContent: v.optional(v.string()),
+      renderMetadata: v.optional(
+        v.object({
+          abstract: v.optional(v.string()),
+          sections: v.array(
+            v.object({
+              title: v.string(),
+              anchor: v.string(),
+              level: v.number(),
+              source: v.union(v.literal("explicit"), v.literal("inferred")),
+            }),
+          ),
+        }),
+      ),
       totalTokens: v.optional(v.number()),
       reviewCount: v.number(),
       slopIdentifier: v.optional(
@@ -54,7 +68,9 @@ export const listAcceptedPapersForSitemap = internalQuery({
         authors: row.authors,
         tags: row.tags,
         submittedAt: row.submittedAt,
-        content: row.content,
+        content: row.renderContent ?? row.content,
+        renderContent: row.renderContent,
+        renderMetadata: row.renderMetadata,
         totalTokens: row.totalTokens,
         reviewCount: row.reviewVotes?.length ?? 0,
         slopIdentifier,

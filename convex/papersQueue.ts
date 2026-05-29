@@ -1,6 +1,7 @@
 import { internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
+import { MAX_REVIEW_ATTEMPTS } from "./reviewConfig";
 
 const queuedPaperResult = v.object({
   queueId: v.id("papersQueue"),
@@ -34,6 +35,7 @@ export const enqueuePaper = internalMutation({
       paperId: args.paperId,
       queuedAt: Date.now(),
       status: "pending",
+      attempts: 0,
       notificationEmail: normalizedEmail?.length ? normalizedEmail : undefined,
     });
   },
@@ -54,7 +56,11 @@ export const acquireNextPaperForReview = internalMutation({
     }
 
     const candidate = candidates[0];
-    await ctx.db.patch("papersQueue", candidate._id, { status: "processing" });
+    await ctx.db.patch("papersQueue", candidate._id, {
+      status: "processing",
+      attempts: (candidate.attempts ?? 0) + 1,
+      processingStartedAt: Date.now(),
+    });
 
     return {
       queueId: candidate._id,
@@ -98,6 +104,36 @@ export const rejectAndDropQueueItem = internalMutation({
     });
 
     await ctx.db.delete("papersQueue", args.queueId);
+    return null;
+  },
+});
+
+export const releaseQueueItemAfterFailure = internalMutation({
+  args: {
+    queueId: v.id("papersQueue"),
+    reason: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const queueItem = await ctx.db.get("papersQueue", args.queueId);
+    if (!queueItem) {
+      return null;
+    }
+
+    if ((queueItem.attempts ?? 0) >= MAX_REVIEW_ATTEMPTS) {
+      await ctx.runMutation(internal.papersQueue.rejectAndDropQueueItem, {
+        queueId: args.queueId,
+        paperId: queueItem.paperId,
+        reason: `Auto-rejected after ${MAX_REVIEW_ATTEMPTS} review pipeline attempts: ${args.reason}`,
+      });
+      return null;
+    }
+
+    await ctx.db.patch("papersQueue", args.queueId, {
+      status: "pending",
+      lastError: args.reason,
+      processingStartedAt: undefined,
+    });
     return null;
   },
 });

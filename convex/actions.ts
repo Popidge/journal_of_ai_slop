@@ -20,6 +20,9 @@ const REVIEW_MODELS = [
 
 const MAX_REVIEW_COST = 0.2;
 const REVIEW_CONTENT_CHARACTER_LIMIT = 19000;
+const PUBLISHING_EDITOR_MODEL = "deepseek/deepseek-v4-pro";
+const PUBLISHING_EDITOR_MAX_ATTEMPTS = 2;
+const PUBLISHING_EDITOR_TEMPERATURE = 0.2;
 const CONTENT_SAFETY_PAYLOAD_CHARACTER_LIMIT = 9500;
 const CATEGORY_SEVERITY_THRESHOLD = 4;
 const OVERALL_SEVERITY_THRESHOLD = 6;
@@ -81,6 +84,36 @@ type ReviewVote = {
   totalTokens: number;
 };
 
+type UsageData = {
+  cost: number;
+  promptTokens: number;
+  completionTokens: number;
+  cachedTokens: number;
+  totalTokens: number;
+};
+
+type PublishingEditorSection = {
+  title: string;
+  anchor: string;
+  level: number;
+  source: "explicit" | "inferred";
+};
+
+type PublishingEditorSuccess = {
+  ok: true;
+  renderContent: string;
+  renderMetadata: {
+    abstract?: string;
+    sections: PublishingEditorSection[];
+  };
+  reason?: string;
+};
+
+type PublishingEditorFailure = {
+  ok: false;
+  reason: string;
+};
+
 const normalizeDecision = (value: unknown): ReviewDecision => {
   if (typeof value !== "string") {
     return "reject";
@@ -95,6 +128,27 @@ const normalizeDecision = (value: unknown): ReviewDecision => {
   }
   return "reject";
 };
+
+const normalizeStoredReviewVotes = (votes: Array<{
+  agentId: string;
+  decision: ReviewDecision;
+  reasoning: string;
+  cost: number;
+  promptTokens?: number;
+  completionTokens?: number;
+  cachedTokens?: number;
+  totalTokens?: number;
+}>): ReviewVote[] =>
+  votes.map((vote) => ({
+    agentId: vote.agentId,
+    decision: vote.decision,
+    reasoning: vote.reasoning,
+    cost: vote.cost,
+    promptTokens: vote.promptTokens ?? 0,
+    completionTokens: vote.completionTokens ?? 0,
+    cachedTokens: vote.cachedTokens ?? 0,
+    totalTokens: vote.totalTokens ?? 0,
+  }));
 
 const extractJsonPayload = (text: string): string => {
   const fenced = text.match(/```json\s*([\s\S]*?)```/i);
@@ -176,6 +230,49 @@ Respond in valid JSON only:
 }`;
 };
 
+const buildPublishingEditorPrompt = (paper: {
+  title: string;
+  authors: string;
+  tags: string[];
+  content: string;
+}): string => {
+  const tags = paper.tags.length ? paper.tags.join(", ") : "(no tags)";
+
+  return `You are the publishing editor for The Journal of AI Slop.
+
+Paper title: ${paper.title}
+Authors: ${paper.authors}
+Tags: ${tags}
+
+Original submission:
+${paper.content}
+
+Edit only for render quality. Preserve meaning, claims, jokes, authorial voice, and order. Do not add new facts, citations, results, authors, equations, or conclusions.
+
+Allowed improvements:
+- Normalize Markdown structure.
+- Infer section headings when the paper clearly has sections.
+- Preserve or repair TeX/KaTeX where likely.
+- Convert obvious BBCode into Markdown, including [b], [i], simple [url=...]text[/url], quote-like blocks, and code-like blocks.
+- Fix small spacing, list, heading, and code fence issues.
+- Remove formatting that is out of scope for this renderer.
+
+If unsure, preserve the original text. Output valid JSON only with this exact shape:
+{
+  "renderContent": "Markdown to render on the website",
+  "abstract": "Short abstract/summary if one is present or can be safely extracted, otherwise empty string",
+  "sections": [
+    {
+      "title": "Introduction",
+      "anchor": "introduction",
+      "level": 2,
+      "source": "explicit"
+    }
+  ],
+  "editorNotes": "Short internal note about what changed"
+}`;
+};
+
 /* Dev note: This is the only guardrail we put up to get the review parseable. It's a simple 
 fix to guarantee it, but the fact that some LLMs don't follow the prompt's requested 
 output led to an incredibly funny bug in early testing
@@ -206,6 +303,222 @@ const deriveUsage = (payload: any): { cost: number; promptTokens: number; comple
     completionTokens: Number.isFinite(completionTokens) ? completionTokens : 0,
     cachedTokens: Number.isFinite(cachedTokens) ? cachedTokens : 0,
     totalTokens: Number.isFinite(totalTokens) ? totalTokens : 0,
+  };
+};
+
+const slugifyAnchor = (value: string): string => {
+  const slug = value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  return slug || "section";
+};
+
+const hasSchemaWrapperText = (value: string): boolean => {
+  const normalized = value.trim().toLowerCase();
+  return (
+    normalized.startsWith("{") ||
+    normalized.startsWith("```json") ||
+    normalized.includes('"rendercontent"')
+  );
+};
+
+const parsePublishingEditorOutput = (
+  rawText: string,
+  originalContent: string,
+): PublishingEditorSuccess | PublishingEditorFailure => {
+  const payload = extractJsonPayload(rawText);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(payload);
+  } catch (error) {
+    console.warn("Unable to parse publishing editor JSON", error, payload);
+    return { ok: false, reason: "editor_output_invalid_json" };
+  }
+
+  if (!parsed || typeof parsed !== "object") {
+    return { ok: false, reason: "editor_output_not_object" };
+  }
+
+  const record = parsed as Record<string, unknown>;
+  if (typeof record.renderContent !== "string") {
+    return { ok: false, reason: "editor_render_content_missing" };
+  }
+
+  const renderContent = record.renderContent.trim();
+  if (renderContent.length === 0) {
+    return { ok: false, reason: "editor_render_content_empty" };
+  }
+  if (renderContent.length > originalContent.length * 1.35 + 1000) {
+    return { ok: false, reason: "editor_render_content_too_long" };
+  }
+  if (hasSchemaWrapperText(renderContent)) {
+    return { ok: false, reason: "editor_render_content_contains_schema" };
+  }
+  if (!Array.isArray(record.sections)) {
+    return { ok: false, reason: "editor_sections_not_array" };
+  }
+
+  const seenAnchors = new Map<string, number>();
+  const sections: PublishingEditorSection[] = [];
+  for (const section of record.sections) {
+    if (!section || typeof section !== "object") {
+      continue;
+    }
+    const sectionRecord = section as Record<string, unknown>;
+    if (typeof sectionRecord.title !== "string") {
+      continue;
+    }
+
+    const title = sectionRecord.title.trim().slice(0, 120);
+    if (!title) {
+      continue;
+    }
+
+    const rawAnchor = typeof sectionRecord.anchor === "string" ? sectionRecord.anchor : "";
+    const baseAnchor = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(rawAnchor)
+      ? rawAnchor
+      : slugifyAnchor(title);
+    const seenCount = seenAnchors.get(baseAnchor) ?? 0;
+    seenAnchors.set(baseAnchor, seenCount + 1);
+
+    sections.push({
+      title,
+      anchor: seenCount === 0 ? baseAnchor : `${baseAnchor}-${seenCount + 1}`,
+      level: sectionRecord.level === 3 ? 3 : 2,
+      source: sectionRecord.source === "explicit" ? "explicit" : "inferred",
+    });
+  }
+
+  const abstract =
+    typeof record.abstract === "string" && record.abstract.trim().length > 0
+      ? record.abstract.trim()
+      : undefined;
+  const editorNotes =
+    typeof record.editorNotes === "string" && record.editorNotes.trim().length > 0
+      ? record.editorNotes.trim()
+      : undefined;
+
+  const renderMetadata: {
+    abstract?: string;
+    sections: PublishingEditorSection[];
+  } = { sections };
+  if (abstract !== undefined) {
+    renderMetadata.abstract = abstract;
+  }
+
+  return {
+    ok: true,
+    renderContent,
+    renderMetadata,
+    reason: editorNotes,
+  };
+};
+
+const runPublishingEditor = async (paper: {
+  title: string;
+  authors: string;
+  tags: string[];
+  content: string;
+}): Promise<{
+  result: PublishingEditorSuccess | PublishingEditorFailure;
+  usage: UsageData;
+  attempts: number;
+}> => {
+  let totalUsage: UsageData = {
+    cost: 0,
+    promptTokens: 0,
+    completionTokens: 0,
+    cachedTokens: 0,
+    totalTokens: 0,
+  };
+  let lastFailure: PublishingEditorFailure = {
+    ok: false,
+    reason: "editor_not_attempted",
+  };
+
+  for (let attempt = 1; attempt <= PUBLISHING_EDITOR_MAX_ATTEMPTS; attempt += 1) {
+    let usageData: UsageData = {
+      cost: 0,
+      promptTokens: 0,
+      completionTokens: 0,
+      cachedTokens: 0,
+      totalTokens: 0,
+    };
+
+    try {
+      const response = await fetch(OPENROUTER_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: PUBLISHING_EDITOR_MODEL,
+          temperature: PUBLISHING_EDITOR_TEMPERATURE,
+          messages: [{ role: "user", content: buildPublishingEditorPrompt(paper) }],
+          response_format: {
+            type: "json_object",
+          },
+          usage: {
+            include: true,
+          },
+        }),
+      });
+
+      const responseData = await response.json();
+      usageData = deriveUsage(responseData);
+      totalUsage = {
+        cost: totalUsage.cost + usageData.cost,
+        promptTokens: totalUsage.promptTokens + usageData.promptTokens,
+        completionTokens: totalUsage.completionTokens + usageData.completionTokens,
+        cachedTokens: totalUsage.cachedTokens + usageData.cachedTokens,
+        totalTokens: totalUsage.totalTokens + usageData.totalTokens,
+      };
+
+      const content = responseData?.choices?.[0]?.message?.content ?? "";
+      const rawText = typeof content === "string" ? content : "";
+
+      if (!response.ok) {
+        lastFailure = {
+          ok: false,
+          reason: `editor_api_error:${response.status}`,
+        };
+        continue;
+      }
+
+      const parsed = parsePublishingEditorOutput(rawText, paper.content);
+      if (parsed.ok) {
+        return {
+          result: parsed,
+          usage: totalUsage,
+          attempts: attempt,
+        };
+      }
+      lastFailure = parsed;
+    } catch (error) {
+      console.error("Publishing editor failed", error);
+      lastFailure = {
+        ok: false,
+        reason: `editor_failed:${error instanceof Error ? error.message : "unknown_error"}`,
+      };
+      totalUsage = {
+        cost: totalUsage.cost + usageData.cost,
+        promptTokens: totalUsage.promptTokens + usageData.promptTokens,
+        completionTokens: totalUsage.completionTokens + usageData.completionTokens,
+        cachedTokens: totalUsage.cachedTokens + usageData.cachedTokens,
+        totalTokens: totalUsage.totalTokens + usageData.totalTokens,
+      };
+    }
+  }
+
+  return {
+    result: lastFailure,
+    usage: totalUsage,
+    attempts: PUBLISHING_EDITOR_MAX_ATTEMPTS,
   };
 };
 
@@ -531,74 +844,90 @@ export const reviewPaper = internalAction({
       status: "under_review",
     });
 
-    const selectedModels = [...REVIEW_MODELS].sort(() => 0.5 - Math.random()).slice(0, REVIEW_MODELS.length);
+    let reviewVotes: ReviewVote[];
+    if (paper.reviewVotes && paper.reviewVotes.length > 0) {
+      console.info("[review-pipeline] reusing stored peer review votes", {
+        paperId: args.paperId,
+        reviewCount: paper.reviewVotes.length,
+      });
+      reviewVotes = normalizeStoredReviewVotes(paper.reviewVotes);
+    } else {
+      const selectedModels = [...REVIEW_MODELS].sort(() => 0.5 - Math.random()).slice(0, REVIEW_MODELS.length);
 
-    const reviewPromises = selectedModels.map(async (model) => {
-      const prompt = buildPrompt(paper);
-      let usageData = {
-        cost: 0,
-        promptTokens: 0,
-        completionTokens: 0,
-        cachedTokens: 0,
-        totalTokens: 0,
-      };
-      
-      try {
-        const response = await fetch(OPENROUTER_ENDPOINT, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model,
-            temperature: 0.7,
-            max_tokens: 2000,
-            messages: [{ role: "user", content: prompt }],
-            usage: {
-              include: true,
-            },
-          }),
-        });
-
-        const responseData = await response.json();
+      const reviewPromises = selectedModels.map(async (model) => {
+        const prompt = buildPrompt(paper);
+        let usageData = {
+          cost: 0,
+          promptTokens: 0,
+          completionTokens: 0,
+          cachedTokens: 0,
+          totalTokens: 0,
+        };
         
-        // Extract usage data from response using deriveUsage function
-        usageData = deriveUsage(responseData);
+        try {
+          const response = await fetch(OPENROUTER_ENDPOINT, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model,
+              temperature: 0.7,
+              max_tokens: 2000,
+              messages: [{ role: "user", content: prompt }],
+              usage: {
+                include: true,
+              },
+            }),
+          });
 
-        if (!response.ok) {
-          console.error(`OpenRouter error for ${model}: ${response.status} ${response.statusText}`);
+          const responseData = await response.json();
+          
+          // Extract usage data from response using deriveUsage function
+          usageData = deriveUsage(responseData);
+
+          if (!response.ok) {
+            console.error(`OpenRouter error for ${model}: ${response.status} ${response.statusText}`);
+            return {
+              agentId: model,
+              decision: "reject" as ReviewDecision,
+              reasoning: `API returned ${response.status}.`,
+              ...usageData,
+            };
+          }
+
+          const content = responseData?.choices?.[0]?.message?.content ?? "";
+          const parsed = parseReview(content);
+
+          return {
+            agentId: model,
+            decision: parsed.decision,
+            reasoning: parsed.reasoning,
+            ...usageData,
+          };
+        } catch (error) {
+          console.error(`Failed to review with ${model}:`, error);
           return {
             agentId: model,
             decision: "reject" as ReviewDecision,
-            reasoning: `API returned ${response.status}.`,
+            reasoning: "Review failed due to an unexpected error.",
             ...usageData,
           };
         }
+      });
 
-        const content = responseData?.choices?.[0]?.message?.content ?? "";
-        const parsed = parseReview(content);
-
-        return {
-          agentId: model,
-          decision: parsed.decision,
-          reasoning: parsed.reasoning,
-          ...usageData,
-        };
-      } catch (error) {
-        console.error(`Failed to review with ${model}:`, error);
-        return {
-          agentId: model,
-          decision: "reject" as ReviewDecision,
-          reasoning: "Review failed due to an unexpected error.",
-          ...usageData,
-        };
-      }
-    });
-
-    const reviewVotes: ReviewVote[] = await Promise.all(reviewPromises);
-    const totalReviewCost = reviewVotes.reduce((sum, vote) => sum + vote.cost, 0);
-    const totalTokens = reviewVotes.reduce((sum, vote) => sum + vote.totalTokens, 0);
+      reviewVotes = await Promise.all(reviewPromises);
+      await ctx.runMutation(internal.papers.updatePaperStatus, {
+        paperId: args.paperId,
+        status: "under_review",
+        reviewVotes,
+        totalReviewCost: reviewVotes.reduce((sum, vote) => sum + vote.cost, 0),
+        totalTokens: reviewVotes.reduce((sum, vote) => sum + vote.totalTokens, 0),
+      });
+    }
+    let totalReviewCost = reviewVotes.reduce((sum, vote) => sum + vote.cost, 0);
+    let totalTokens = reviewVotes.reduce((sum, vote) => sum + vote.totalTokens, 0);
 
 
     if (totalReviewCost > MAX_REVIEW_COST) {
@@ -611,13 +940,79 @@ export const reviewPaper = internalAction({
 
     const finalStatus = publishNowVotes >= Math.ceil(REVIEW_MODELS.length * 0.6) ? "accepted" : "rejected";
 
-    await ctx.runMutation(internal.papers.updatePaperStatus, {
+    const statusPatch: {
+      paperId: Id<"papers">;
+      status: "accepted" | "rejected";
+      reviewVotes: ReviewVote[];
+      totalReviewCost: number;
+      totalTokens: number;
+      renderContent?: string;
+      renderMetadata?: {
+        abstract?: string;
+        sections: PublishingEditorSection[];
+      };
+      publishingEditor?: {
+        status: "completed" | "failed_fallback_original";
+        model: string;
+        editedAt: number;
+        attempts: number;
+        reason?: string;
+        cost: number;
+        promptTokens?: number;
+        completionTokens?: number;
+        cachedTokens?: number;
+        totalTokens?: number;
+      };
+    } = {
       paperId: args.paperId,
       status: finalStatus,
       reviewVotes,
       totalReviewCost,
       totalTokens,
-    });
+    };
+
+    if (finalStatus === "accepted") {
+      const editorRun = await runPublishingEditor(paper);
+      totalReviewCost += editorRun.usage.cost;
+      totalTokens += editorRun.usage.totalTokens;
+      statusPatch.totalReviewCost = totalReviewCost;
+      statusPatch.totalTokens = totalTokens;
+
+      if (editorRun.result.ok) {
+        statusPatch.renderContent = editorRun.result.renderContent;
+        statusPatch.renderMetadata = editorRun.result.renderMetadata;
+        const publishingEditor: NonNullable<typeof statusPatch.publishingEditor> = {
+          status: "completed",
+          model: PUBLISHING_EDITOR_MODEL,
+          editedAt: Date.now(),
+          attempts: editorRun.attempts,
+          cost: editorRun.usage.cost,
+          promptTokens: editorRun.usage.promptTokens,
+          completionTokens: editorRun.usage.completionTokens,
+          cachedTokens: editorRun.usage.cachedTokens,
+          totalTokens: editorRun.usage.totalTokens,
+        };
+        if (editorRun.result.reason !== undefined) {
+          publishingEditor.reason = editorRun.result.reason;
+        }
+        statusPatch.publishingEditor = publishingEditor;
+      } else {
+        statusPatch.publishingEditor = {
+          status: "failed_fallback_original",
+          model: PUBLISHING_EDITOR_MODEL,
+          editedAt: Date.now(),
+          attempts: editorRun.attempts,
+          reason: editorRun.result.reason,
+          cost: editorRun.usage.cost,
+          promptTokens: editorRun.usage.promptTokens,
+          completionTokens: editorRun.usage.completionTokens,
+          cachedTokens: editorRun.usage.cachedTokens,
+          totalTokens: editorRun.usage.totalTokens,
+        };
+      }
+    }
+
+    await ctx.runMutation(internal.papers.updatePaperStatus, statusPatch);
 
     if (finalStatus === "accepted") {
       const slopId = deriveSlopId(paper._id);
@@ -633,6 +1028,16 @@ export const reviewPaper = internalAction({
     }
 
     if (notificationEmail && (finalStatus === "accepted" || finalStatus === "rejected")) {
+      const shouldSendNotification = await ctx.runMutation(internal.papers.reserveStatusNotification, {
+        paperId: args.paperId,
+        status: finalStatus,
+        recipient: notificationEmail,
+      });
+
+      if (!shouldSendNotification) {
+        return null;
+      }
+
       const reviewSummary = reviewVotes
         .map((vote) => `${vote.agentId}: ${vote.reasoning}`)
         .slice(0, 3)
@@ -650,7 +1055,6 @@ export const reviewPaper = internalAction({
     return null;
   },
 });
-
 
 export const regenerateSitemap = internalAction({
   args: {},
@@ -801,10 +1205,9 @@ export const processNextQueuedReview = internalAction({
     } catch (error) {
       const failureReason = error instanceof Error ? error.message : "Unknown failure";
       console.error("Queued review failed", { queueItem, failureReason });
-      await ctx.runMutation(internal.papersQueue.rejectAndDropQueueItem, {
+      await ctx.runMutation(internal.papersQueue.releaseQueueItemAfterFailure, {
         queueId: queueItem.queueId,
-        paperId: queueItem.paperId,
-        reason: `Auto-rejected after review failure: ${failureReason}`,
+        reason: `Review pipeline failed and will retry: ${failureReason || "unknown failure"}`,
       });
     }
 
