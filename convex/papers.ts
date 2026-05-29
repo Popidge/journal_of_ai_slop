@@ -279,6 +279,9 @@ export const redactPaperContent = internalMutation({
       title: "[REDACTED]",
       authors: "[REDACTED]",
       content: "[REDACTED]",
+      renderContent: undefined,
+      renderMetadata: undefined,
+      publishingEditor: undefined,
       tags: [],
       status: "rejected",
       reviewVotes: [],
@@ -287,5 +290,35 @@ export const redactPaperContent = internalMutation({
       moderation: args.moderation,
     });
     return null;
+  },
+});
+
+export const reserveStatusNotification = internalMutation({
+  args: {
+    paperId: v.id("papers"),
+    status: publicStatusValidator,
+    recipient: v.string(),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const normalizedRecipient = args.recipient.trim().toLowerCase();
+    const key = `${args.paperId}:${args.status}:${normalizedRecipient}`;
+    const existing = await ctx.db
+      .query("notificationEvents")
+      .withIndex("by_key", (q) => q.eq("key", key))
+      .unique();
+
+    if (existing) {
+      return false;
+    }
+
+    await ctx.db.insert("notificationEvents", {
+      key,
+      paperId: args.paperId,
+      status: args.status,
+      recipient: normalizedRecipient,
+      createdAt: Date.now(),
+    });
+    return true;
   },
 });

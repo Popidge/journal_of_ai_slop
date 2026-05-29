@@ -174,6 +174,21 @@ export default defineSchema({
     .index("by_postType", ["postType"])
     .index("by_paperId", ["paperId"]),
 
+  publishedEvents: defineTable({
+    key: v.string(),
+    paperId: v.id("papers"),
+    postType: v.union(v.literal("new_publication"), v.literal("daily_highlight")),
+    createdAt: v.number(),
+  }).index("by_key", ["key"]),
+
+  notificationEvents: defineTable({
+    key: v.string(),
+    paperId: v.id("papers"),
+    status: v.union(v.literal("accepted"), v.literal("rejected")),
+    recipient: v.string(),
+    createdAt: v.number(),
+  }).index("by_key", ["key"]),
+
   sitemaps: defineTable({
     name: v.string(),
     fileId: v.id("_storage"),

@@ -106,6 +106,25 @@ export const recordPostOutcome = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    if (args.postType === "new_publication" && args.paperId && args.status === "drafted") {
+      const key = `${args.paperId}:${args.postType}`;
+      const existingEvent = await ctx.db
+        .query("publishedEvents")
+        .withIndex("by_key", (q) => q.eq("key", key))
+        .unique();
+
+      if (existingEvent) {
+        return null;
+      }
+
+      await ctx.db.insert("publishedEvents", {
+        key,
+        paperId: args.paperId,
+        postType: args.postType,
+        createdAt: Date.now(),
+      });
+    }
+
     await ctx.db.insert("slopTweets", {
       postType: args.postType,
       tweetType: args.tweetType,

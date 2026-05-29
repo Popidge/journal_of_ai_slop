@@ -114,28 +114,6 @@ type PublishingEditorFailure = {
   reason: string;
 };
 
-type PublishingEditorAttemptDebug = {
-  attempt: number;
-  status: number;
-  ok: boolean;
-  finishReason?: string;
-  rawLength: number;
-  payloadLength: number;
-  rawPreview: string;
-  parseResult: string;
-  usage: UsageData;
-};
-
-const DEBUG_OUTPUT_PREVIEW_CHARS = 4000;
-
-const isSlopbotDebugMode = (): boolean => {
-  const flag = process.env.SLOPBOT_DEBUG_MODE;
-  if (!flag) {
-    return false;
-  }
-  return ["1", "true", "yes", "on"].includes(flag.toLowerCase());
-};
-
 const normalizeDecision = (value: unknown): ReviewDecision => {
   if (typeof value !== "string") {
     return "reject";
@@ -445,13 +423,10 @@ const runPublishingEditor = async (paper: {
   authors: string;
   tags: string[];
   content: string;
-}, options?: {
-  collectDebug?: boolean;
 }): Promise<{
   result: PublishingEditorSuccess | PublishingEditorFailure;
   usage: UsageData;
   attempts: number;
-  debugAttempts?: PublishingEditorAttemptDebug[];
 }> => {
   let totalUsage: UsageData = {
     cost: 0,
@@ -464,8 +439,6 @@ const runPublishingEditor = async (paper: {
     ok: false,
     reason: "editor_not_attempted",
   };
-  const debugAttempts: PublishingEditorAttemptDebug[] = [];
-  const shouldLogDebug = options?.collectDebug === true || isSlopbotDebugMode();
 
   for (let attempt = 1; attempt <= PUBLISHING_EDITOR_MAX_ATTEMPTS; attempt += 1) {
     let usageData: UsageData = {
@@ -508,55 +481,21 @@ const runPublishingEditor = async (paper: {
 
       const content = responseData?.choices?.[0]?.message?.content ?? "";
       const rawText = typeof content === "string" ? content : "";
-      const payload = extractJsonPayload(rawText);
-      const finishReason =
-        typeof responseData?.choices?.[0]?.finish_reason === "string"
-          ? responseData.choices[0].finish_reason
-          : undefined;
 
       if (!response.ok) {
         lastFailure = {
           ok: false,
           reason: `editor_api_error:${response.status}`,
         };
-        if (shouldLogDebug) {
-          debugAttempts.push({
-            attempt,
-            status: response.status,
-            ok: false,
-            finishReason,
-            rawLength: rawText.length,
-            payloadLength: payload.length,
-            rawPreview: rawText.slice(0, DEBUG_OUTPUT_PREVIEW_CHARS),
-            parseResult: lastFailure.reason,
-            usage: usageData,
-          });
-          console.info("[publishing-editor] attempt", debugAttempts[debugAttempts.length - 1]);
-        }
         continue;
       }
 
       const parsed = parsePublishingEditorOutput(rawText, paper.content);
-      if (shouldLogDebug) {
-        debugAttempts.push({
-          attempt,
-          status: response.status,
-          ok: parsed.ok,
-          finishReason,
-          rawLength: rawText.length,
-          payloadLength: payload.length,
-          rawPreview: rawText.slice(0, DEBUG_OUTPUT_PREVIEW_CHARS),
-          parseResult: parsed.ok ? "ok" : parsed.reason,
-          usage: usageData,
-        });
-        console.info("[publishing-editor] attempt", debugAttempts[debugAttempts.length - 1]);
-      }
       if (parsed.ok) {
         return {
           result: parsed,
           usage: totalUsage,
           attempts: attempt,
-          debugAttempts: options?.collectDebug ? debugAttempts : undefined,
         };
       }
       lastFailure = parsed;
@@ -580,7 +519,6 @@ const runPublishingEditor = async (paper: {
     result: lastFailure,
     usage: totalUsage,
     attempts: PUBLISHING_EDITOR_MAX_ATTEMPTS,
-    debugAttempts: options?.collectDebug ? debugAttempts : undefined,
   };
 };
 
@@ -1090,6 +1028,16 @@ export const reviewPaper = internalAction({
     }
 
     if (notificationEmail && (finalStatus === "accepted" || finalStatus === "rejected")) {
+      const shouldSendNotification = await ctx.runMutation(internal.papers.reserveStatusNotification, {
+        paperId: args.paperId,
+        status: finalStatus,
+        recipient: notificationEmail,
+      });
+
+      if (!shouldSendNotification) {
+        return null;
+      }
+
       const reviewSummary = reviewVotes
         .map((vote) => `${vote.agentId}: ${vote.reasoning}`)
         .slice(0, 3)
@@ -1107,98 +1055,6 @@ export const reviewPaper = internalAction({
     return null;
   },
 });
-
-// TEMP DEBUG: remove before deploying the publishing editor pipeline.
-export const debugPublishingEditorForPaper = internalAction({
-  args: {
-    paperId: v.id("papers"),
-  },
-  returns: v.object({
-    ok: v.boolean(),
-    reason: v.optional(v.string()),
-    attempts: v.number(),
-    usage: v.object({
-      cost: v.number(),
-      promptTokens: v.number(),
-      completionTokens: v.number(),
-      cachedTokens: v.number(),
-      totalTokens: v.number(),
-    }),
-    renderContentLength: v.optional(v.number()),
-    abstract: v.optional(v.string()),
-    sections: v.array(
-      v.object({
-        title: v.string(),
-        anchor: v.string(),
-        level: v.number(),
-        source: v.union(v.literal("explicit"), v.literal("inferred")),
-      }),
-    ),
-    debugAttempts: v.array(
-      v.object({
-        attempt: v.number(),
-        status: v.number(),
-        ok: v.boolean(),
-        finishReason: v.optional(v.string()),
-        rawLength: v.number(),
-        payloadLength: v.number(),
-        rawPreview: v.string(),
-        parseResult: v.string(),
-        usage: v.object({
-          cost: v.number(),
-          promptTokens: v.number(),
-          completionTokens: v.number(),
-          cachedTokens: v.number(),
-          totalTokens: v.number(),
-        }),
-      }),
-    ),
-  }),
-  handler: async (ctx, args) => {
-    if (!process.env.OPENROUTER_API_KEY) {
-      throw new Error("OPENROUTER_API_KEY must be set to run the publishing editor debug action");
-    }
-
-    const paper = await ctx.runQuery(internal.papers.internalGetPaper, { id: args.paperId });
-    if (!paper) {
-      throw new Error("Paper not found");
-    }
-
-    const editorRun = await runPublishingEditor(paper, { collectDebug: true });
-    const result = editorRun.result;
-    const response: {
-      ok: boolean;
-      reason?: string;
-      attempts: number;
-      usage: UsageData;
-      renderContentLength?: number;
-      abstract?: string;
-      sections: PublishingEditorSection[];
-      debugAttempts: PublishingEditorAttemptDebug[];
-    } = {
-      ok: result.ok,
-      attempts: editorRun.attempts,
-      usage: editorRun.usage,
-      sections: result.ok ? result.renderMetadata.sections : [],
-      debugAttempts: editorRun.debugAttempts ?? [],
-    };
-
-    if (result.ok) {
-      response.renderContentLength = result.renderContent.length;
-      if (result.renderMetadata.abstract !== undefined) {
-        response.abstract = result.renderMetadata.abstract;
-      }
-      if (result.reason !== undefined) {
-        response.reason = result.reason;
-      }
-    } else {
-      response.reason = result.reason;
-    }
-
-    return response;
-  },
-});
-
 
 export const regenerateSitemap = internalAction({
   args: {},
