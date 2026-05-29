@@ -151,6 +151,27 @@ const normalizeDecision = (value: unknown): ReviewDecision => {
   return "reject";
 };
 
+const normalizeStoredReviewVotes = (votes: Array<{
+  agentId: string;
+  decision: ReviewDecision;
+  reasoning: string;
+  cost: number;
+  promptTokens?: number;
+  completionTokens?: number;
+  cachedTokens?: number;
+  totalTokens?: number;
+}>): ReviewVote[] =>
+  votes.map((vote) => ({
+    agentId: vote.agentId,
+    decision: vote.decision,
+    reasoning: vote.reasoning,
+    cost: vote.cost,
+    promptTokens: vote.promptTokens ?? 0,
+    completionTokens: vote.completionTokens ?? 0,
+    cachedTokens: vote.cachedTokens ?? 0,
+    totalTokens: vote.totalTokens ?? 0,
+  }));
+
 const extractJsonPayload = (text: string): string => {
   const fenced = text.match(/```json\s*([\s\S]*?)```/i);
   if (fenced) {
@@ -885,72 +906,88 @@ export const reviewPaper = internalAction({
       status: "under_review",
     });
 
-    const selectedModels = [...REVIEW_MODELS].sort(() => 0.5 - Math.random()).slice(0, REVIEW_MODELS.length);
+    let reviewVotes: ReviewVote[];
+    if (paper.reviewVotes && paper.reviewVotes.length > 0) {
+      console.info("[review-pipeline] reusing stored peer review votes", {
+        paperId: args.paperId,
+        reviewCount: paper.reviewVotes.length,
+      });
+      reviewVotes = normalizeStoredReviewVotes(paper.reviewVotes);
+    } else {
+      const selectedModels = [...REVIEW_MODELS].sort(() => 0.5 - Math.random()).slice(0, REVIEW_MODELS.length);
 
-    const reviewPromises = selectedModels.map(async (model) => {
-      const prompt = buildPrompt(paper);
-      let usageData = {
-        cost: 0,
-        promptTokens: 0,
-        completionTokens: 0,
-        cachedTokens: 0,
-        totalTokens: 0,
-      };
-      
-      try {
-        const response = await fetch(OPENROUTER_ENDPOINT, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model,
-            temperature: 0.7,
-            max_tokens: 2000,
-            messages: [{ role: "user", content: prompt }],
-            usage: {
-              include: true,
-            },
-          }),
-        });
-
-        const responseData = await response.json();
+      const reviewPromises = selectedModels.map(async (model) => {
+        const prompt = buildPrompt(paper);
+        let usageData = {
+          cost: 0,
+          promptTokens: 0,
+          completionTokens: 0,
+          cachedTokens: 0,
+          totalTokens: 0,
+        };
         
-        // Extract usage data from response using deriveUsage function
-        usageData = deriveUsage(responseData);
+        try {
+          const response = await fetch(OPENROUTER_ENDPOINT, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model,
+              temperature: 0.7,
+              max_tokens: 2000,
+              messages: [{ role: "user", content: prompt }],
+              usage: {
+                include: true,
+              },
+            }),
+          });
 
-        if (!response.ok) {
-          console.error(`OpenRouter error for ${model}: ${response.status} ${response.statusText}`);
+          const responseData = await response.json();
+          
+          // Extract usage data from response using deriveUsage function
+          usageData = deriveUsage(responseData);
+
+          if (!response.ok) {
+            console.error(`OpenRouter error for ${model}: ${response.status} ${response.statusText}`);
+            return {
+              agentId: model,
+              decision: "reject" as ReviewDecision,
+              reasoning: `API returned ${response.status}.`,
+              ...usageData,
+            };
+          }
+
+          const content = responseData?.choices?.[0]?.message?.content ?? "";
+          const parsed = parseReview(content);
+
+          return {
+            agentId: model,
+            decision: parsed.decision,
+            reasoning: parsed.reasoning,
+            ...usageData,
+          };
+        } catch (error) {
+          console.error(`Failed to review with ${model}:`, error);
           return {
             agentId: model,
             decision: "reject" as ReviewDecision,
-            reasoning: `API returned ${response.status}.`,
+            reasoning: "Review failed due to an unexpected error.",
             ...usageData,
           };
         }
+      });
 
-        const content = responseData?.choices?.[0]?.message?.content ?? "";
-        const parsed = parseReview(content);
-
-        return {
-          agentId: model,
-          decision: parsed.decision,
-          reasoning: parsed.reasoning,
-          ...usageData,
-        };
-      } catch (error) {
-        console.error(`Failed to review with ${model}:`, error);
-        return {
-          agentId: model,
-          decision: "reject" as ReviewDecision,
-          reasoning: "Review failed due to an unexpected error.",
-          ...usageData,
-        };
-      }
-    });
-
-    const reviewVotes: ReviewVote[] = await Promise.all(reviewPromises);
+      reviewVotes = await Promise.all(reviewPromises);
+      await ctx.runMutation(internal.papers.updatePaperStatus, {
+        paperId: args.paperId,
+        status: "under_review",
+        reviewVotes,
+        totalReviewCost: reviewVotes.reduce((sum, vote) => sum + vote.cost, 0),
+        totalTokens: reviewVotes.reduce((sum, vote) => sum + vote.totalTokens, 0),
+      });
+    }
     let totalReviewCost = reviewVotes.reduce((sum, vote) => sum + vote.cost, 0);
     let totalTokens = reviewVotes.reduce((sum, vote) => sum + vote.totalTokens, 0);
 
@@ -1312,10 +1349,9 @@ export const processNextQueuedReview = internalAction({
     } catch (error) {
       const failureReason = error instanceof Error ? error.message : "Unknown failure";
       console.error("Queued review failed", { queueItem, failureReason });
-      await ctx.runMutation(internal.papersQueue.rejectAndDropQueueItem, {
+      await ctx.runMutation(internal.papersQueue.releaseQueueItemAfterFailure, {
         queueId: queueItem.queueId,
-        paperId: queueItem.paperId,
-        reason: `Auto-rejected after review failure: ${failureReason}`,
+        reason: `Review pipeline failed and will retry: ${failureReason || "unknown failure"}`,
       });
     }
 
