@@ -3,10 +3,19 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { MAX_REVIEW_ATTEMPTS } from "./reviewConfig";
 
+const pipelineStage = v.union(
+  v.literal("moderation"),
+  v.literal("peer_review"),
+  v.literal("tally"),
+  v.literal("publishing_editor"),
+  v.literal("finalize"),
+);
+
 const queuedPaperResult = v.object({
   queueId: v.id("papersQueue"),
   paperId: v.id("papers"),
   notificationEmail: v.optional(v.string()),
+  stage: pipelineStage,
 });
 
 export const enqueuePaper = internalMutation({
@@ -49,23 +58,29 @@ export const acquireNextPaperForReview = internalMutation({
       .query("papersQueue")
       .withIndex("by_status_and_queuedAt", (q) => q.eq("status", "pending"))
       .order("asc")
-      .take(1);
+      .take(10);
 
-    if (candidates.length === 0) {
+    const now = Date.now();
+    const eligible = candidates.filter((c) => (c.retryAfter ?? 0) <= now);
+
+    if (eligible.length === 0) {
       return null;
     }
 
-    const candidate = candidates[0];
+    const candidate = eligible[0];
     await ctx.db.patch("papersQueue", candidate._id, {
       status: "processing",
       attempts: (candidate.attempts ?? 0) + 1,
-      processingStartedAt: Date.now(),
+      stageAttempts: 0,
+      processingStartedAt: now,
+      stage: candidate.stage ?? "moderation",
     });
 
     return {
       queueId: candidate._id,
       paperId: candidate.paperId,
       notificationEmail: candidate.notificationEmail,
+      stage: candidate.stage ?? "moderation",
     };
   },
 });
@@ -120,17 +135,25 @@ export const releaseQueueItemAfterFailure = internalMutation({
       return null;
     }
 
-    if ((queueItem.attempts ?? 0) >= MAX_REVIEW_ATTEMPTS) {
+    const stageAttempts = (queueItem.stageAttempts ?? 0) + 1;
+    if (stageAttempts >= MAX_REVIEW_ATTEMPTS) {
       await ctx.runMutation(internal.papersQueue.rejectAndDropQueueItem, {
         queueId: args.queueId,
         paperId: queueItem.paperId,
-        reason: `Auto-rejected after ${MAX_REVIEW_ATTEMPTS} review pipeline attempts: ${args.reason}`,
+        reason: `Auto-rejected after ${MAX_REVIEW_ATTEMPTS} attempts at stage ${queueItem.stage ?? "unknown"}: ${args.reason}`,
       });
       return null;
     }
 
+    const backoffMs = Math.min(
+      1000 * 60 * Math.pow(2, stageAttempts - 1),
+      1000 * 60 * 60, // cap at 1 hour
+    );
+
     await ctx.db.patch("papersQueue", args.queueId, {
       status: "pending",
+      stageAttempts,
+      retryAfter: Date.now() + backoffMs,
       lastError: args.reason,
       processingStartedAt: undefined,
     });
@@ -138,3 +161,17 @@ export const releaseQueueItemAfterFailure = internalMutation({
   },
 });
 
+export const advanceQueueStage = internalMutation({
+  args: {
+    queueId: v.id("papersQueue"),
+    stage: pipelineStage,
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch("papersQueue", args.queueId, {
+      stage: args.stage,
+      stageAttempts: 0,
+    });
+    return null;
+  },
+});
