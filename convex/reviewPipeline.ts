@@ -221,7 +221,6 @@ export const runSingleReview = internalAction({
         },
         body: JSON.stringify({
           model: args.model,
-          temperature: 0.7,
           max_tokens: REVIEW_MAX_OUTPUT_TOKENS,
           messages: [{ role: "user", content: prompt }],
           usage: {

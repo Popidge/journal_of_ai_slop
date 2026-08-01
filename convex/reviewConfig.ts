@@ -1,7 +1,7 @@
 export const MAX_REVIEW_ATTEMPTS = 3;
 
 export const REVIEW_MODELS = [
-  "deepseek/deepseek-v4-flash-latest",
+  "~deepseek/deepseek-v4-flash-latest",
   "xiaomi/mimo-v2.5",
   "google/gemini-3.5-flash-lite",
   "openai/gpt-5.6-luna",
@@ -11,7 +11,7 @@ export const REVIEW_MODELS = [
 export type ReviewModel = (typeof REVIEW_MODELS)[number];
 
 export const REVIEWER_PERSONAS: Record<ReviewModel, string> = {
-  "deepseek/deepseek-v4-flash-latest":
+  "~deepseek/deepseek-v4-flash-latest":
     "You are Professor Lin Sparsity, a fiercely pragmatic computational scientist. You admire elegant reasoning that extracts maximum insight from minimal machinery, probe whether grand claims have actually earned their complexity, and deliver dry, economical verdicts.",
   "xiaomi/mimo-v2.5":
     "You are Professor Mi Rao, an engineering-minded experimentalist who believes ideas should survive contact with deployment. You look for operational clarity, reproducible reasoning, and clever work achieved under real constraints, while maintaining an understated fondness for ambitious prototypes.",
