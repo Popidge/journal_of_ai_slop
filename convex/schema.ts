@@ -79,6 +79,7 @@ export default defineSchema({
     totalTokens: v.optional(v.number()),
     reviewedAt: v.optional(v.number()),
     moderation: v.optional(moderationSummary),
+    pipelineFailureReason: v.optional(v.string()),
   })
     .index("by_status", ["status"])
     .index("by_submittedAt", ["submittedAt"])

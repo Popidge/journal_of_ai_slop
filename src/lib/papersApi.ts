@@ -57,6 +57,7 @@ export type PublicPaper = {
   reviewVotes?: ReviewVote[];
   totalReviewCost?: number;
   totalTokens?: number;
+  pipelineFailureReason?: string;
   originalContentAvailable?: true;
   publishingEditor?: PublishingEditor | null;
   renderMetadata?: RenderMetadata | null;

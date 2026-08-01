@@ -90,6 +90,7 @@ const paperProjection = v.object({
   totalTokens: v.optional(v.number()),
   reviewedAt: v.optional(v.number()),
   moderation: v.optional(moderationSummaryValidator),
+  pipelineFailureReason: v.optional(v.string()),
 });
 
 type PaperDoc = Doc<"papers">;
@@ -231,6 +232,7 @@ export const updatePaperStatus = internalMutation({
     renderContent: v.optional(v.string()),
     renderMetadata: v.optional(renderMetadataValidator),
     publishingEditor: v.optional(publishingEditorValidator),
+    pipelineFailureReason: v.optional(v.string()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -253,6 +255,9 @@ export const updatePaperStatus = internalMutation({
     }
     if (args.publishingEditor !== undefined) {
       patch.publishingEditor = args.publishingEditor;
+    }
+    if (args.pipelineFailureReason !== undefined) {
+      patch.pipelineFailureReason = args.pipelineFailureReason;
     }
     if (
       existing &&

@@ -71,7 +71,6 @@ export const acquireNextPaperForReview = internalMutation({
     await ctx.db.patch("papersQueue", candidate._id, {
       status: "processing",
       attempts: (candidate.attempts ?? 0) + 1,
-      stageAttempts: 0,
       processingStartedAt: now,
       stage: candidate.stage ?? "moderation",
     });
@@ -123,6 +122,29 @@ export const rejectAndDropQueueItem = internalMutation({
   },
 });
 
+export const rejectAfterStageFailure = internalMutation({
+  args: {
+    queueId: v.id("papersQueue"),
+    paperId: v.id("papers"),
+    stage: pipelineStage,
+    reason: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const paper = await ctx.db.get("papers", args.paperId);
+    if (paper) {
+      await ctx.runMutation(internal.papers.updatePaperStatus, {
+        paperId: args.paperId,
+        status: "rejected",
+        pipelineFailureReason: `Pipeline failed at stage ${args.stage}: ${args.reason}`,
+      });
+    }
+
+    await ctx.db.delete("papersQueue", args.queueId);
+    return null;
+  },
+});
+
 export const releaseQueueItemAfterFailure = internalMutation({
   args: {
     queueId: v.id("papersQueue"),
@@ -137,10 +159,11 @@ export const releaseQueueItemAfterFailure = internalMutation({
 
     const stageAttempts = (queueItem.stageAttempts ?? 0) + 1;
     if (stageAttempts >= MAX_REVIEW_ATTEMPTS) {
-      await ctx.runMutation(internal.papersQueue.rejectAndDropQueueItem, {
+      await ctx.runMutation(internal.papersQueue.rejectAfterStageFailure, {
         queueId: args.queueId,
         paperId: queueItem.paperId,
-        reason: `Auto-rejected after ${MAX_REVIEW_ATTEMPTS} attempts at stage ${queueItem.stage ?? "unknown"}: ${args.reason}`,
+        stage: queueItem.stage ?? "moderation",
+        reason: `Exhausted ${MAX_REVIEW_ATTEMPTS} attempts: ${args.reason}`,
       });
       return null;
     }
