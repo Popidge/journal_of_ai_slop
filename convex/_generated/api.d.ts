@@ -22,6 +22,7 @@ import type * as openrouter from "../openrouter.js";
 import type * as paperNotifications from "../paperNotifications.js";
 import type * as papers from "../papers.js";
 import type * as papersQueue from "../papersQueue.js";
+import type * as pipelineSmokeTest from "../pipelineSmokeTest.js";
 import type * as resend from "../resend.js";
 import type * as reviewConfig from "../reviewConfig.js";
 import type * as reviewPipeline from "../reviewPipeline.js";
@@ -57,6 +58,7 @@ declare const fullApi: ApiFromModules<{
   paperNotifications: typeof paperNotifications;
   papers: typeof papers;
   papersQueue: typeof papersQueue;
+  pipelineSmokeTest: typeof pipelineSmokeTest;
   resend: typeof resend;
   reviewConfig: typeof reviewConfig;
   reviewPipeline: typeof reviewPipeline;

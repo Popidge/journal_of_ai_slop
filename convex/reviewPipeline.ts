@@ -6,6 +6,10 @@ import { Id } from "./_generated/dataModel";
 import { OPENROUTER_ENDPOINT } from "./openrouter";
 import { sendPaperStatusNotification } from "./paperNotifications";
 import { analyzeWithContentSafety } from "./moderation";
+import {
+  isPipelineSmokeTestMode,
+  logPipelineSmokeTest,
+} from "./pipelineSmokeTest";
 import { deriveSlopId, localPaperLink } from "./slopIdUtils";
 import { REVIEW_MAX_OUTPUT_TOKENS, REVIEW_MODELS } from "./reviewConfig";
 import {
@@ -201,6 +205,31 @@ export const runSingleReview = internalAction({
         cachedTokens: 0,
         totalTokens: 0,
       });
+    }
+
+    if (isPipelineSmokeTestMode()) {
+      const modelIndex = REVIEW_MODELS.indexOf(args.model);
+      const decision = modelIndex < 3
+        ? "publish_now"
+        : modelIndex === 3
+          ? "publish_after_edits"
+          : "reject";
+      logPipelineSmokeTest("peer-review OpenRouter call mocked", {
+        model: args.model,
+        decision,
+      });
+      return buildReviewVote(
+        args.model,
+        decision,
+        `Deterministic ${decision} vote from pipeline smoke-test mode.`,
+        {
+          cost: 0,
+          promptTokens: 0,
+          completionTokens: 0,
+          cachedTokens: 0,
+          totalTokens: 0,
+        },
+      );
     }
 
     const prompt = buildPrompt(paper, args.model);
@@ -527,6 +556,11 @@ export const runFinalize = internalAction({
       return null;
     }
 
+    const queuedNotificationEmail = await ctx.runQuery(
+      internal.papersQueue.getQueueNotificationEmail,
+      { queueId: args.queueId },
+    );
+
     try {
       if (paper.status === "accepted") {
         // Slop ID (idempotent)
@@ -558,7 +592,9 @@ export const runFinalize = internalAction({
       }
 
       // Email notification (idempotent via reserve after success)
-      const notificationEmail = args.notificationEmail?.trim();
+      const notificationEmail = (
+        args.notificationEmail ?? queuedNotificationEmail ?? undefined
+      )?.trim();
       if (notificationEmail && (paper.status === "accepted" || paper.status === "rejected")) {
         const reviewVotes = normalizeStoredReviewVotes(paper.reviewVotes ?? []);
         const reviewSummary = reviewVotes

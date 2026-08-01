@@ -1,6 +1,10 @@
 "use node";
 import ContentSafetyClient, { AnalyzeTextParameters, TextCategoriesAnalysisOutput, isUnexpected } from "@azure-rest/ai-content-safety";
 import { AzureKeyCredential } from "@azure/core-auth";
+import {
+  isPipelineSmokeTestMode,
+  logPipelineSmokeTest,
+} from "./pipelineSmokeTest";
 
 const CONTENT_SAFETY_PAYLOAD_CHARACTER_LIMIT = 9500;
 const CATEGORY_SEVERITY_THRESHOLD = 4;
@@ -171,6 +175,22 @@ const mergeModerationCategories = (chunks: ModerationCategory[][]): ModerationCa
 };
 
 export const analyzeWithContentSafety = async (paper: PaperForModeration): Promise<ModerationVerdict> => {
+  if (isPipelineSmokeTestMode()) {
+    logPipelineSmokeTest("Azure Content Safety mocked", {
+      title: paper.title,
+    });
+    return {
+      blocked: false,
+      overallSeverity: 0,
+      categories: MODERATION_CATEGORIES.map((category) => ({
+        category,
+        severity: 0,
+      })),
+      requestId: "pipeline-smoke-test",
+      reason: "pipeline_smoke_test_safe",
+    };
+  }
+
   if (isContentSafetyTestMode()) {
     const categories: ModerationCategory[] = [
       { category: "Hate", severity: CATEGORY_SEVERITY_THRESHOLD + 1 },

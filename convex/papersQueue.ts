@@ -1,4 +1,4 @@
-import { internalMutation } from "./_generated/server";
+import { internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { MAX_REVIEW_ATTEMPTS } from "./reviewConfig";
@@ -92,6 +92,18 @@ export const completeQueueItem = internalMutation({
   handler: async (ctx, args) => {
     await ctx.db.delete("papersQueue", args.queueId);
     return null;
+  },
+});
+
+export const getQueueNotificationEmail = internalQuery({
+  args: {
+    queueId: v.id("papersQueue"),
+  },
+  returns: v.union(v.string(), v.null()),
+  handler: async (ctx, args) => {
+    const queueItem = await ctx.db.get("papersQueue", args.queueId);
+    const notificationEmail = queueItem?.notificationEmail?.trim();
+    return notificationEmail?.length ? notificationEmail : null;
   },
 });
 

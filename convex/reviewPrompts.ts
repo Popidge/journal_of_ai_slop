@@ -1,5 +1,9 @@
 "use node";
 import { OPENROUTER_ENDPOINT } from "./openrouter";
+import {
+  isPipelineSmokeTestMode,
+  logPipelineSmokeTest,
+} from "./pipelineSmokeTest";
 import { REVIEWER_PERSONAS, type ReviewModel } from "./reviewConfig";
 
 const REVIEW_CONTENT_CHARACTER_LIMIT = 19000;
@@ -368,6 +372,38 @@ export const runPublishingEditor = async (paper: {
   usage: UsageData;
   attempts: number;
 }> => {
+  if (isPipelineSmokeTestMode()) {
+    logPipelineSmokeTest("publishing editor OpenRouter call mocked", {
+      title: paper.title,
+    });
+    return {
+      result: {
+        ok: true,
+        renderContent: paper.content,
+        renderMetadata: {
+          abstract: "A deterministic abstract produced by pipeline smoke-test mode.",
+          sections: [
+            {
+              title: "Smoke-Test Findings",
+              anchor: "smoke-test-findings",
+              level: 2,
+              source: "inferred",
+            },
+          ],
+        },
+        reason: "pipeline_smoke_test_mock",
+      },
+      usage: {
+        cost: 0,
+        promptTokens: 0,
+        completionTokens: 0,
+        cachedTokens: 0,
+        totalTokens: 0,
+      },
+      attempts: 1,
+    };
+  }
+
   let totalUsage: UsageData = {
     cost: 0,
     promptTokens: 0,
