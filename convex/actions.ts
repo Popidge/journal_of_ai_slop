@@ -11,15 +11,31 @@ import { sendPaperStatusNotification } from "./paperNotifications";
 import { OPENROUTER_ENDPOINT } from "./openrouter";
 
 const REVIEW_MODELS = [
-  "deepseek/deepseek-v4-flash",
+  "deepseek/deepseek-v4-flash-latest",
   "xiaomi/mimo-v2.5",
-  "moonshotai/kimi-k2.6",
-  "openai/gpt-5.4-mini",
-  "qwen/qwen3.6-flash",
+  "google/gemini-3.5-flash-lite",
+  "openai/gpt-5.6-luna",
+  "qwen/qwen3.7-flash",
 ] as const;
+
+type ReviewModel = (typeof REVIEW_MODELS)[number];
+
+const REVIEWER_PERSONAS: Record<ReviewModel, string> = {
+  "deepseek/deepseek-v4-flash-latest":
+    "You are Professor Lin Sparsity, a fiercely pragmatic computational scientist. You admire elegant reasoning that extracts maximum insight from minimal machinery, probe whether grand claims have actually earned their complexity, and deliver dry, economical verdicts.",
+  "xiaomi/mimo-v2.5":
+    "You are Professor Mi Rao, an engineering-minded experimentalist who believes ideas should survive contact with deployment. You look for operational clarity, reproducible reasoning, and clever work achieved under real constraints, while maintaining an understated fondness for ambitious prototypes.",
+  "google/gemini-3.5-flash-lite":
+    "You are Dr. Gemma Fielding, a scale-obsessed research methodologist. You rapidly classify the paper's evidence, assumptions, and failure modes, appreciate work that stays coherent across disciplines, and respond with the cheerful precision of someone facing a very large evaluation spreadsheet.",
+  "openai/gpt-5.6-luna":
+    "You are Dr. Luna Mercer, a cost-conscious interdisciplinary generalist with an editor's instinct for the decisive crux. You reward clear arguments and surprising synthesis, identify the single issue that most affects the verdict, and refuse to confuse verbosity with intelligence.",
+  "qwen/qwen3.7-flash":
+    "You are Professor Qian Wen, a multilingual open-science scholar who enjoys translating ideas between fields and research traditions. You scrutinize terminology and hidden assumptions, value adaptable work that others can build on, and offer incisive criticism with collegial curiosity.",
+};
 
 const MAX_REVIEW_COST = 0.2;
 const REVIEW_CONTENT_CHARACTER_LIMIT = 19000;
+const REVIEW_MAX_OUTPUT_TOKENS = 4000;
 const PUBLISHING_EDITOR_MODEL = "deepseek/deepseek-v4-pro";
 const PUBLISHING_EDITOR_MAX_ATTEMPTS = 2;
 const PUBLISHING_EDITOR_TEMPERATURE = 0.2;
@@ -192,13 +208,18 @@ const buildPrompt = (paper: {
   authors: string;
   tags: string[];
   content: string;
-}): string => {
+}, model: ReviewModel): string => {
   const tags = paper.tags.length ? paper.tags.join(", ") : "(no tag)";
   const truncated = paper.content.length > REVIEW_CONTENT_CHARACTER_LIMIT
     ? `${paper.content.slice(0, REVIEW_CONTENT_CHARACTER_LIMIT)}...`
     : paper.content;
 
   return `You are a peer reviewer for The Journal of AI Slop™, a semi-satirical academic journal.
+
+Your reviewer character:
+${REVIEWER_PERSONAS[model]}
+
+Stay in character in your reasoning, but the journal's ethos and review criteria below always take priority over the character.
 
 The paper you're reviewing is tagged as: ${tags}
 
@@ -855,7 +876,7 @@ export const reviewPaper = internalAction({
       const selectedModels = [...REVIEW_MODELS].sort(() => 0.5 - Math.random()).slice(0, REVIEW_MODELS.length);
 
       const reviewPromises = selectedModels.map(async (model) => {
-        const prompt = buildPrompt(paper);
+        const prompt = buildPrompt(paper, model);
         let usageData = {
           cost: 0,
           promptTokens: 0,
@@ -874,7 +895,7 @@ export const reviewPaper = internalAction({
             body: JSON.stringify({
               model,
               temperature: 0.7,
-              max_tokens: 2000,
+              max_tokens: REVIEW_MAX_OUTPUT_TOKENS,
               messages: [{ role: "user", content: prompt }],
               usage: {
                 include: true,

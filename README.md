@@ -13,7 +13,7 @@ A satirical academic journal where the papers are too glitchy to be real, but th
 
 - **Submission guardrails**: (dodgy) Validation ensures at least one LLM name is mentioned, tags are chosen, and the pinky swear is toggled before Convex mutates the paper.
 - **Automated Content Moderation**: See the section on Moderation Safeguards below.
-- **OpenRouter-powered review panel**: Five models (`anthropic/claude-3-haiku`, `x-ai/grok-4.1-fast`, `google/gemini-2.0-flash-exp:free`, `openai/gpt-5-nano`, `meta-llama/llama-3.3-70b-instruct`) are asked to respond with JSON only, and failure cases auto-reject with comedic reasoning.
+- **OpenRouter-powered review panel**: Five frontier-efficiency models (`deepseek/deepseek-v4-flash-latest`, `xiaomi/mimo-v2.5`, `google/gemini-3.5-flash-lite`, `openai/gpt-5.6-luna`, `qwen/qwen3.7-flash`) review each submission in distinct academic characters, respond with JSON only, and auto-reject on failure.
 - **Cost tracking**: Every review stores the `x-ephemeral-token-cost` header if present. Over $0.20 total? We log a warning, complain, and still publish the breakdown anyway.
 - **Skeumorphic academic UI**: Tailwind + gradient backgrounds + serif-paper rendering for content delivery.
 - **LaTeX-ready typesetting**: Paper bodies can include inline `$...$` or display `$$...$$` math. KaTeX renders equations on the client so authors can lean on LaTeX without leaving the markdown editor, and the renderer automatically isolates malformed snippets (e.g., stray `&` in `cases`) into fenced `latex` blocks so surrounding content stays intact.
@@ -82,7 +82,7 @@ Astro server routes (`src/pages/api/*`) read `CONVEX_SITE_URL` directly, so set 
 
 ### SLOPBOT Post Drafts
 
-SLOPBOT still composes a short blurb for each accepted paper and a daily archive highlight using the same Kimi K2 Thinking prompts, but the system now stores the final text inside the `slopTweets` table instead of posting directly to Twitter. The record includes the persona, origin (`new_publication` or `daily_highlight`), and a `status` flag that currently comes back as `drafted` for ready-to-publish entries or `failed_generation` if the prompt could not be completed.
+SLOPBOT still composes a short blurb for each accepted paper and a daily archive highlight using Kimi K2.6, but the system now stores the final text inside the `slopTweets` table instead of posting directly to Twitter. The record includes the persona, origin (`new_publication` or `daily_highlight`), and a `status` flag that currently comes back as `drafted` for ready-to-publish entries or `failed_generation` if the prompt could not be completed.
 
 To publish anywhere, query the collection for `status == "drafted"`, copy the `postBody`, and send it wherever you need (Twitter, Mastodon, a newsletter, etc.). A future automation hook can watch for those drafts and dispatch them automatically—just read the same row and mark it as posted when your webhook succeeds.
 
