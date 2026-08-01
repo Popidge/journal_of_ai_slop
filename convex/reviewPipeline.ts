@@ -7,6 +7,7 @@ import { OPENROUTER_ENDPOINT } from "./openrouter";
 import { sendPaperStatusNotification } from "./paperNotifications";
 import { analyzeWithContentSafety } from "./moderation";
 import { deriveSlopId, localPaperLink } from "./slopIdUtils";
+import { REVIEW_MAX_OUTPUT_TOKENS, REVIEW_MODELS } from "./reviewConfig";
 import {
   buildPrompt,
   parseReview,
@@ -18,14 +19,6 @@ import {
   PUBLISHING_EDITOR_MODEL,
   ReviewVote,
 } from "./reviewPrompts";
-
-const REVIEW_MODELS = [
-  "deepseek/deepseek-v4-flash",
-  "xiaomi/mimo-v2.5",
-  "moonshotai/kimi-k2.6",
-  "openai/gpt-5.4-mini",
-  "qwen/qwen3.6-flash",
-] as const;
 
 const MAX_REVIEW_COST = 0.2;
 
@@ -180,7 +173,13 @@ export const runModeration = internalAction({
 export const runSingleReview = internalAction({
   args: {
     paperId: v.id("papers"),
-    model: v.string(),
+    model: v.union(
+      v.literal(REVIEW_MODELS[0]),
+      v.literal(REVIEW_MODELS[1]),
+      v.literal(REVIEW_MODELS[2]),
+      v.literal(REVIEW_MODELS[3]),
+      v.literal(REVIEW_MODELS[4]),
+    ),
   },
   returns: v.object({
     agentId: v.string(),
@@ -204,7 +203,7 @@ export const runSingleReview = internalAction({
       });
     }
 
-    const prompt = buildPrompt(paper);
+    const prompt = buildPrompt(paper, args.model);
     let usageData = {
       cost: 0,
       promptTokens: 0,
@@ -223,7 +222,7 @@ export const runSingleReview = internalAction({
         body: JSON.stringify({
           model: args.model,
           temperature: 0.7,
-          max_tokens: 2000,
+          max_tokens: REVIEW_MAX_OUTPUT_TOKENS,
           messages: [{ role: "user", content: prompt }],
           usage: {
             include: true,
@@ -281,7 +280,14 @@ export const runPeerReview = internalAction({
     }
 
     try {
-      const selectedModels = [...REVIEW_MODELS].sort(() => 0.5 - Math.random());
+      const selectedModels = [...REVIEW_MODELS];
+      for (let index = selectedModels.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [selectedModels[index], selectedModels[swapIndex]] = [
+          selectedModels[swapIndex],
+          selectedModels[index],
+        ];
+      }
 
       const reviewPromises = selectedModels.map((model) =>
         ctx.runAction(internal.reviewPipeline.runSingleReview, {

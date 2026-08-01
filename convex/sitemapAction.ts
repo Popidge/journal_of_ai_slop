@@ -34,6 +34,11 @@ export const regenerateSitemap = internalAction({
   args: {},
   returns: v.null(),
   handler: async (ctx) => {
+    const generatedAt = Date.now();
+    let entryCount = 0;
+    let hash: string | undefined;
+
+    try {
     const papers = await ctx.runQuery(internal.sitemap.listAcceptedPapersForSitemap, {});
 
     const buildMetadata = (paper: (typeof papers)[number]) => {
@@ -93,6 +98,7 @@ export const regenerateSitemap = internalAction({
         };
       }),
     ];
+    entryCount = urls.length;
 
     const entriesXml = urls
       .map((entry) => {
@@ -122,19 +128,32 @@ export const regenerateSitemap = internalAction({
 
     const encoder = new TextEncoder();
     const payload = encoder.encode(xml);
-    const hash = createHash("sha256").update(payload).digest("hex");
+    hash = createHash("sha256").update(payload).digest("hex");
     const sitemapBlob = new Blob([payload], { type: "application/xml" });
     const fileId: Id<"_storage"> = await ctx.storage.store(sitemapBlob);
 
     await ctx.runMutation(internal.sitemap.upsertSitemapMetadata, {
       name: SITEMAP_METADATA_NAME,
       fileId,
-      generatedAt: Date.now(),
+      generatedAt,
       hash,
-      entryCount: urls.length,
+      entryCount,
       contentLength: payload.byteLength,
     });
 
     return null;
+    } catch (error) {
+      console.error("Sitemap regeneration failed", {
+        name: SITEMAP_METADATA_NAME,
+        stage: "regenerate_sitemap",
+        generatedAt,
+        entryCount,
+        hash,
+        reason: error instanceof Error ? error.message : "Unknown error",
+      });
+      throw error instanceof Error
+        ? error
+        : new Error("Sitemap regeneration failed");
+    }
   },
 });

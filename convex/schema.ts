@@ -109,7 +109,12 @@ export default defineSchema({
     retryAfter: v.optional(v.number()),
   })
     .index("by_paperId", ["paperId"])
-    .index("by_status_and_queuedAt", ["status", "queuedAt"]),
+    .index("by_status_and_queuedAt", ["status", "queuedAt"])
+    .index("by_status_and_retryAfter_and_queuedAt", [
+      "status",
+      "retryAfter",
+      "queuedAt",
+    ]),
   environmentalImpactValues: defineTable({
     label: v.string(),
     energyPerTokenWh: v.number(),

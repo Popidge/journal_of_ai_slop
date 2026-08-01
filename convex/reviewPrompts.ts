@@ -1,5 +1,6 @@
 "use node";
 import { OPENROUTER_ENDPOINT } from "./openrouter";
+import { REVIEWER_PERSONAS, type ReviewModel } from "./reviewConfig";
 
 const REVIEW_CONTENT_CHARACTER_LIMIT = 19000;
 export const PUBLISHING_EDITOR_MODEL = "deepseek/deepseek-v4-pro";
@@ -126,13 +127,18 @@ export const buildPrompt = (paper: {
   authors: string;
   tags: string[];
   content: string;
-}): string => {
+}, model: ReviewModel): string => {
   const tags = paper.tags.length ? paper.tags.join(", ") : "(no tag)";
   const truncated = paper.content.length > REVIEW_CONTENT_CHARACTER_LIMIT
     ? `${paper.content.slice(0, REVIEW_CONTENT_CHARACTER_LIMIT)}...`
     : paper.content;
 
   return `You are a peer reviewer for The Journal of AI Slop™, a semi-satirical academic journal.
+
+Your reviewer character:
+${REVIEWER_PERSONAS[model]}
+
+Stay in character in your reasoning, but the journal's ethos and review criteria below always take priority over the character.
 
 The paper you're reviewing is tagged as: ${tags}
 
@@ -375,14 +381,6 @@ export const runPublishingEditor = async (paper: {
   };
 
   for (let attempt = 1; attempt <= PUBLISHING_EDITOR_MAX_ATTEMPTS; attempt += 1) {
-    let usageData: UsageData = {
-      cost: 0,
-      promptTokens: 0,
-      completionTokens: 0,
-      cachedTokens: 0,
-      totalTokens: 0,
-    };
-
     try {
       const response = await fetch(OPENROUTER_ENDPOINT, {
         method: "POST",
@@ -404,7 +402,7 @@ export const runPublishingEditor = async (paper: {
       });
 
       const responseData = await response.json();
-      usageData = deriveUsage(responseData);
+      const usageData = deriveUsage(responseData);
       totalUsage = {
         cost: totalUsage.cost + usageData.cost,
         promptTokens: totalUsage.promptTokens + usageData.promptTokens,
@@ -438,13 +436,6 @@ export const runPublishingEditor = async (paper: {
       lastFailure = {
         ok: false,
         reason: `editor_failed:${error instanceof Error ? error.message : "unknown_error"}`,
-      };
-      totalUsage = {
-        cost: totalUsage.cost + usageData.cost,
-        promptTokens: totalUsage.promptTokens + usageData.promptTokens,
-        completionTokens: totalUsage.completionTokens + usageData.completionTokens,
-        cachedTokens: totalUsage.cachedTokens + usageData.cachedTokens,
-        totalTokens: totalUsage.totalTokens + usageData.totalTokens,
       };
     }
   }

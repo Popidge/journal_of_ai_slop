@@ -40,12 +40,14 @@ export const enqueuePaper = internalMutation({
       return existing[0]._id;
     }
 
+    const queuedAt = Date.now();
     return await ctx.db.insert("papersQueue", {
       paperId: args.paperId,
-      queuedAt: Date.now(),
+      queuedAt,
       status: "pending",
       attempts: 0,
       notificationEmail: normalizedEmail?.length ? normalizedEmail : undefined,
+      retryAfter: queuedAt,
     });
   },
 });
@@ -54,20 +56,18 @@ export const acquireNextPaperForReview = internalMutation({
   args: {},
   returns: v.union(v.null(), queuedPaperResult),
   handler: async (ctx) => {
-    const candidates = await ctx.db
-      .query("papersQueue")
-      .withIndex("by_status_and_queuedAt", (q) => q.eq("status", "pending"))
-      .order("asc")
-      .take(10);
-
     const now = Date.now();
-    const eligible = candidates.filter((c) => (c.retryAfter ?? 0) <= now);
+    const candidate = await ctx.db
+      .query("papersQueue")
+      .withIndex("by_status_and_retryAfter_and_queuedAt", (q) =>
+        q.eq("status", "pending").lte("retryAfter", now),
+      )
+      .order("asc")
+      .first();
 
-    if (eligible.length === 0) {
+    if (!candidate) {
       return null;
     }
-
-    const candidate = eligible[0];
     await ctx.db.patch("papersQueue", candidate._id, {
       status: "processing",
       attempts: (candidate.attempts ?? 0) + 1,

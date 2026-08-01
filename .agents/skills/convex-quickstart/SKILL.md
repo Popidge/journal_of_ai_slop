@@ -11,7 +11,7 @@ Set up a working Convex project as fast as possible.
 
 ## When to Use
 
-- Starting a brand new project with Convex
+- Starting a brand-new project with Convex
 - Adding Convex to an existing React, Next.js, Vue, Svelte, or other app
 - Scaffolding a Convex app for prototyping
 
@@ -158,7 +158,7 @@ Vite apps serve on `http://localhost:5173`, Next.js on `http://localhost:3000`.
 
 After scaffolding, the project structure looks like:
 
-```
+```text
 my-app/
   convex/           # Backend functions and schema
     _generated/     # Auto-generated types (check this into git)
