@@ -45,6 +45,14 @@ const publishingEditor = v.object({
 
 const queueStatus = v.union(v.literal("pending"), v.literal("processing"));
 
+const pipelineStage = v.union(
+  v.literal("moderation"),
+  v.literal("peer_review"),
+  v.literal("tally"),
+  v.literal("publishing_editor"),
+  v.literal("finalize"),
+);
+
 export default defineSchema({
   // Papers table for The Journal of AI Slop™
   papers: defineTable({
@@ -71,6 +79,7 @@ export default defineSchema({
     totalTokens: v.optional(v.number()),
     reviewedAt: v.optional(v.number()),
     moderation: v.optional(moderationSummary),
+    pipelineFailureReason: v.optional(v.string()),
   })
     .index("by_status", ["status"])
     .index("by_submittedAt", ["submittedAt"])
@@ -96,9 +105,17 @@ export default defineSchema({
     attempts: v.optional(v.number()),
     processingStartedAt: v.optional(v.number()),
     notificationEmail: v.optional(v.string()),
+    stage: v.optional(pipelineStage),
+    stageAttempts: v.optional(v.number()),
+    retryAfter: v.optional(v.number()),
   })
     .index("by_paperId", ["paperId"])
-    .index("by_status_and_queuedAt", ["status", "queuedAt"]),
+    .index("by_status_and_queuedAt", ["status", "queuedAt"])
+    .index("by_status_and_retryAfter_and_queuedAt", [
+      "status",
+      "retryAfter",
+      "queuedAt",
+    ]),
   environmentalImpactValues: defineTable({
     label: v.string(),
     energyPerTokenWh: v.number(),

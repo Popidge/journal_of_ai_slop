@@ -1,4 +1,4 @@
-import { query, internalMutation } from "./_generated/server";
+import { query, internalMutation, internalQuery } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 
@@ -62,7 +62,7 @@ export const getByPaperIds = query({
   },
 });
 
-export const listAcceptedPaperIdsMissingSlop = query({
+export const listAcceptedPaperIdsMissingSlop = internalQuery({
   args: {},
   returns: v.array(v.id("papers")),
   handler: async (ctx) => {

@@ -1,4 +1,6 @@
 export type PublicPaperStatus = "accepted" | "rejected";
+export const PUBLIC_PIPELINE_FAILURE_REASON =
+  "pipeline_processing_failed" as const;
 
 export type ReviewVote = {
   agentId: string;
@@ -57,6 +59,7 @@ export type PublicPaper = {
   reviewVotes?: ReviewVote[];
   totalReviewCost?: number;
   totalTokens?: number;
+  pipelineFailureReason?: typeof PUBLIC_PIPELINE_FAILURE_REASON;
   originalContentAvailable?: true;
   publishingEditor?: PublishingEditor | null;
   renderMetadata?: RenderMetadata | null;
@@ -67,6 +70,26 @@ export type PublicPaper = {
 type PapersPageResponse = {
   papers: PublicPaper[];
   cursor: string | null;
+};
+
+type PublicPaperPayload = Omit<PublicPaper, "pipelineFailureReason"> & {
+  pipelineFailureReason?: unknown;
+};
+
+type PapersPagePayload = {
+  papers: PublicPaperPayload[];
+  cursor: string | null;
+};
+
+const normalizePublicPaper = (paper: PublicPaperPayload): PublicPaper => {
+  const { pipelineFailureReason, ...publicFields } = paper;
+  return typeof pipelineFailureReason === "string" &&
+    pipelineFailureReason.length > 0
+    ? {
+        ...publicFields,
+        pipelineFailureReason: PUBLIC_PIPELINE_FAILURE_REASON,
+      }
+    : publicFields;
 };
 
 export type EnvironmentalImpact = {
@@ -263,7 +286,11 @@ export const fetchPapersPage = async (params: {
     }
 
     try {
-      return await fetchJson<PapersPageResponse>(url);
+      const response = await fetchJson<PapersPagePayload>(url);
+      return {
+        papers: response.papers.map(normalizePublicPaper),
+        cursor: response.cursor,
+      };
     } catch (error) {
       errors.push(
         error instanceof Error ? error.message : "Unknown papers API error",
@@ -307,7 +334,9 @@ export const fetchPaperById = async (params: {
       continue;
     }
 
-    return (await response.json()) as PublicPaper;
+    return normalizePublicPaper(
+      (await response.json()) as PublicPaperPayload,
+    );
   }
 
   if (errors.length > 0) {

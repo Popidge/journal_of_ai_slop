@@ -3,6 +3,10 @@ import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
+import {
+  PUBLIC_PIPELINE_FAILURE_REASON,
+  toPublicPipelineFailureReason,
+} from "./paperPublicContract";
 
 const statusValidator = v.union(
   v.literal("pending"),
@@ -70,7 +74,7 @@ const publishingEditorValidator = v.object({
   totalTokens: v.optional(v.number()),
 });
 
-const paperProjection = v.object({
+const paperProjectionFields = {
   _id: v.id("papers"),
   _creationTime: v.number(),
   title: v.string(),
@@ -90,10 +94,35 @@ const paperProjection = v.object({
   totalTokens: v.optional(v.number()),
   reviewedAt: v.optional(v.number()),
   moderation: v.optional(moderationSummaryValidator),
+};
+
+const publicPaperProjection = v.object({
+  ...paperProjectionFields,
+  pipelineFailureReason: v.optional(
+    v.literal(PUBLIC_PIPELINE_FAILURE_REASON),
+  ),
+});
+
+const internalPaperProjection = v.object({
+  ...paperProjectionFields,
+  pipelineFailureReason: v.optional(v.string()),
 });
 
 type PaperDoc = Doc<"papers">;
 type PaperId = Id<"papers">;
+type PublicPaperDoc = Omit<PaperDoc, "pipelineFailureReason"> & {
+  pipelineFailureReason?: typeof PUBLIC_PIPELINE_FAILURE_REASON;
+};
+
+const toPublicPaper = (paper: PaperDoc): PublicPaperDoc => {
+  const { pipelineFailureReason, ...publicFields } = paper;
+  const publicFailureReason = toPublicPipelineFailureReason(
+    pipelineFailureReason,
+  );
+  return publicFailureReason
+    ? { ...publicFields, pipelineFailureReason: publicFailureReason }
+    : publicFields;
+};
 
 export const submitPaper = mutation({
   args: {
@@ -126,15 +155,16 @@ export const submitPaper = mutation({
 
 export const getPaper = query({
   args: { id: v.id("papers") },
-  returns: v.union(paperProjection, v.null()),
+  returns: v.union(publicPaperProjection, v.null()),
   handler: async (ctx, args) => {
-    return await ctx.db.get("papers", args.id);
+    const paper = await ctx.db.get("papers", args.id);
+    return paper ? toPublicPaper(paper) : null;
   },
 });
 
 export const internalGetPaper = internalQuery({
   args: { id: v.id("papers") },
-  returns: v.union(paperProjection, v.null()),
+  returns: v.union(internalPaperProjection, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db.get("papers", args.id);
   },
@@ -145,7 +175,7 @@ export const listPapers = query({
     status: v.optional(statusValidator),
     limit: v.optional(v.number()),
   },
-  returns: v.array(paperProjection),
+  returns: v.array(publicPaperProjection),
   handler: async (ctx, args) => {
     const requestedLimit = args.limit ?? 20;
     const limit = Math.min(Math.max(requestedLimit, 1), 50);
@@ -156,10 +186,12 @@ export const listPapers = query({
       const statusQuery = ctx.db
         .query("papers")
         .withIndex("by_status", (inner) => inner.eq("status", statusFilter));
-      return await statusQuery.order("desc").take(limit);
+      const papers = await statusQuery.order("desc").take(limit);
+      return papers.map(toPublicPaper);
     }
 
-    return await ctx.db.query("papers").order("desc").take(limit);
+    const papers = await ctx.db.query("papers").order("desc").take(limit);
+    return papers.map(toPublicPaper);
   },
 });
 
@@ -169,7 +201,7 @@ export const listPublicPapersPage = query({
     status: v.optional(publicStatusValidator),
   },
   returns: v.object({
-    papers: v.array(paperProjection),
+    papers: v.array(publicPaperProjection),
     cursor: v.union(v.string(), v.null()),
   }),
   handler: async (ctx, args) => {
@@ -180,7 +212,9 @@ export const listPublicPapersPage = query({
       .order("desc")
       .paginate(args.paginationOpts);
 
-    const papers = page.page.filter((paper) => !paper.moderation?.blocked);
+    const papers = page.page
+      .filter((paper) => !paper.moderation?.blocked)
+      .map(toPublicPaper);
     return {
       papers,
       cursor: page.continueCursor ?? null,
@@ -192,7 +226,7 @@ export const listCommentedPapers = query({
   args: {
     status: v.optional(publicStatusValidator),
   },
-  returns: v.array(paperProjection),
+  returns: v.array(publicPaperProjection),
   handler: async (ctx, args) => {
     const statusFilter = args.status ?? "accepted";
     const seenPaperIds = new Set<PaperId>();
@@ -208,13 +242,13 @@ export const listCommentedPapers = query({
       }
     }
 
-    const papers: PaperDoc[] = [];
+    const papers: ReturnType<typeof toPublicPaper>[] = [];
     for (const paperId of uniquePaperIds) {
       const paper = await ctx.db.get("papers", paperId);
       if (!paper) continue;
       if (paper.moderation?.blocked) continue;
       if (paper.status !== statusFilter) continue;
-      papers.push(paper);
+      papers.push(toPublicPaper(paper));
     }
 
     return papers;
@@ -231,6 +265,9 @@ export const updatePaperStatus = internalMutation({
     renderContent: v.optional(v.string()),
     renderMetadata: v.optional(renderMetadataValidator),
     publishingEditor: v.optional(publishingEditorValidator),
+    pipelineFailureReason: v.optional(
+      v.literal(PUBLIC_PIPELINE_FAILURE_REASON),
+    ),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -253,6 +290,9 @@ export const updatePaperStatus = internalMutation({
     }
     if (args.publishingEditor !== undefined) {
       patch.publishingEditor = args.publishingEditor;
+    }
+    if (args.pipelineFailureReason !== undefined) {
+      patch.pipelineFailureReason = args.pipelineFailureReason;
     }
     if (
       existing &&

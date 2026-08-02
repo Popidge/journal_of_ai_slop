@@ -1,4 +1,8 @@
 import { OPENROUTER_ENDPOINT, DEFAULT_OPENROUTER_MODEL } from "./openrouter";
+import {
+  isPipelineSmokeTestMode,
+  logPipelineSmokeTest,
+} from "./pipelineSmokeTest";
 
 const SITE_URL = (process.env.SITE_URL ?? "https://journalofaislop.com").replace(/\/$/, "");
 export const SLOPBOT_PERSONA = "SLOPBOT, the Chief Confusion Officer and Deputy Editor of The Journal of AI Slop™";
@@ -99,6 +103,13 @@ export const appendLinkToTweet = (tweet: string, paperId: string): string => {
 };
 
 export const generateSlopbotTweet = async (prompt: string): Promise<string> => {
+  if (isPipelineSmokeTestMode()) {
+    logPipelineSmokeTest("SLOPBOT OpenRouter call mocked", {
+      promptLength: prompt.length,
+    });
+    return "BREAKING: deterministic slop has cleared peer review. The control group remains a damp napkin with tenure.";
+  }
+
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     throw new Error("OPENROUTER_API_KEY is required to generate SLOPBOT tweets");

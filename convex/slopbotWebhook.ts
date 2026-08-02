@@ -1,6 +1,10 @@
 "use node";
 import { internalAction } from "./_generated/server";
 import { v } from "convex/values";
+import {
+  isPipelineSmokeTestMode,
+  logPipelineSmokeTest,
+} from "./pipelineSmokeTest";
 
 const requireEnv = (key: string): string => {
   const value = process.env[key]?.trim();
@@ -16,6 +20,13 @@ export const triggerN8nPost = internalAction({
   },
   returns: v.null(),
   handler: async (_ctx, args) => {
+    if (isPipelineSmokeTestMode()) {
+      logPipelineSmokeTest("n8n delivery suppressed", {
+        postLength: args.postBody.length,
+      });
+      return null;
+    }
+
     const webhookUrl = requireEnv("N8N_WEBHOOK_URL");
     const webhookToken = requireEnv("N8N_WEBHOOK_TOKEN");
 

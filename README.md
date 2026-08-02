@@ -114,6 +114,7 @@ Then run both Convex and the frontend together (`pnpm run dev`) or run them indi
 ## Testing
 
 - `pnpm run lint` exercises `tsc` + `eslint` and ensures the codebase has no glaring type issues (check the `package.json` scripts if you want to add more).
+- For a live orchestration smoke test on a disposable dev deployment, temporarily set `PIPELINE_SMOKE_TEST_MODE=true` and set the deployment environment’s `CONVEX_DEPLOYMENT` value to its existing `dev:<name>` identifier. Both conditions are required. The pipeline then uses deterministic local results for Azure Content Safety, all OpenRouter calls, and the publishing editor, while suppressing n8n and Resend delivery. Never enable this flag in production, and disable it immediately after the smoke test.
 
 ## Cost Control & Etiquette
 
