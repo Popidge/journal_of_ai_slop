@@ -5,6 +5,8 @@ import {
 } from "./pipelineSmokeTest";
 
 const RESEND_FROM = process.env.RESEND_FROM ?? "editor@mail.journalofaislop.com";
+export const RESEND_EMAIL_DELIVERY_FAILED =
+  "RESEND_EMAIL_DELIVERY_FAILED" as const;
 
 export interface ResendEmailParams {
   to: string;
@@ -26,12 +28,24 @@ export const sendResendEmail = async (params: ResendEmailParams) => {
     throw new Error("RESEND_API_KEY must be set to send email notifications");
   }
 
-  const resend = new Resend(apiKey);
-  return await resend.emails.send({
-    from: RESEND_FROM,
-    to: params.to,
-    subject: params.subject,
-    html: params.html,
-    text: params.text,
-  });
+  try {
+    const resend = new Resend(apiKey);
+    const result = await resend.emails.send({
+      from: RESEND_FROM,
+      to: params.to,
+      subject: params.subject,
+      html: params.html,
+      text: params.text,
+    });
+    if (result.error) {
+      throw new Error("RESEND_PROVIDER_RESPONSE_ERROR");
+    }
+    return result;
+  } catch {
+    console.error("Resend email delivery failed", {
+      operation: "send_email",
+      subject: params.subject,
+    });
+    throw new Error(RESEND_EMAIL_DELIVERY_FAILED);
+  }
 };

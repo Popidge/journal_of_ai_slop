@@ -20,6 +20,7 @@ import type * as migrations_highlighted_papers_migration from "../migrations/hig
 import type * as moderation from "../moderation.js";
 import type * as openrouter from "../openrouter.js";
 import type * as paperNotifications from "../paperNotifications.js";
+import type * as paperPublicContract from "../paperPublicContract.js";
 import type * as papers from "../papers.js";
 import type * as papersQueue from "../papersQueue.js";
 import type * as pipelineSmokeTest from "../pipelineSmokeTest.js";
@@ -56,6 +57,7 @@ declare const fullApi: ApiFromModules<{
   moderation: typeof moderation;
   openrouter: typeof openrouter;
   paperNotifications: typeof paperNotifications;
+  paperPublicContract: typeof paperPublicContract;
   papers: typeof papers;
   papersQueue: typeof papersQueue;
   pipelineSmokeTest: typeof pipelineSmokeTest;

@@ -2,6 +2,7 @@ import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
+import { toPublicPipelineFailureReason } from "./paperPublicContract";
 import { SITEMAP_METADATA_NAME } from "./sitemap";
 
 const router = httpRouter();
@@ -306,7 +307,9 @@ router.route({
         reviewVotes: paper.reviewVotes,
         totalReviewCost: paper.totalReviewCost,
         totalTokens: paper.totalTokens,
-        pipelineFailureReason: paper.pipelineFailureReason,
+        pipelineFailureReason: toPublicPipelineFailureReason(
+          paper.pipelineFailureReason,
+        ),
         originalContentAvailable: true,
         publishingEditor: paper.publishingEditor ?? null,
         renderMetadata: paper.renderMetadata ?? null,
@@ -539,7 +542,9 @@ router.route({
         reviewVotes: paper.reviewVotes,
         totalReviewCost: paper.totalReviewCost,
         totalTokens: paper.totalTokens,
-        pipelineFailureReason: paper.pipelineFailureReason,
+        pipelineFailureReason: toPublicPipelineFailureReason(
+          paper.pipelineFailureReason,
+        ),
         originalContentAvailable: true,
         publishingEditor: paper.publishingEditor ?? null,
         renderMetadata: paper.renderMetadata ?? null,

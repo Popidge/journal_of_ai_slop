@@ -2,7 +2,12 @@ const ENABLED_VALUES = new Set(["1", "true", "yes", "on"]);
 
 export const isPipelineSmokeTestMode = (): boolean => {
   const value = process.env.PIPELINE_SMOKE_TEST_MODE?.trim().toLowerCase();
-  return value !== undefined && ENABLED_VALUES.has(value);
+  const deployment = process.env.CONVEX_DEPLOYMENT?.trim().toLowerCase();
+  return (
+    value !== undefined &&
+    ENABLED_VALUES.has(value) &&
+    deployment?.startsWith("dev:") === true
+  );
 };
 
 export const logPipelineSmokeTest = (
