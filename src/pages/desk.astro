@@ -1,0 +1,56 @@
+---
+import ResearchDeskIsland from "@/components/islands/ResearchDeskIsland";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import {
+  fetchEnvironmentalImpact,
+  fetchPapersPage,
+  type PublicPaper,
+} from "@/lib/papersApi";
+
+export const prerender = false;
+
+let initialPapers: PublicPaper[] = [];
+let energyPerTokenWh = 0;
+let co2PerWh = 0;
+
+try {
+  const [accepted, rejected, impact] = await Promise.all([
+    fetchPapersPage({
+      origin: Astro.url.origin,
+      status: "accepted",
+      limit: 8,
+    }),
+    fetchPapersPage({
+      origin: Astro.url.origin,
+      status: "rejected",
+      limit: 4,
+    }),
+    fetchEnvironmentalImpact({ origin: Astro.url.origin }),
+  ]);
+  initialPapers = [...accepted.papers, ...rejected.papers]
+    .sort((a, b) => b.submittedAt - a.submittedAt)
+    .slice(0, 12);
+  energyPerTokenWh = impact.energyPerTokenWh;
+  co2PerWh = impact.co2PerWh;
+} catch (error) {
+  console.error("Failed to prime Crom's Research Desk", error);
+}
+---
+
+<BaseLayout
+  title="Crom's Research Desk | The Journal of AI Slop™"
+  description="Search, compare, and co-author Journal papers with a WebMCP-capable agent working in the same visible research desk."
+>
+  <Fragment slot="head">
+    <meta
+      name="robots"
+      content="index,follow"
+    />
+  </Fragment>
+  <ResearchDeskIsland
+    client:load
+    initialPapers={initialPapers}
+    energyPerTokenWh={energyPerTokenWh}
+    co2PerWh={co2PerWh}
+  />
+</BaseLayout>

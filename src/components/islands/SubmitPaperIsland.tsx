@@ -1,40 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRateLimit } from "@/hooks/useRateLimit";
-
-const AVAILABLE_TAGS = [
-  "Actually Academic",
-  "Pseudo academic",
-  "Nonsense",
-  "Pure Slop",
-  "🤷‍♂️",
-] as const;
-
-const LLM_SIGNIFIERS = [
-  "GPT",
-  "Claude",
-  "Gemini",
-  "Grok",
-  "LLaMA",
-  "Llama",
-  "Bard",
-  "Kimi",
-  "Minimax",
-  "Phi",
-  "Qwen",
-  "GLM",
-  "DeepSeek",
-  "Mistral",
-  "Mixtral",
-  "Gemma",
-  "Command",
-  "Nova",
-  "Jamba",
-] as const;
+import {
+  AVAILABLE_TAGS,
+  clearResearchDeskDraft,
+  CONTENT_CHARACTER_LIMIT,
+  CONTENT_WARNING_THRESHOLD,
+  includesLlmAuthor,
+  readResearchDeskDraft,
+} from "@/lib/submissionDraft";
 
 const SUBMISSION_LIMIT = 3;
 const RATE_WINDOW_MS = 3600000;
-const CONTENT_CHARACTER_LIMIT = 19000;
-const CONTENT_WARNING_THRESHOLD = 18000;
 
 type SubmitResponse = {
   paperId: string;
@@ -54,6 +30,7 @@ export default function SubmitPaperIsland() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedPaperId, setSubmittedPaperId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [draftWasPrepared, setDraftWasPrepared] = useState(false);
   const contentLength = formData.content.length;
   const remainingCharacters = Math.max(
     0,
@@ -75,6 +52,27 @@ export default function SubmitPaperIsland() {
     1,
     Math.ceil(rateLimit.timeUntilReset / 60000),
   );
+
+  useEffect(() => {
+    const preparedDraft = readResearchDeskDraft();
+    if (!preparedDraft) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setFormData((previous) => ({
+        ...previous,
+        title: preparedDraft.title,
+        authors: preparedDraft.authors,
+        content: preparedDraft.content,
+        tags: preparedDraft.tags,
+      }));
+      setDraftWasPrepared(true);
+      clearResearchDeskDraft();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -119,10 +117,7 @@ export default function SubmitPaperIsland() {
       if (!formData.authors.trim()) {
         throw new Error("Authors are required");
       }
-      const includesLLM = LLM_SIGNIFIERS.some((model) =>
-        formData.authors.toLowerCase().includes(model.toLowerCase()),
-      );
-      if (!includesLLM) {
+      if (!includesLlmAuthor(formData.authors)) {
         throw new Error(
           "Authors must mention at least one AI model such as GPT-4, Claude, or Gemini.",
         );
@@ -299,7 +294,22 @@ export default function SubmitPaperIsland() {
             </div>
           )}
 
-          <form onSubmit={(e) => void handleSubmit(e)} className="space-y-8">
+          {draftWasPrepared && (
+            <div className="rounded-[24px] border border-[color:var(--accent-blue)] bg-[color:var(--accent-blue)]/10 p-4">
+              <p className="text-sm font-semibold text-[color:var(--ink)]">
+                Crom&apos;s Research Desk prepared this draft. Review every field,
+                accept the terms yourself, and submit only when it is genuinely
+                ready.
+              </p>
+            </div>
+          )}
+
+          <form
+            onSubmit={(e) => void handleSubmit(e)}
+            className="space-y-8"
+            toolname="prepare_slop_submission"
+            tooldescription="Populate a visible Journal paper submission draft for human review. This tool never accepts terms or submits the paper."
+          >
             <div className="grid gap-2 sm:grid-cols-[190px_minmax(0,1fr)] sm:items-center sm:gap-4">
               <label
                 htmlFor="title"
@@ -311,6 +321,7 @@ export default function SubmitPaperIsland() {
                 type="text"
                 id="title"
                 name="title"
+                toolparamdescription="The proposed paper title."
                 value={formData.title}
                 onChange={handleInputChange}
                 required
@@ -330,6 +341,7 @@ export default function SubmitPaperIsland() {
                 type="text"
                 id="authors"
                 name="authors"
+                toolparamdescription="The full author line, including explicit credit for at least one AI model."
                 value={formData.authors}
                 onChange={handleInputChange}
                 required
@@ -348,6 +360,7 @@ export default function SubmitPaperIsland() {
               <textarea
                 id="content"
                 name="content"
+                toolparamdescription="The complete Markdown paper body, up to 19,000 characters."
                 value={formData.content}
                 onChange={handleInputChange}
                 required
@@ -394,6 +407,9 @@ export default function SubmitPaperIsland() {
                     <span>{tag}</span>
                     <input
                       type="checkbox"
+                      name="tags"
+                      value={tag}
+                      toolparamdescription="One or more Journal classification tags."
                       checked={formData.tags.includes(tag)}
                       onChange={() => handleTagToggle(tag)}
                       className="sr-only"
@@ -414,9 +430,13 @@ export default function SubmitPaperIsland() {
                 <input
                   type="email"
                   id="notificationEmail"
-                  name="notificationEmail"
                   value={formData.notificationEmail}
-                  onChange={handleInputChange}
+                  onChange={(event) =>
+                    setFormData((previous) => ({
+                      ...previous,
+                      notificationEmail: event.target.value,
+                    }))
+                  }
                   placeholder="you@email.com"
                   className="w-full rounded-lg border border-[color:var(--coffee-light)] bg-[color:var(--paper)] px-4 py-3 text-sm text-[color:var(--ink)] placeholder:text-[color:var(--ink-soft)] transition focus:border-[color:var(--coffee)] focus:outline-none"
                 />

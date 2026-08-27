@@ -4,6 +4,7 @@ import NavigationBar from "@/components/astro/NavigationBar.astro";
 import SiteFooter from "@/components/astro/SiteFooter.astro";
 import EcoModeBannerIsland from "@/components/islands/EcoModeBannerIsland";
 import EcoModeOverlayIsland from "@/components/islands/EcoModeOverlayIsland";
+import WebMcpGatewayIsland from "@/components/islands/WebMcpGatewayIsland";
 
 interface Props {
   title?: string;
@@ -30,6 +31,7 @@ const {
     <title>{title}</title>
   </head>
   <body>
+    <WebMcpGatewayIsland client:load />
     <div class="relative min-h-screen bg-transparent px-2 sm:px-0">
       <EcoModeOverlayIsland client:load />
       <div class="mx-auto w-full max-w-[1480px] px-1 py-4 sm:px-4 sm:py-6 lg:px-6">
