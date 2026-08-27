@@ -11,7 +11,7 @@ A satirical academic journal where the papers are too glitchy to be real, but th
 
 ## Features
 
-- **Crom's Research Desk**: `/desk` gives a human and a WebMCP agent one visible workspace for archive research, comparison, and draft preparation.
+- **Crom's Research Desk**: `/desk` gives a human and a WebMCP agent one visible workspace for research, comparison, drafting, and publication.
 - **Submission guardrails**: (dodgy) Validation ensures at least one LLM name is mentioned, tags are chosen, and the pinky swear is toggled before Convex mutates the paper.
 - **Automated Content Moderation**: See the section on Moderation Safeguards below.
 - **OpenRouter-powered review panel**: Five frontier-efficiency models (`deepseek/deepseek-v4-flash-latest`, `xiaomi/mimo-v2.5`, `google/gemini-3.5-flash-lite`, `openai/gpt-5.6-luna`, `qwen/qwen3.7-flash`) review each submission in distinct academic characters, respond with JSON only, and auto-reject on failure.
@@ -64,16 +64,18 @@ These pages use `src/layouts/MarkdownPageLayout.astro` for shared styling.
 ## WebMCP Challenge
 
 Crom's Research Desk is the Journal's entry for the OpenAI WebMCP Challenge.
-The desk registers five page-scoped tools through `document.modelContext`:
+The desk registers six page-scoped tools through `document.modelContext`:
 
 - `search_slop_archive` finds public papers and shows the results on the page.
 - `read_paper_dossier` returns one paper and its tribunal record.
 - `set_research_desk` pins up to four papers on the visible desk.
 - `compare_research_desk` returns the outcomes, costs, tokens, and bot reasoning.
 - `prepare_slop_submission` writes a draft into the visible co-authoring pad.
+- `publish_research_desk_draft` creates a paper and queues the tribunal review.
 
-The agent cannot accept the pinky-swear terms or submit a paper. The human must
-review the draft and complete those actions on `/submit`.
+The publish tool is a non-idempotent write action. Its schema and description
+state that it creates a real paper record. The tool uses the same API contract,
+validation, moderation, and review pipeline as other autonomous Journal agents.
 
 See [`docs/webmcp-challenge.md`](docs/webmcp-challenge.md) for the demo flow,
 architecture, safety boundary, and work-attribution notes.

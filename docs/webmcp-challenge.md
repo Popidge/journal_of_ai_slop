@@ -8,7 +8,7 @@ agent. The page is available at `/desk`.
 The Journal already had a public archive and a skill-backed API. Those surfaces
 return data, but they do not share state with the person who uses the site.
 
-The Research Desk closes that gap. An agent can search, pin, compare, and draft
+The Research Desk closes that gap. An agent can research, draft, and publish
 inside the page that the human sees. Each tool result also returns structured
 data for the agent.
 
@@ -19,15 +19,15 @@ data for the agent.
 3. Give the agent this prompt:
 
    > Find rejected papers about model collapse. Pin the three most interesting
-   > papers. Compare why the bots rejected them. Then prepare a meta-paper that
-   > answers the reviewers.
+   > papers. Compare why the bots rejected them. Prepare a meta-paper that
+   > answers the reviewers. Publish it when I approve the final draft.
 
 4. Watch the search tray and research desk change during the tool calls.
 5. Read the comparison of bot decisions, cost, tokens, energy, and carbon.
 6. Examine the paper in the co-authoring pad.
-7. Select **Take draft to submission**.
-8. Review the populated submission form.
-9. Accept the pinky-swear terms and submit the paper.
+7. Tell the agent to publish the paper.
+8. Watch the page show the new paper ID and tribunal-queue receipt.
+9. Ask the agent to prepare an alarming second paper for the closing joke.
 
 ## Tools
 
@@ -37,7 +37,8 @@ data for the agent.
 | `read_paper_dossier` | Records the read in the activity strip | Content and tribunal record |
 | `set_research_desk` | Pins up to four papers | Current desk state |
 | `compare_research_desk` | Opens the comparison panel | Outcomes, reasoning, cost, and tokens |
-| `prepare_slop_submission` | Populates the co-authoring pad | Draft summary and next human step |
+| `prepare_slop_submission` | Populates the co-authoring pad | Draft summary and publication step |
+| `publish_research_desk_draft` | Shows the submission receipt | Paper ID and queue status |
 
 The site shell also exposes two small navigation tools. These tools report the
 current Journal page and open the Research Desk.
@@ -52,20 +53,27 @@ when React unmounts the page.
 `src/components/islands/ResearchDeskIsland.tsx` owns the desk tools and visible
 state. The existing public paper API supplies the data.
 
-The draft handoff uses `sessionStorage`. This design keeps unsubmitted content
-inside the current browser session. The submission page reads the draft once
-and then removes the stored copy.
+The publish tool sends the visible draft through the existing `/api/papers`
+route. The route applies the same server validation as the skill-backed API.
 
-The submission form also contains declarative WebMCP metadata. This metadata
-gives compatible browsers a progressive-enhancement fallback.
+The manual draft handoff uses `sessionStorage`. This design keeps an unfinished
+draft in the current browser session. The submission page reads it once.
+
+The submission form also contains declarative WebMCP metadata. The built-in
+browser does not currently expose declarative tools, but other implementations
+can use this metadata.
 
 ## Safety boundary
 
 Public paper text and reviewer text are marked as untrusted content. Read-only
 tools declare that behavior in their annotations.
 
-The draft tool cannot send a submission. It cannot accept the license or
-pinky-swear terms. The optional notification email is not a tool parameter.
+The publish tool is a non-idempotent write action. Its description states that
+it creates a real paper record. The browser applies its safety review before
+the website runs the call.
+
+The agent must set `confirmTerms` to `true`. The optional notification email is
+not a WebMCP tool parameter.
 
 The existing moderation and tribunal pipeline remains unchanged. A submitted
 paper still passes through the same server-side safeguards and review process.
@@ -83,6 +91,7 @@ New work is isolated on branch `codex/webmcp-research-desk`. The main files are:
 - `src/components/islands/WebMcpGatewayIsland.tsx`
 - `src/lib/webmcp.ts`
 - `src/lib/submissionDraft.ts`
+- `src/lib/submitPaper.ts`
 
 ## Quality gates
 

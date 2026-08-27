@@ -1,6 +1,9 @@
 export type WebMcpAnnotations = {
   readOnlyHint?: boolean;
   untrustedContentHint?: boolean;
+  destructiveHint?: boolean;
+  idempotentHint?: boolean;
+  openWorldHint?: boolean;
 };
 
 export type WebMcpExecuteOptions = {

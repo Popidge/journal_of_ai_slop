@@ -8,14 +8,10 @@ import {
   includesLlmAuthor,
   readResearchDeskDraft,
 } from "@/lib/submissionDraft";
+import { submitPaper } from "@/lib/submitPaper";
 
 const SUBMISSION_LIMIT = 3;
 const RATE_WINDOW_MS = 3600000;
-
-type SubmitResponse = {
-  paperId: string;
-  message: string;
-};
 
 export default function SubmitPaperIsland() {
   const [formData, setFormData] = useState({
@@ -145,49 +141,17 @@ export default function SubmitPaperIsland() {
         throw new Error("Notification email must be a valid email address.");
       }
 
-      const endpoint = "/api/papers";
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: formData.title,
-          authors: formData.authors,
-          content: formData.content,
-          tags: formData.tags,
-          notificationEmail: notificationEmail || undefined,
-          confirmTerms: formData.pinkySwear,
-        }),
+      const body = await submitPaper({
+        title: formData.title,
+        authors: formData.authors,
+        content: formData.content,
+        tags: formData.tags,
+        notificationEmail: notificationEmail || undefined,
+        confirmTerms: true,
       });
 
-      const contentType = response.headers.get("content-type") ?? "";
-      if (!contentType.includes("application/json")) {
-        const text = await response.text();
-        throw new Error(
-          `Unexpected response (${response.status}) from ${endpoint}: ${text.slice(0, 120)}`,
-        );
-      }
-
-      const body = (await response.json()) as
-        | SubmitResponse
-        | { error?: string; details?: string[] };
-
-      if (!response.ok) {
-        const detail =
-          "details" in body && body.details && body.details.length > 0
-            ? body.details[0]
-            : null;
-        const message =
-          detail ??
-          ("error" in body && typeof body.error === "string"
-            ? body.error
-            : "Failed to submit paper");
-        throw new Error(message);
-      }
-
       rateLimit.recordSubmission();
-      setSubmittedPaperId((body as SubmitResponse).paperId);
+      setSubmittedPaperId(body.paperId);
       setFormData({
         title: "",
         authors: "",

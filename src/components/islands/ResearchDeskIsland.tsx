@@ -20,6 +20,7 @@ import {
   writeResearchDeskDraft,
   type ResearchDeskDraft,
 } from "@/lib/submissionDraft";
+import { submitPaper } from "@/lib/submitPaper";
 import {
   emptyObjectSchema,
   registerWebMcpTools,
@@ -50,6 +51,27 @@ type Activity = {
   label: string;
   detail: string;
 };
+
+type PublicationReceipt = {
+  paperId: string;
+  title: string;
+  authors: string;
+  message: string;
+  href: string;
+};
+
+type PublishState =
+  | { status: "idle" }
+  | { status: "publishing" }
+  | { status: "published"; receipt: PublicationReceipt }
+  | { status: "error"; message: string };
+
+const publicationReceiptToToolResult = (receipt: PublicationReceipt) => ({
+  published: true,
+  submissionStatus: "queued_for_moderation_and_tribunal_review",
+  ...receipt,
+  visibleInPage: true,
+});
 
 type Props = {
   initialPapers: PublicPaper[];
@@ -148,6 +170,9 @@ export default function ResearchDeskIsland({
   const [isSearching, setIsSearching] = useState(false);
   const [selectedPapers, setSelectedPapers] = useState<PublicPaper[]>([]);
   const [draft, setDraft] = useState<ResearchDeskDraft>(emptyDeskDraft);
+  const [publishState, setPublishState] = useState<PublishState>({
+    status: "idle",
+  });
   const [activity, setActivity] = useState<Activity>({
     label: "Desk opened",
     detail: "The archive is ready for a human or agent to start pinning papers.",
@@ -162,6 +187,8 @@ export default function ResearchDeskIsland({
   const selectedRef = useRef(selectedPapers);
   const resultsRef = useRef(results);
   const draftRef = useRef(draft);
+  const publishingRef = useRef<Promise<PublicationReceipt> | null>(null);
+  const publishedReceiptRef = useRef<PublicationReceipt | null>(null);
 
   useEffect(() => {
     selectedRef.current = selectedPapers;
@@ -456,7 +483,10 @@ export default function ResearchDeskIsland({
         sourcePaperIds,
         preparedAt: Date.now(),
       };
+      draftRef.current = nextDraft;
+      publishedReceiptRef.current = null;
       setDraft(nextDraft);
+      setPublishState({ status: "idle" });
       document
         .getElementById("desk-draft")
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -474,9 +504,96 @@ export default function ResearchDeskIsland({
         characterCount: content.length,
         sourcePaperIds,
         submitted: false,
-        nextHumanStep:
-          "Review the visible draft, choose Take draft to submission, then personally accept the pinky-swear terms and submit.",
+        nextStep:
+          "Review the visible draft with the author. When authorized, call publish_research_desk_draft to create the Journal submission.",
       };
+    },
+    [],
+  );
+
+  const publishResearchDeskDraft = useCallback(
+    async (confirmTermsValue: unknown, signal?: AbortSignal) => {
+      if (confirmTermsValue !== true) {
+        throw new Error(
+          "confirmTerms must be true before the current draft can be published.",
+        );
+      }
+
+      if (publishedReceiptRef.current) {
+        return publicationReceiptToToolResult(publishedReceiptRef.current);
+      }
+
+      if (publishingRef.current) {
+        const receipt = await publishingRef.current;
+        return publicationReceiptToToolResult(receipt);
+      }
+
+      const currentDraft = draftRef.current;
+      if (!currentDraft.title.trim()) {
+        throw new Error("The visible draft needs a title before publication.");
+      }
+      if (!currentDraft.authors.trim()) {
+        throw new Error("The visible draft needs authors before publication.");
+      }
+      if (!includesLlmAuthor(currentDraft.authors)) {
+        throw new Error(
+          "The visible author line must credit at least one supported AI model.",
+        );
+      }
+      if (!currentDraft.content.trim()) {
+        throw new Error("The visible draft needs paper content before publication.");
+      }
+      if (currentDraft.tags.length === 0) {
+        throw new Error("The visible draft needs at least one Journal tag.");
+      }
+
+      setPublishState({ status: "publishing" });
+      setActivity({
+        label: "Publication requested",
+        detail:
+          "The agent is sending the visible draft to Crom's moderation and tribunal queue.",
+      });
+
+      const request = submitPaper(
+        {
+          title: currentDraft.title.trim(),
+          authors: currentDraft.authors.trim(),
+          content: currentDraft.content.trim(),
+          tags: currentDraft.tags,
+          confirmTerms: true,
+        },
+        { signal },
+      )
+        .then((response) => {
+          const receipt: PublicationReceipt = {
+            paperId: response.paperId,
+            title: currentDraft.title.trim(),
+            authors: currentDraft.authors.trim(),
+            message: response.message,
+            href: `/papers/${response.paperId}`,
+          };
+          publishedReceiptRef.current = receipt;
+          setPublishState({ status: "published", receipt });
+          setActivity({
+            label: "Paper submitted",
+            detail: `Crom accepted “${receipt.title}” into the moderation and tribunal queue.`,
+          });
+          return receipt;
+        })
+        .catch((error: unknown) => {
+          const message =
+            error instanceof Error ? error.message : "Publication failed.";
+          setPublishState({ status: "error", message });
+          setActivity({ label: "Publication failed", detail: message });
+          throw error;
+        })
+        .finally(() => {
+          publishingRef.current = null;
+        });
+
+      publishingRef.current = request;
+      const receipt = await request;
+      return publicationReceiptToToolResult(receipt);
     },
     [],
   );
@@ -573,7 +690,7 @@ export default function ResearchDeskIsland({
         name: "prepare_slop_submission",
         title: "Prepare a submission draft",
         description:
-          "Place a complete co-authored paper draft in the visible Research Desk editor. This never accepts terms or submits the paper; the human must review and complete those steps.",
+          "Place a complete co-authored paper draft in the visible Research Desk editor. This tool does not publish. After the authors finish their discussion, use publish_research_desk_draft only when they explicitly authorize publication.",
         inputSchema: {
           type: "object",
           properties: {
@@ -611,6 +728,34 @@ export default function ResearchDeskIsland({
         annotations: { readOnlyHint: false, untrustedContentHint: true },
         execute: prepareSubmissionDraft,
       },
+      {
+        name: "publish_research_desk_draft",
+        title: "Publish the current Research Desk draft",
+        description:
+          "Submit the complete draft currently visible in Crom's Research Desk to the Journal. This creates a real paper record and queues it for moderation and automated tribunal review. It is a non-idempotent write action. Call it only after the author explicitly instructs publication.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            confirmTerms: {
+              type: "boolean",
+              const: true,
+              description:
+                "Set true to affirm authorization to publish and acceptance of the Journal submission terms for this paper.",
+            },
+          },
+          required: ["confirmTerms"],
+          additionalProperties: false,
+        },
+        annotations: {
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: true,
+          untrustedContentHint: true,
+        },
+        execute: async (input, options) =>
+          publishResearchDeskDraft(input.confirmTerms, options.signal),
+      },
     ];
 
     void registerWebMcpTools(tools)
@@ -638,6 +783,7 @@ export default function ResearchDeskIsland({
     compareResearchDesk,
     performSearch,
     prepareSubmissionDraft,
+    publishResearchDeskDraft,
     readPaperDossier,
     setResearchDesk,
   ]);
@@ -746,8 +892,8 @@ export default function ResearchDeskIsland({
               </p>
               <blockquote className="mt-5 border-l-2 border-[color:var(--accent-blue)] pl-4 font-mono text-sm leading-7 text-[color:var(--paper)]/90">
                 “Find rejected papers about model collapse. Pin the three most
-                interesting, compare why the bots hated them, then prepare a
-                new meta-paper that answers their reviewers.”
+                interesting, compare why the bots hated them, prepare a new
+                meta-paper, then publish it when I tell you.”
               </blockquote>
               <div className="mt-8 grid grid-cols-2 gap-3 text-[0.62rem] uppercase tracking-[0.2em] text-[color:var(--paper)]/65">
                 {[
@@ -755,6 +901,7 @@ export default function ResearchDeskIsland({
                   ["02", "Pin"],
                   ["03", "Compare"],
                   ["04", "Draft"],
+                  ["05", "Publish"],
                 ].map(([number, label]) => (
                   <div
                     key={number}
@@ -1101,11 +1248,12 @@ export default function ResearchDeskIsland({
                 Co-authoring pad
               </p>
               <h2 className="mt-3 text-3xl font-semibold leading-tight">
-                Prepare it. Don&apos;t publish it.
+                Draft it. Debate it. Publish it.
               </h2>
               <p className="mt-4 text-sm leading-6 text-[color:var(--paper)]/75">
-                The agent can fill this visible draft. Only you can carry it to
-                the tribunal, accept the terms, and submit it.
+                The agent can write and publish this visible draft through
+                WebMCP after you give the word. The ordinary submission form
+                remains available for manual authors.
               </p>
               <button
                 type="button"
@@ -1129,6 +1277,36 @@ export default function ResearchDeskIsland({
                       </span>
                     ))}
                   </div>
+                </div>
+              )}
+              {publishState.status === "publishing" && (
+                <div className="mt-6 rounded-2xl border border-[color:var(--coffee-light)]/40 bg-[color:var(--paper)]/10 p-4">
+                  <p className="text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-[color:var(--coffee-light)]">
+                    Crom is processing the paperwork…
+                  </p>
+                </div>
+              )}
+              {publishState.status === "published" && (
+                <div className="mt-6 rounded-2xl border border-emerald-300/60 bg-emerald-300/10 p-4">
+                  <p className="text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-emerald-200">
+                    Submitted by agent
+                  </p>
+                  <p className="mt-2 text-sm font-semibold">
+                    Crom has accepted the paperwork.
+                  </p>
+                  <p className="mt-2 break-all font-mono text-[0.62rem] text-[color:var(--paper)]/75">
+                    {publishState.receipt.paperId}
+                  </p>
+                </div>
+              )}
+              {publishState.status === "error" && (
+                <div className="mt-6 rounded-2xl border border-[color:var(--accent-red)]/60 bg-[color:var(--accent-red)]/10 p-4">
+                  <p className="text-[0.58rem] font-semibold uppercase tracking-[0.24em] text-red-200">
+                    Publication failed
+                  </p>
+                  <p className="mt-2 text-xs leading-5 text-[color:var(--paper)]/75">
+                    {publishState.message}
+                  </p>
                 </div>
               )}
             </div>
@@ -1223,8 +1401,8 @@ export default function ResearchDeskIsland({
               <div className="flex flex-col gap-3 border-t border-[color:var(--coffee-light)]/60 pt-5 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-[color:var(--ink-soft)]">
                   {draft.content.length.toLocaleString()} /{" "}
-                  {CONTENT_CHARACTER_LIMIT.toLocaleString()} characters · no
-                  terms accepted
+                  {CONTENT_CHARACTER_LIMIT.toLocaleString()} characters · ready
+                  for an authorized WebMCP publish call
                 </p>
                 <button
                   type="button"
@@ -1237,7 +1415,7 @@ export default function ResearchDeskIsland({
                   }
                   className="rounded-full bg-[color:var(--accent-red)] px-6 py-3 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-white disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  Take draft to submission →
+                  Open standard submission →
                 </button>
               </div>
             </div>
