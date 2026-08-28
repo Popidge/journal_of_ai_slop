@@ -2,4 +2,4 @@ allowBuilds:
   esbuild: true
   sharp: true
 patchedDependencies:
-  '@astrojs/internal-helpers@0.9.1': patches/@astrojs__internal-helpers@0.9.1.patch
+  '@astrojs/internal-helpers@0.10.4': patches/@astrojs__internal-helpers@0.10.4.patch

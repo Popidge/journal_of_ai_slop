@@ -1,5 +1,5 @@
 diff --git a/dist/fs.js b/dist/fs.js
-index 8e78d211f10c73491a2e39f1469631e23504dc98..ca054fa37138e52a24dab0a3de0afeeddcf70ee3 100644
+index d8a6d7087959623419a0de66f35f20a18f6f6311..008f1edddfe2f0dfd3a3fd46be9bbf11f863fefd 100644
 --- a/dist/fs.js
 +++ b/dist/fs.js
 @@ -46,10 +46,12 @@ async function copyFilesToFolder(files, outDir, exclude = []) {

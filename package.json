@@ -16,14 +16,14 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "@astrojs/react": "^5.0.5",
-    "@astrojs/vercel": "^10.0.7",
+    "@astrojs/react": "^6.0.4",
+    "@astrojs/vercel": "^11.0.8",
     "@azure-rest/ai-content-safety": "^1.0.1",
     "@azure/core-auth": "^1.10.1",
     "@convex-dev/resend": "^0.2.4",
     "@types/katex": "^0.16.8",
-    "astro": "^6.3.8",
-    "convex": "^1.39.1",
+    "astro": "^7.2.9",
+    "convex": "^1.45.0",
     "convex-helpers": "^0.1.118",
     "devlop": "1.1.0",
     "katex": "^0.17.0",
@@ -36,23 +36,23 @@
     "resend": "^6.12.4"
   },
   "devDependencies": {
-    "@convex-dev/eslint-plugin": "^2.0.0",
+    "@convex-dev/eslint-plugin": "^4.0.0",
     "@eslint/js": "^10.0.1",
-    "@tailwindcss/vite": "^4.3.0",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^25.9.1",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
-    "eslint": "^10.4.0",
+    "eslint": "^10.9.1",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
-    "npm-run-all2": "^9.0.1",
+    "npm-run-all2": "^9.0.3",
     "prettier": "^3.8.3",
-    "sharp": "^0.34.5",
-    "svgo": "^4.0.1",
-    "tailwindcss": "^4.3.0",
+    "sharp": "^0.35.4",
+    "svgo": "^4.1.0",
+    "tailwindcss": "^4.3.3",
     "typescript": "~6.0.3",
-    "typescript-eslint": "^8.60.0"
+    "typescript-eslint": "^8.68.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

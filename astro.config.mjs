@@ -74,6 +74,7 @@ const markdownSsrPackages = [
 
 export default defineConfig({
   output: "static",
+  compressHTML: true,
   integrations: [react()],
   adapter: vercel(),
   vite: {
