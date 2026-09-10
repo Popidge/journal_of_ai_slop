@@ -19,6 +19,38 @@ Project guidance for agentic coding assistants in this repository.
 - Backend only: `pnpm run dev:backend`
 - Production preview: `pnpm run preview`
 
+## Update and Deployment Process
+
+GitHub and Vercel control deployments for this project:
+
+| GitHub event | Vercel deployment | Convex target |
+| --- | --- | --- |
+| Open or update a PR | Preview build and deployment | Development environment |
+| Merge the PR into `main` | Production build and deployment | Production environment |
+
+The Vercel build includes the Convex deployment stage. PR previews support testing and CI/CD before merge.
+
+For updates, follow these steps:
+
+1. Create a small branch from the current `main`. Unless the user specifies another name, use the `codex/` prefix.
+2. Make the requested changes.
+3. Run local checks appropriate to the changes, including `pnpm run lint` for code changes.
+4. Commit only the files for the requested update.
+5. Push the branch to GitHub.
+6. Unless the user requests a draft, open a ready-to-review PR.
+7. Check the PR checks and Vercel preview results. Use the preview and Convex development environment to test before merge.
+8. Unless the user explicitly asks you to merge, leave the merge to them.
+
+Deployment rules for agents:
+
+- Unless the user explicitly requests a direct deployment, do not run `convex deploy` through pnpm, npx, or another tool.
+- Do not run separate Convex development pushes as a routine PR validation step. Let the Vercel preview deploy those changes.
+- Use this workflow even when a skill recommends a separate backend deployment.
+- Do not treat access to deployment credentials as permission to deploy.
+- Report local checks, preview deployment, and production deployment as separate results.
+
+A separate Convex deployment bypasses the PR workflow. A later Vercel build can overwrite it with code from another Git revision.
+
 ## Environment Variables
 
 Expected values used by app/runtime:
@@ -67,7 +99,7 @@ Expected values used by app/runtime:
 
 - Start backend runtime: `pnpm run dev:backend`
 - Run migration example used in repo: `npx convex action call internal.migrations.ecoModeMigration`
-- Deploy backend: `npx convex deploy`
+- Deploy backend: Use the GitHub/Vercel workflow in **Update and Deployment Process**.
 
 ## Formatting and General Style
 
