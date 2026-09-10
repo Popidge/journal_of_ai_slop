@@ -21,6 +21,11 @@ export const tweetDailyHighlight = internalAction({
     }),
   ),
   handler: async (ctx): Promise<null | { paperId: Id<"papers">; postBody: string }> => {
+    // Daily highlights are paused unless explicitly enabled on this deployment.
+    if (process.env.SLOPBOT_DAILY_HIGHLIGHT_ENABLED?.trim().toLowerCase() !== "true") {
+      return null;
+    }
+
     const runId = randomUUID();
     const candidate: HighlightCandidate | null = await ctx.runMutation(internal.slopbotTweets.reserveHighlightCandidate, { runId });
     if (!candidate) {

@@ -9,11 +9,19 @@ export const tweetPublishedPaper = internalAction({
   args: {
     paperId: v.id("papers"),
   },
-  returns: v.object({
-    paperId: v.id("papers"),
-    postBody: v.string(),
-  }),
+  returns: v.union(
+    v.null(),
+    v.object({
+      paperId: v.id("papers"),
+      postBody: v.string(),
+    }),
+  ),
   handler: async (ctx, args) => {
+    // Publication tweets are paused unless explicitly enabled on this deployment.
+    if (process.env.SLOPBOT_PUBLICATION_TWEETS_ENABLED?.trim().toLowerCase() !== "true") {
+      return null;
+    }
+
     const runId = randomUUID();
     const paper = await ctx.runQuery(internal.papers.internalGetPaper, { id: args.paperId });
     if (!paper) {

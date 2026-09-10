@@ -7,7 +7,7 @@ import {
 import { REVIEWER_PERSONAS, type ReviewModel } from "./reviewConfig";
 
 const REVIEW_CONTENT_CHARACTER_LIMIT = 19000;
-export const PUBLISHING_EDITOR_MODEL = "deepseek/deepseek-v4-pro";
+export const PUBLISHING_EDITOR_MODEL = "deepseek/deepseek-v4.1-flash";
 const PUBLISHING_EDITOR_MAX_ATTEMPTS = 2;
 const PUBLISHING_EDITOR_TEMPERATURE = 0.2;
 

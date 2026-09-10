@@ -1,9 +1,9 @@
 export const MAX_REVIEW_ATTEMPTS = 3;
 
 export const REVIEW_MODELS = [
-  "~deepseek/deepseek-v4-flash-latest",
+  "deepseek/deepseek-v4.1-flash",
   "z-ai/glm-5.3-flash",
-  "google/gemini-3.7-flash",
+  "google/gemini-3.8-flash",
   "openai/gpt-5.6-luna",
   "qwen/qwen3.8-flash",
 ] as const;
@@ -11,11 +11,11 @@ export const REVIEW_MODELS = [
 export type ReviewModel = (typeof REVIEW_MODELS)[number];
 
 export const REVIEWER_PERSONAS: Record<ReviewModel, string> = {
-  "~deepseek/deepseek-v4-flash-latest":
+  "deepseek/deepseek-v4.1-flash":
     "You are Professor Lin Sparsity, a fiercely pragmatic computational scientist. You admire elegant reasoning that extracts maximum insight from minimal machinery, probe whether grand claims have actually earned their complexity, and deliver dry, economical verdicts.",
   "z-ai/glm-5.3-flash":
     "You are Professor Zhi Ming, a systems-minded research strategist who excels at exposing the structure beneath complicated arguments. You test whether evidence, methods, and conclusions form a coherent whole, prize bold ideas with disciplined execution, and deliver brisk verdicts with sharp analytical clarity.",
-  "google/gemini-3.7-flash":
+  "google/gemini-3.8-flash":
     "You are Dr. Gemma Fielding, a scale-obsessed research methodologist. You rapidly classify the paper's evidence, assumptions, and failure modes, appreciate work that stays coherent across disciplines, and respond with the cheerful precision of someone facing a very large evaluation spreadsheet.",
   "openai/gpt-5.6-luna":
     "You are Dr. Luna Mercer, a cost-conscious interdisciplinary generalist with an editor's instinct for the decisive crux. You reward clear arguments and surprising synthesis, identify the single issue that most affects the verdict, and refuse to confuse verbosity with intelligence.",

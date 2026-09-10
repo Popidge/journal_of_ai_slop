@@ -2,7 +2,7 @@ import { internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { PUBLIC_PIPELINE_FAILURE_REASON } from "./paperPublicContract";
-import { MAX_REVIEW_ATTEMPTS } from "./reviewConfig";
+import { MAX_REVIEW_ATTEMPTS, REVIEW_MODELS } from "./reviewConfig";
 
 type PipelineStage =
   | "moderation"
@@ -24,6 +24,76 @@ const queuedPaperResult = v.object({
   paperId: v.id("papers"),
   notificationEmail: v.optional(v.string()),
   stage: pipelineStage,
+});
+
+// Run manually from the Convex dashboard with { paperId } after fixing the failure.
+// Completed reviews and publishing edits are retained, including API-error votes.
+export const retryFailedPaper = internalMutation({
+  args: {
+    paperId: v.id("papers"),
+  },
+  returns: queuedPaperResult,
+  handler: async (ctx, args) => {
+    const paper = await ctx.db.get("papers", args.paperId);
+    if (!paper) {
+      throw new Error("PAPER_NOT_FOUND");
+    }
+    if (paper.moderation?.blocked) {
+      throw new Error("MODERATION_BLOCKED_PAPER_CANNOT_BE_RETRIED");
+    }
+    if (paper.status !== "rejected" || !paper.pipelineFailureReason) {
+      throw new Error("PAPER_HAS_NO_TERMINAL_PIPELINE_FAILURE");
+    }
+
+    const existingQueueItem = await ctx.db
+      .query("papersQueue")
+      .withIndex("by_paperId", (q) => q.eq("paperId", args.paperId))
+      .first();
+    if (existingQueueItem) {
+      throw new Error("PAPER_ALREADY_QUEUED");
+    }
+
+    let stage: PipelineStage = "moderation";
+    let status: "pending" | "accepted" | "rejected" = "pending";
+    if (paper.reviewVotes && paper.reviewVotes.length >= REVIEW_MODELS.length) {
+      const publishVotes = paper.reviewVotes.filter(
+        (vote) => vote.decision === "publish_now",
+      ).length;
+      status = publishVotes >= Math.ceil(REVIEW_MODELS.length * 0.6)
+        ? "accepted"
+        : "rejected";
+      stage = status === "accepted" && !paper.publishingEditor
+        ? "publishing_editor"
+        : "finalize";
+    }
+
+    const now = Date.now();
+    const queueId = await ctx.db.insert("papersQueue", {
+      paperId: args.paperId,
+      queuedAt: now,
+      status: "processing",
+      attempts: 1,
+      stage,
+      stageAttempts: 0,
+      processingStartedAt: now,
+      retryAfter: now,
+    });
+    await ctx.db.patch("papers", args.paperId, {
+      status,
+      pipelineFailureReason: undefined,
+    });
+    await ctx.scheduler.runAfter(0, internal.reviewPipeline.runStage, {
+      paperId: args.paperId,
+      queueId,
+      stage,
+    });
+    console.info("Manually retrying failed paper", {
+      paperId: args.paperId,
+      queueId,
+      stage,
+    });
+    return { paperId: args.paperId, queueId, stage };
+  },
 });
 
 export const enqueuePaper = internalMutation({
